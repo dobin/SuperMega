@@ -1,5 +1,5 @@
 *.exe*
 *.obj
 *.lnk
-*.bin
+/*.bin
 *.asm
