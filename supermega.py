@@ -5,6 +5,7 @@ import shutil
 
 print("Super Mega")
 
+use_cleanup = True
 use_compile = True
 use_test = False
 use_sgn = False
@@ -12,6 +13,13 @@ use_append = True
 
 
 def main():
+    if use_cleanup:
+        os.remove("main.asm")       # generated from compiling source/main.c
+        os.remove("main-clean.asm") # cleaned for being a shellcode
+        os.remove("main-clean.exe") # assembled
+        os.remove("main-clean.bin")
+        os.remove("main-clean-append.bin")
+
     if use_compile:
         print("--[ Compile C source to ASM ]")
         path_cl = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\cl.exe'
@@ -42,7 +50,7 @@ def main():
         else:
             print("  Generated main-clean.asm")
 
-    print("--[ Compile to exe ]")
+    print("--[ Assemble to exe ]")
     path_ml64 =  r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\ml64.exe'
     subprocess.run([
         path_ml64,
@@ -106,6 +114,7 @@ def main():
             output.write(data_payload)
 
         print("--[ Test Append shellcode ]")
+        print("---[ Stager: {}  Shellcode: {} ]".format(len(data_stager), len(data_payload)))
         path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
         subprocess.run([
             path_shexec,
@@ -133,13 +142,21 @@ def clean_asm_file(filename):
     # ;	ret	0
     # main	ENDP
     # _TEXT	ENDS
+    #for idx, line in enumerate(lines): 
+    #    if lines[idx].startswith("main\tENDP"):
+    #        print("--( Fix main-end jmp at line: {}) ".format(idx))
+    #        lines[idx-1] = "; " + lines[idx-1]
+    #        lines[idx-2] = "; " + lines[idx-2]
+    #        lines.insert(idx-4, "\tjmp shcstart\r\n")
+    #        break
+        
     for idx, line in enumerate(lines): 
-        if lines[idx].startswith("main\tENDP"):
-            print("--( Fix main-end jmp at line: {}) ".format(idx))
-            lines[idx-1] = "; " + lines[idx-1]
-            lines[idx-2] = "; " + lines[idx-2]
-            lines.insert(idx-4, "\tjmp shcstart\r\n")
-            break
+        if "dobin" in lines[idx]:
+            lines[idx] = lines[idx].replace(
+                "mov	r8, QWORD PTR dobin",
+                "lea	r8, [shcstart]"
+            )
+            
         
     #   _TEXT	ENDS
     #   END

