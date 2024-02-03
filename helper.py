@@ -7,11 +7,11 @@ import shutil
 SHC_VERIFY_SLEEP = 0.1
 
 path_cl = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\cl.exe'
-path_masmshc =  r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\masm_shc\masm_shc.exe'
 path_ml64 =  r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\ml64.exe'
 
+path_masmshc =  r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\masm_shc\masm_shc.exe'
 path_runshc = r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc\runshc.exe'
-path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
+#path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
 
 verify_filename = r'C:\Temp\a'
 
@@ -28,7 +28,7 @@ def clean_files():
         pass
 
 
-def make_c_to_asm(c_file, asm_file, asm_clean_file):
+def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):
     print("--[ Compile C source to ASM: {} -> {} ]".format(c_file, asm_file))
     subprocess.run([
         path_cl,
@@ -56,10 +56,10 @@ def make_c_to_asm(c_file, asm_file, asm_clean_file):
         print("    > Generated {}".format(asm_clean_file))
 
     print("--[ Fixup ASM: {} ]".format(asm_clean_file))
-    fixup_asm_file(asm_clean_file)
+    fixup_asm_file(asm_clean_file, payload_len)
 
 
-def fixup_asm_file(filename):
+def fixup_asm_file(filename, payload_len):
     with open(filename, 'r') as asmfile:
         lines = asmfile.readlines()
 
@@ -71,6 +71,12 @@ def fixup_asm_file(filename):
                 "mov	r8, QWORD PTR dobin",
                 "lea	r8, [shcstart]"
             )
+
+    # replace payload length
+    for idx, line in enumerate(lines): 
+        if "11223344" in lines[idx]:
+            lines[idx] = lines[idx].replace("11223344", str(payload_len+1))
+            break
             
     # add label at end of code
     for idx, line in enumerate(lines): 
@@ -162,7 +168,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
 def test_shellcode(shc_name):
     print("---[ Test shellcode: {} ]".format(shc_name))
     subprocess.run([
-        path_shexec,
+        path_runshc,
         "{}".format(shc_name),
     ])  # , check=True
 
@@ -175,8 +181,6 @@ def verify_shellcode(shc_name):
         print("Error, directory does not exist for: {}".format(verify_filename))
         return
 
-    # path_runshc
-    # path_shexec
     subprocess.run([
         path_runshc,
         "{}".format(shc_name),

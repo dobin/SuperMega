@@ -76,7 +76,10 @@ def main():
         clean_files()
 
     if options["generate_asm_from_c"]:
-        make_c_to_asm("source/main.c", "main.asm", "main-clean.asm")
+        with open(options["payload"], 'rb') as input2:
+            data_payload = input2.read()
+            l = len(data_payload)
+        make_c_to_asm("source/main.c", "main.asm", "main-clean.asm", l)
 
     if options["generate_asm_from_c"]:
         make_shc_from_asm("main-clean.asm", "main-clean.exe", "main-clean.bin")
