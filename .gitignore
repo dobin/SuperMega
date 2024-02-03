@@ -3,3 +3,4 @@
 *.lnk
 /*.bin
 *.asm
+__pycache__
