@@ -39,11 +39,12 @@ options_default = {
 }
 
 
+# VERIFY
 # This will verify if our loader works
 # - Use it on a "target" machine
 # - payload shellcode will create a file c:\temp\a
 # - set: verify=True
-options_test = {
+options_verify = {
     "payload": "shellcodes/createfile.bin",
     "verify": True,
 
@@ -66,7 +67,7 @@ options_test = {
 }
 
 
-options = options_test
+options = options_verify
 
 
 def main():
@@ -89,14 +90,15 @@ def main():
 
     # SGN seems buggy atm
     #if options["obfuscate_shc_loader"]:
-    #    obfuscate_shc_loader("main-clean.bin", "main-clean-sgn.bin")
+    #    obfuscate_shc_loader("main-clean.bin", "main-clean.bin")
     #
-    #    if options["test_obfuscated_shc"]:
-    #        test_shellcode("main-clean-sgn.bin")
+    #    if options["verify"]:
+    #        if not verify_shellcode("main-clean.bin"):
+    #            return
 
     if options["dataref_style"] == DataRefStyle.APPEND:
         with open("main-clean.bin", 'rb') as input1:
-            data_stager = remove_trailing_null_bytes(input1.read())
+            data_stager = input1.read()
 
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
@@ -112,7 +114,8 @@ def main():
 
         if options["verify"]:
             print("--[ Verify final shellcode ]")
-            verify_shellcode("main-clean-append.bin")
+            if not verify_shellcode("main-clean-append.bin"):
+                return
 
         if options["exec_final_shellcode"]:
             print("--[ Test Append shellcode ]")
