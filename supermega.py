@@ -101,6 +101,8 @@ def main():
             output.write(data_stager)
             output.write(data_payload)
 
+        print("--[ Final shellcode available at: {} ]".format("main-clean-append.bin"))
+
         if options["verify"]:
             print("--[ Verify final shellcode ]")
             verify_shellcode("main-clean-append.bin")

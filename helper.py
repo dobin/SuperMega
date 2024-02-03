@@ -66,7 +66,7 @@ def fixup_asm_file(filename):
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
         if "dobin" in lines[idx]:
-            print("    > Replace external reference at: {})".format(idx))
+            print("    > Replace external reference at: {}".format(idx))
             lines[idx] = lines[idx].replace(
                 "mov	r8, QWORD PTR dobin",
                 "lea	r8, [shcstart]"
@@ -75,7 +75,7 @@ def fixup_asm_file(filename):
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):
-            print("    > Add end of code label at: {})".format(idx))
+            print("    > Add end of code label at: {}".format(idx))
             lines.insert(idx-1, "shcstart:\r\n")
             lines.insert(idx, "\tnop\r\n")
             break
@@ -102,7 +102,7 @@ def make_shc_from_asm(asm_clean_file, exe_file, shc_file):
     code = get_code_section(exe_file)
     with open(shc_file, 'wb') as f:
         f.write(code)
-    print("--[ Shellcode written to: {} size: {} ]".format(exe_file, len(code)))
+    print("--[ Shellcode written to: {}  (size: {}) ]".format(exe_file, len(code)))
 
 
 def get_code_section(pe_file):
@@ -116,8 +116,8 @@ def get_code_section(pe_file):
             if '.text' in section.Name.decode().rstrip('\x00'):
                 data = section.get_data()
                 data = remove_trailing_null_bytes(data)
-                print("    > Code Size Raw: {}  Size me: {}".format(
-                    section.SizeOfRawData, len(data)))
+                print("    > Code Size: {}  (raw code section size: {})".format(
+                    len(data), section.SizeOfRawData))
                 return data
         else:
             print("Code section not found.")
@@ -160,7 +160,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
 
 
 def test_shellcode(shc_name):
-    print("--[ Test shellcode: {} ]".format(shc_name))
+    print("---[ Test shellcode: {} ]".format(shc_name))
     subprocess.run([
         path_shexec,
         "{}".format(shc_name),
@@ -168,7 +168,7 @@ def test_shellcode(shc_name):
 
 
 def verify_shellcode(shc_name):
-    print("--[ Test shellcode: {} ]".format(shc_name))
+    print("---[ Verify shellcode: {} ]".format(shc_name))
 
     # check if directory exists
     if not os.path.exists(os.path.dirname(verify_filename)):
@@ -180,12 +180,12 @@ def verify_shellcode(shc_name):
     subprocess.run([
         path_runshc,
         "{}".format(shc_name),
-    ])  # , check=True
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("--> OK. File creation test shellcode payload verified")
+        print("---> OK. Shellcode payload verified (file was created)")
         # better to remove it immediately. If cleanup on start is not performed, 
         # there may be false positives
         os.remove(verify_filename)
     else:
-        print("--> FAIL. Payload did not create file.")
+        print("---> FAIL. Payload did not create file.")
