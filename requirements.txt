@@ -1,1 +1,3 @@
 pefile
+capstone
+keystone-engine
