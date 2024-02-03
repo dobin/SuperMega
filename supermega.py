@@ -98,14 +98,14 @@ def main():
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
 
-        print("--[ Stager: {}  Shellcode: {}  (both: {})]".format(
+        print("--[ Integrate Stager: {}  Payload: {}  (sum: {})]".format(
             len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
         with open("main-clean-append.bin", 'wb') as output:
             output.write(data_stager)
             output.write(data_payload)
 
-        print("--[ Final shellcode available at: {} ]".format("main-clean-append.bin"))
+        print("---[ Final shellcode available at: {} ]".format("main-clean-append.bin"))
 
         if options["verify"]:
             print("--[ Verify final shellcode ]")
@@ -117,7 +117,9 @@ def main():
 
     if options["inject_exe"]:
         inject_exe("main-clean-append.bin", options["inject_exe_in"], options["inject_exe_out"])
-        
+        if options["verify"]:
+            print("--[ Verify final exe ]")
+            verify_injected_exe(options["inject_exe_out"])
 
 if __name__ == "__main__":
     main()

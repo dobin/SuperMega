@@ -98,11 +98,11 @@ def make_shc_from_asm(asm_clean_file, exe_file, shc_file):
     else:
         print("    > Generated {}".format(exe_file))
 
-    print("--[ Get code section from exe ]")
+    print("---[ Get code section from exe ]")
     code = get_code_section(exe_file)
     with open(shc_file, 'wb') as f:
         f.write(code)
-    print("--[ Shellcode written to: {}  (size: {}) ]".format(exe_file, len(code)))
+    print("---[ Shellcode from {} written to: {}  (size: {}) ]".format(exe_file, shc_file, len(code)))
 
 
 def get_code_section(pe_file):
@@ -183,16 +183,16 @@ def verify_shellcode(shc_name):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("---> OK. Shellcode payload verified (file was created)")
+        print("---> Verify OK. Shellcode payload verified (file was created)")
         # better to remove it immediately. If cleanup on start is not performed, 
         # there may be false positives
         os.remove(verify_filename)
     else:
-        print("---> FAIL. Payload did not create file.")
+        print("---> Verify FAIL. Payload did not create file.")
 
 
 def inject_exe(shc_file, exe_in, exe_out):
-    print("--[ Injecting: shc {} into: {} -> {} ]".format(
+    print("--[ Injecting: {} into: {} -> {} ]".format(
         shc_file, exe_in, exe_out
     ))
     shutil.copyfile(exe_in, exe_out)
@@ -205,4 +205,19 @@ def inject_exe(shc_file, exe_in, exe_out):
         shc_file,
         exe_out
     ], check=True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+
+def verify_injected_exe(exefile):
+    print("---[ Verify infected exe: {} ]".format(exefile))
+    subprocess.run([
+        exefile,
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
+    time.sleep(SHC_VERIFY_SLEEP)
+    if os.path.isfile(verify_filename):
+        print("---> Verify OK. Infected exe verified (file was created)")
+        # better to remove it immediately. If cleanup on start is not performed, 
+        # there may be false positives
+        os.remove(verify_filename)
+    else:
+        print("---> Verify FAIL. Infected exe did not create file.")
 
