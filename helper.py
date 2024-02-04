@@ -162,7 +162,8 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
         print("Error")
         return
     else:
-        print("   > Generated main-clean-sgn.bin")
+        print("   > Success obfuscation")
+        pass
 
 
 def test_shellcode(shc_name):
@@ -191,8 +192,10 @@ def verify_shellcode(shc_name):
         # better to remove it immediately. If cleanup on start is not performed, 
         # there may be false positives
         os.remove(verify_filename)
+        return True
     else:
         print("---> Verify FAIL. Payload did not create file.")
+        return False
 
 
 def inject_exe(shc_file, exe_in, exe_out):

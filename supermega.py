@@ -58,7 +58,7 @@ options_verify = {
 
     "inject_exe": True,
     "inject_exe_in": "exes/procexp64.exe",
-    "inject_exe_out": "exes/procexp64-a.exe",
+    "inject_exe_out": "out/procexp64-a.exe",
 
     "alloc_style": AllocStyle.RWX,
     "exec_style": ExecStyle.CALL,
@@ -120,6 +120,10 @@ def main():
         if options["exec_final_shellcode"]:
             print("--[ Test Append shellcode ]")
             test_shellcode("main-clean-append.bin")
+
+        # copy it to out
+        shutil.copyfile("main-clean-append.bin", os.path.join("out/", "main-clean-append.bin"))
+
 
     if options["inject_exe"]:
         inject_exe("main-clean-append.bin", options["inject_exe_in"], options["inject_exe_out"])
