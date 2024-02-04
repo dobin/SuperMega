@@ -3,6 +3,7 @@ import os
 import pefile
 import time
 import shutil
+import pathlib
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -17,15 +18,20 @@ verify_filename = r'C:\Temp\a'
 
 
 def clean_files():
-    try:
-        os.remove("main.asm")       # generated from compiling source/main.c
-        os.remove("main-clean.asm") # cleaned for being a shellcode
-        os.remove("main-clean.exe") # assembled
-        os.remove("main-clean.bin")
-        os.remove("main-clean-append.bin")
-        os.remove(verify_filename)
-    except OSError:
-        pass
+    print("--[ Cleanup files ]")
+    files_to_clean = [
+        "main.asm",
+        "main.obj",
+        "main-clean.asm",
+        "main-clean.bin",
+        "main-clean-append.bin",
+        "main-clean.obj",
+        "mllink$.lnk",
+        verify_filename,
+        #"main-clean.exe",  # at the end as it may still shutdown?
+    ]
+    for file in files_to_clean:
+        pathlib.Path(file).unlink(missing_ok=True)
 
 
 def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):

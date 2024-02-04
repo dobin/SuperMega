@@ -25,6 +25,9 @@ options_default = {
     "verify": False,
 
     "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True, # all is just in out/
+
+
     "generate_asm_from_c": True,
     "generate_shc_from_asm": True,
     "test_loader_shellcode": False,
@@ -49,6 +52,8 @@ options_verify = {
     "verify": True,
 
     "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True, # all is just in out/
+
     "generate_asm_from_c": True,
     "generate_shc_from_asm": True,
     "test_loader_shellcode": False,
@@ -124,12 +129,14 @@ def main():
         # copy it to out
         shutil.copyfile("main-clean-append.bin", os.path.join("out/", "main-clean-append.bin"))
 
-
     if options["inject_exe"]:
         inject_exe("main-clean-append.bin", options["inject_exe_in"], options["inject_exe_out"])
         if options["verify"]:
             print("--[ Verify final exe ]")
             verify_injected_exe(options["inject_exe_out"])
+
+    if options["cleanup_files_on_exit"]:
+        clean_files()
 
 if __name__ == "__main__":
     main()
