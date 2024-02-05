@@ -5,3 +5,5 @@
 *.asm
 __pycache__
 bak/
+build/
+out/

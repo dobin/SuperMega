@@ -4,6 +4,7 @@ import pefile
 import time
 import shutil
 import pathlib
+import sys
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -16,17 +17,31 @@ path_runshc = r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc
 
 verify_filename = r'C:\Temp\a'
 
+build_dir = "build"
+main_c_file = os.path.join(build_dir, "main.c")
+main_asm_file = os.path.join(build_dir, "main.asm")
+main_asm_clean_file = os.path.join(build_dir, "main-clean.asm")
+
+main_exe_clean_file = os.path.join(build_dir, "main-clean.exe")
+main_bin_clean_file = os.path.join(build_dir, "main-clean.bin")
+main_bin_clean_append_file = os.path.join(build_dir, "main-clean-append.bin")
+
 
 def clean_files():
     print("--[ Cleanup files ]")
+    
     files_to_clean = [
-        "main.asm",
-        "main.obj",
-        "main-clean.asm",
-        "main-clean.bin",
-        "main-clean-append.bin",
+        # compile artefacts in current dir
         "main-clean.obj",
+        "main.obj",
         "mllink$.lnk",
+
+        # out/ stuff
+        os.path.join(build_dir, "main.asm"),
+        os.path.join(build_dir, "main-clean.asm"),
+        os.path.join(build_dir, "main-clean.bin"),
+        os.path.join(build_dir, "main-clean-append.bin"),
+        
         verify_filename,
         #"main-clean.exe",  # at the end as it may still shutdown?
     ]
@@ -41,8 +56,9 @@ def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):
         "/c",
         "/FA",
         "/GS-",
+        "/Fa{}/".format(os.path.dirname(c_file)),
         c_file,
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ])
     if not os.path.isfile(asm_file):
         print("Error")
         return
@@ -102,6 +118,7 @@ def make_shc_from_asm(asm_clean_file, exe_file, shc_file):
         path_ml64,
         asm_clean_file,
         "/link",
+        "/OUT:build\main-clean.exe",
         "/entry:AlignRSP"
     ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if not os.path.isfile(exe_file):
@@ -187,6 +204,9 @@ def verify_shellcode(shc_name):
     if not os.path.exists(os.path.dirname(verify_filename)):
         print("Error, directory does not exist for: {}".format(verify_filename))
         return
+    
+    # remove indicator file
+    pathlib.Path(verify_filename).unlink(missing_ok=True)
 
     subprocess.run([
         path_runshc,
@@ -195,8 +215,6 @@ def verify_shellcode(shc_name):
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
         print("---> Verify OK. Shellcode payload verified (file was created)")
-        # better to remove it immediately. If cleanup on start is not performed, 
-        # there may be false positives
         os.remove(verify_filename)
         return True
     else:
@@ -222,14 +240,16 @@ def inject_exe(shc_file, exe_in, exe_out):
 
 def verify_injected_exe(exefile):
     print("---[ Verify infected exe: {} ]".format(exefile))
+    # remove indicator file
+    pathlib.Path(verify_filename).unlink(missing_ok=True)
+
     subprocess.run([
         exefile,
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
         print("---> Verify OK. Infected exe verified (file was created)")
-        # better to remove it immediately. If cleanup on start is not performed, 
-        # there may be false positives
+        # better to remove it immediately
         os.remove(verify_filename)
     else:
         print("---> Verify FAIL. Infected exe did not create file.")
