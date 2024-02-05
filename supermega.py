@@ -75,6 +75,13 @@ options_verify = {
 options = options_verify
 
 
+main_c_file = os.path.join(build_dir, "main.c")
+main_asm_file = os.path.join(build_dir, "main.asm")
+main_exe_file = os.path.join(build_dir, "main.exe")
+main_shc_file = os.path.join(build_dir, "main.bin")
+
+
+
 def main():
     print("Super Mega")
 
@@ -85,13 +92,13 @@ def main():
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
             l = len(data_payload)
-        make_c_to_asm(main_c_file, main_asm_file, main_asm_clean_file, l)
+        make_c_to_asm(main_c_file, main_asm_file, l)
 
     if options["generate_asm_from_c"]:
-        make_shc_from_asm(main_asm_clean_file, main_exe_clean_file, main_bin_clean_file)
+        make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
     
     if options["test_loader_shellcode"]:
-        test_shellcode(main_bin_clean_file)
+        test_shellcode(main_shc_file)
 
     # SGN seems buggy atm
     #if options["obfuscate_shc_loader"]:
@@ -102,7 +109,7 @@ def main():
     #            return
 
     if options["dataref_style"] == DataRefStyle.APPEND:
-        with open(main_bin_clean_file, 'rb') as input1:
+        with open(main_shc_file, 'rb') as input1:
             data_stager = input1.read()
 
         with open(options["payload"], 'rb') as input2:
@@ -111,26 +118,26 @@ def main():
         print("--[ Integrate Stager: {}  Payload: {}  (sum: {})]".format(
             len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
-        with open(main_bin_clean_append_file, 'wb') as output:
+        with open(main_shc_file, 'wb') as output:
             output.write(data_stager)
             output.write(data_payload)
 
-        print("---[ Final shellcode available at: {} ]".format(main_bin_clean_append_file))
+        print("---[ Final shellcode available at: {} ]".format(main_shc_file))
 
         if options["verify"]:
             print("--[ Verify final shellcode ]")
-            if not verify_shellcode(main_bin_clean_append_file):
+            if not verify_shellcode(main_shc_file):
                 return
 
         if options["exec_final_shellcode"]:
             print("--[ Test Append shellcode ]")
-            test_shellcode(main_bin_clean_append_file)
+            test_shellcode(main_shc_file)
 
         # copy it to out
-        shutil.copyfile(main_bin_clean_append_file, os.path.join("out/", os.path.basename(main_bin_clean_append_file)))
+        #shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_bin_clean_append_file)))
 
     if options["inject_exe"]:
-        inject_exe(main_bin_clean_append_file, options["inject_exe_in"], options["inject_exe_out"])
+        inject_exe(main_shc_file, options["inject_exe_in"], options["inject_exe_out"])
         if options["verify"]:
             print("--[ Verify final exe ]")
             verify_injected_exe(options["inject_exe_out"])

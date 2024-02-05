@@ -16,15 +16,7 @@ path_runshc = r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc
 #path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
 
 verify_filename = r'C:\Temp\a'
-
 build_dir = "build"
-main_c_file = os.path.join(build_dir, "main.c")
-main_asm_file = os.path.join(build_dir, "main.asm")
-main_asm_clean_file = os.path.join(build_dir, "main-clean.asm")
-
-main_exe_clean_file = os.path.join(build_dir, "main-clean.exe")
-main_bin_clean_file = os.path.join(build_dir, "main-clean.bin")
-main_bin_clean_append_file = os.path.join(build_dir, "main-clean-append.bin")
 
 
 def clean_files():
@@ -49,7 +41,7 @@ def clean_files():
         pathlib.Path(file).unlink(missing_ok=True)
 
 
-def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):
+def make_c_to_asm(c_file, asm_file, payload_len):
     print("--[ Compile C source to ASM: {} -> {} ]".format(c_file, asm_file))
     subprocess.run([
         path_cl,
@@ -65,6 +57,8 @@ def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):
     else:
         print("    > Generated {}".format(asm_file))
 
+    # need different file
+    asm_clean_file = asm_file + ".clean"
     print("--[ Cleanup ASM: {} -> {} ]".format(asm_file, asm_clean_file))
     subprocess.run([
         path_masmshc,
@@ -76,9 +70,13 @@ def make_c_to_asm(c_file, asm_file, asm_clean_file, payload_len):
         return
     else:
         print("    > Generated {}".format(asm_clean_file))
+        shutil.move(asm_clean_file, asm_file)
 
     print("--[ Fixup ASM: {} ]".format(asm_clean_file))
-    fixup_asm_file(asm_clean_file, payload_len)
+    fixup_asm_file(asm_file, payload_len)
+
+    input("Press Enter to continue...")
+
 
 
 def fixup_asm_file(filename, payload_len):
@@ -114,13 +112,14 @@ def fixup_asm_file(filename, payload_len):
 
 def make_shc_from_asm(asm_clean_file, exe_file, shc_file):
     print("--[ Assemble to exe ]")
+    print("AAAAAA: {}".format(exe_file))
     subprocess.run([
         path_ml64,
         asm_clean_file,
         "/link",
-        "/OUT:build\main-clean.exe",
+        "/OUT:{}".format(exe_file),
         "/entry:AlignRSP"
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], check=True)
     if not os.path.isfile(exe_file):
         print("Error")
         return
