@@ -183,7 +183,7 @@ def try_start_shellcode(shc_file):
     subprocess.run([
         path_runshc,
         shc_file,
-    ], check=True)
+    ]) # , check=True
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
@@ -228,11 +228,11 @@ def verify_shellcode(shc_name):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("---> Verify OK. Shellcode payload verified (file was created)")
+        print("---> Verify OK. Shellcode works (file was created)")
         os.remove(verify_filename)
         return True
     else:
-        print("---> Verify FAIL. Payload did not create file.")
+        print("---> Verify FAIL. Shellcode doesnt work (file was not created)")
         return False
 
 
@@ -262,12 +262,12 @@ def verify_injected_exe(exefile):
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("---> Verify OK. Infected exe verified (file was created)")
+        print("---> Verify OK. Infected exe works (file was created)")
         # better to remove it immediately
         os.remove(verify_filename)
         return True
     else:
-        print("---> Verify FAIL. Infected exe did not create file.")
+        print("---> Verify FAIL. Infected exe does not work (no file created)")
         return False
 
 

