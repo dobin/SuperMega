@@ -32,7 +32,7 @@ options_default = {
     "dataref_style": DataRefStyle.APPEND,
 
     "try_start_loader_shellcode": False,  # without payload (Debugging)
-    "try_start_final_shellcode": True,    # with payload (should work)
+    "try_start_final_shellcode": False,    # with payload (should work)
     "try_start_final_infected_exe": True, # with payload (should work)
 
     # cleanup
@@ -67,6 +67,7 @@ options_verify = {
     # testing
     "try_start_loader_shellcode": False,  # without payload (Debugging)
     "try_start_final_shellcode": False,   # with payload (should work)
+    "try_start_final_infected_exe": False, # with payload (should work)
 
     # injecting into exe
     "inject_exe": True,
@@ -79,7 +80,7 @@ options_verify = {
     
     # cleanup
     "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
+    "cleanup_files_on_exit": False, # all is just in out/
 
     # doesnt work
     "obfuscate_shc_loader": False,
