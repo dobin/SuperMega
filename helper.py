@@ -6,6 +6,7 @@ import shutil
 import pathlib
 import sys
 
+
 SHC_VERIFY_SLEEP = 0.1
 
 path_cl = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\cl.exe'
@@ -40,6 +41,16 @@ def clean_files():
         pathlib.Path(file).unlink(missing_ok=True)
 
 
+def run_process_checkret(args):
+    ret = None
+    ret = subprocess.run(args, capture_output=True, text=True)
+    if ret.returncode != 0:
+        print("----! Command: {}".format(" ".join(args)))
+        print(ret.stdout)
+        print(ret.stderr)
+        raise Exception("Command failed")
+
+
 def make_c_to_asm(c_file, asm_file, payload_len):
     print("--[ C to ASM: {} -> {} ]".format(c_file, asm_file))
 
@@ -51,14 +62,14 @@ def make_c_to_asm(c_file, asm_file, payload_len):
 
     # Phase 1: Compile
     print("---[ Compile: {} ]".format(c_file))
-    subprocess.run([
-        path_cl,
-        "/c",
-        "/FA",
-        "/GS-",
-        "/Fa{}/".format(os.path.dirname(c_file)),
-        c_file,
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    run_process_checkret([
+            path_cl,
+            "/c",
+            "/FA",
+            "/GS-",
+            "/Fa{}/".format(os.path.dirname(c_file)),
+            c_file,
+    ])
     if not os.path.isfile(asm_file):
         print("Error: Compiling failed")
         return
@@ -67,11 +78,11 @@ def make_c_to_asm(c_file, asm_file, payload_len):
     # Phase 2: Assembly cleanup
     asm_clean_file = asm_file + ".clean"
     print("---[ Cleanup: {} ]".format(asm_file))
-    subprocess.run([
+    run_process_checkret([
         path_masmshc,
         asm_file,
         asm_clean_file,
-    ], check=True, stdout=subprocess.DEVNULL)
+    ])
     if not os.path.isfile(asm_clean_file):
         print("Error: Cleanup filed")
         return
@@ -128,13 +139,13 @@ def make_shc_from_asm(asm_file, exe_file, shc_file):
     print("--[ Assemble to exe: {} -> {} -> {} ]".format(asm_file, exe_file, shc_file))
 
     print("---[ Assemble ASM to EXE: {} -> {} ]".format(asm_file, exe_file))
-    subprocess.run([
+    run_process_checkret([
         path_ml64,
         asm_file,
         "/link",
         "/OUT:{}".format(exe_file),
         "/entry:AlignRSP"
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ])
     if not os.path.isfile(exe_file):
         print("Error")
         return
