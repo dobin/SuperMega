@@ -32,6 +32,7 @@ def clean_files():
         os.path.join(build_dir, "main.asm"),
         os.path.join(build_dir, "main.bin"),
         os.path.join(build_dir, "main.c"),
+        os.path.join(build_dir, "peb_lookup.h"),
         #os.path.join(build_dir, "main.exe"),
         
         verify_filename,

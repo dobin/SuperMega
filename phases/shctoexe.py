@@ -2,7 +2,7 @@ from helper import *
 import shutil
 
 
-def inject_exe(shc_file, exe_in, exe_out):
+def inject_exe(shc_file, exe_in, exe_out, mode):
     print("--[ Injecting: {} into: {} -> {} ]".format(
         shc_file, exe_in, exe_out
     ))
@@ -12,7 +12,7 @@ def inject_exe(shc_file, exe_in, exe_out):
     subprocess.run([
         "python3.exe",
         "redbackdoorer.py",
-        "1,1",
+        mode,
         shc_file,
         exe_out
     ], check=True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

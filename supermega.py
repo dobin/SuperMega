@@ -35,6 +35,12 @@ options_default = {
     "copy_style": CopyStyle.SIMPLE,
     "dataref_style": DataRefStyle.APPEND,
 
+    # injecting into exe
+    "inject_exe": True,
+    "inject_mode": "1,1",
+    "inject_exe_in": "exes/procexp64.exe",
+    "inject_exe_out": "out/procexp64-a.exe",
+
     "try_start_loader_shellcode": False,  # without payload (Debugging)
     "try_start_final_shellcode": False,    # with payload (should work)
     "try_start_final_infected_exe": True, # with payload (should work)
@@ -75,6 +81,7 @@ options_verify = {
 
     # injecting into exe
     "inject_exe": True,
+    "inject_mode": "1,1",
     "inject_exe_in": "exes/procexp64.exe",
     "inject_exe_out": "out/procexp64-a.exe",
 
@@ -84,12 +91,14 @@ options_verify = {
     
     # cleanup
     "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": False, # all is just in out/
+    "cleanup_files_on_exit": True, # all is just in out/
 
     # doesnt work
     "obfuscate_shc_loader": False,
     "test_obfuscated_shc": False,
 }
+
+
 
 options = None
 
@@ -201,7 +210,7 @@ def main():
     if options["inject_exe"]:
         debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
-        inject_exe(main_shc_file, options["inject_exe_in"], options["inject_exe_out"])
+        inject_exe(main_shc_file, options["inject_exe_in"], options["inject_exe_out"], options["inject_mode"])
         if options["verify"]:
             print("--[ Verify final exe ]")
             if verify_injected_exe(options["inject_exe_out"]):
