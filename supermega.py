@@ -3,6 +3,10 @@ from enum import Enum
 from helper import *
 import argparse
 
+from phases.ctoasm import *
+from phases.asmtoshc import *
+from phases.shctoexe import *
+
 
 class AllocStyle(Enum):
     RWX = 1
@@ -212,6 +216,48 @@ def main():
     if options["cleanup_files_on_exit"]:
         clean_files()
 
+
+def obfuscate_shc_loader(file_shc_in, file_shc_out):
+    print("--[ Convert with SGN ]")
+    path_sgn = r'C:\training\tools\sgn\sgn.exe'
+    subprocess.run([
+        path_sgn,
+        "--arch=64",
+        "-i", "{}".format(file_shc_in),
+        "-o", "{}".format(file_shc_out),
+    ], check=True)
+    if not os.path.isfile(file_shc_out):
+        print("Error")
+        return
+    else:
+        print("   > Success obfuscation")
+        pass
+
+
+def verify_shellcode(shc_name):
+    print("---[ Verify shellcode: {} ]".format(shc_name))
+
+    # check if directory exists
+    if not os.path.exists(os.path.dirname(verify_filename)):
+        print("Error, directory does not exist for: {}".format(verify_filename))
+        return
+    
+    # remove indicator file
+    pathlib.Path(verify_filename).unlink(missing_ok=True)
+
+    subprocess.run([
+        path_runshc,
+        "{}".format(shc_name),
+    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
+    time.sleep(SHC_VERIFY_SLEEP)
+    if os.path.isfile(verify_filename):
+        print("---> Verify OK. Shellcode works (file was created)")
+        os.remove(verify_filename)
+        return True
+    else:
+        print("---> Verify FAIL. Shellcode doesnt work (file was not created)")
+        return False
+    
 
 if __name__ == "__main__":
     main()
