@@ -1,4 +1,5 @@
 from helper import *
+from config import config
 
 
 def make_c_to_asm(c_file, asm_file, payload_len):
@@ -13,7 +14,7 @@ def make_c_to_asm(c_file, asm_file, payload_len):
     # Phase 1: Compile
     print("---[ Compile: {} ]".format(c_file))
     run_process_checkret([
-            path_cl,
+            config.get("path_cl"),
             "/c",
             "/FA",
             "/GS-",
@@ -29,7 +30,7 @@ def make_c_to_asm(c_file, asm_file, payload_len):
     asm_clean_file = asm_file + ".clean"
     print("---[ Cleanup: {} ]".format(asm_file))
     run_process_checkret([
-        path_masmshc,
+        config.get("path_masmshc"),
         asm_file,
         asm_clean_file,
     ])

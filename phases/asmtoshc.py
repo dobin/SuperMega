@@ -1,5 +1,7 @@
-from helper import *
 import pefile
+
+from helper import *
+from config import config
 
 
 def make_shc_from_asm(asm_file, exe_file, shc_file):
@@ -7,7 +9,7 @@ def make_shc_from_asm(asm_file, exe_file, shc_file):
 
     print("---[ Assemble ASM to EXE: {} -> {} ]".format(asm_file, exe_file))
     run_process_checkret([
-        path_ml64,
+        config.get("path_ml64"),
         asm_file,
         "/link",
         "/OUT:{}".format(exe_file),

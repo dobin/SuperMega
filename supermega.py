@@ -3,6 +3,7 @@ from enum import Enum
 from helper import *
 import argparse
 
+from config import config
 from phases.ctoasm import *
 from phases.asmtoshc import *
 from phases.shctoexe import *
@@ -50,8 +51,8 @@ options_default = {
     "cleanup_files_on_exit": True,
 
     # For debugging: Can disable some steps
-    "generate_asm_from_c": True,
-    "generate_shc_from_asm": True,
+    "generate_asm_from_c": True,    # phase 2
+    "generate_shc_from_asm": True,  # phase 3
 
     # Not working atm
     "obfuscate_shc_loader": False,
@@ -86,8 +87,8 @@ options_verify = {
     "inject_exe_out": "out/procexp64-a.exe",
 
     # For debugging: Can disable some steps
-    "generate_asm_from_c": True,
-    "generate_shc_from_asm": True,
+    "generate_asm_from_c": True,        # phase 2
+    "generate_shc_from_asm": True,      # phase 3
     
     # cleanup
     "cleanup_files_on_start": True,
@@ -97,8 +98,6 @@ options_verify = {
     "obfuscate_shc_loader": False,
     "test_obfuscated_shc": False,
 }
-
-
 
 options = None
 
@@ -123,6 +122,7 @@ debug_data = {
 
 def main():
     print("Super Mega")
+    config.load()
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
@@ -255,7 +255,7 @@ def verify_shellcode(shc_name):
     pathlib.Path(verify_filename).unlink(missing_ok=True)
 
     subprocess.run([
-        path_runshc,
+        config.get("path_runshc"),
         "{}".format(shc_name),
     ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
     time.sleep(SHC_VERIFY_SLEEP)

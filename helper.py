@@ -5,15 +5,11 @@ import shutil
 import pathlib
 import sys
 
+from config import config
+
 
 SHC_VERIFY_SLEEP = 0.1
 
-path_cl = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\cl.exe'
-path_ml64 =  r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\ml64.exe'
-
-path_masmshc =  r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\masm_shc\masm_shc.exe'
-path_runshc = r'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc\runshc.exe'
-#path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
 
 verify_filename = r'C:\Temp\a'
 build_dir = "build"
@@ -54,7 +50,7 @@ def run_process_checkret(args):
 def try_start_shellcode(shc_file):
     print("--[ Blindly execute shellcode: {} ]".format(shc_file))
     subprocess.run([
-        path_runshc,
+        config.get["path_runshc"],
         shc_file,
     ]) # , check=True
 
