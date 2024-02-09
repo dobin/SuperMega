@@ -68,17 +68,14 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
-    #pprint.pprint(exe_capabilities)
-
-    # FUCK
-    for idx, line in enumerate(lines):
-        if "jmp\tSHORT" in lines[idx]:
-            lines[idx] = lines[idx].replace("SHORT", "")
+    # When it breaks, enable this
+    #for idx, line in enumerate(lines):
+    #    if "jmp\tSHORT" in lines[idx]:
+    #        lines[idx] = lines[idx].replace("SHORT", "")
 
     # do IAT reuse
     for idx, line in enumerate(lines):
-        # Remove definition: 
-        #   EXTRN	__imp_MessageBoxW:PROC
+        # Remove EXTRN, we dont need it
         if "EXTRN	__imp_" in lines[idx]:
             lines[idx] = "; " + lines[idx]
             continue
@@ -90,27 +87,18 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
 
             exeCapability = capabilities.get(func_name)
             if exeCapability == None:
-            #if func_name not in exe_capabilities or exe_capabilities[func_name] == None:
                 print("Error Capabilities not: {}".format(func_name))
             else:
                 randbytes: bytes = os.urandom(6)
                 lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
                 exeCapability.id = randbytes
-                #func_addr = exe_capabilities[func_name]
-                #lines[idx] = "\tcall  main\r\n"
-                #lines[idx] = "\tcall  rax\r\n"
-                #lines.insert(idx, "\tmov rax, [rax]\r\n")
-                #lines.insert(idx, "\tmov rax, {:X}H\r\n".format(func_addr))
-
-            #print("    > Replace__imp_MessageBoxW at line: {}".format(idx))
-            #lines[idx] = lines[idx].replace("__imp_MessageBoxW", "ds:[0x123]")
         
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
-        if "dobin" in lines[idx]:
+        if "supermega_payload" in lines[idx]:
             print("    > Replace external reference at line: {}".format(idx))
             lines[idx] = lines[idx].replace(
-                "mov	r8, QWORD PTR dobin",
+                "mov	r8, QWORD PTR supermega_payload",
                 "lea	r8, [shcstart]"
             )
 

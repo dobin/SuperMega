@@ -2,8 +2,8 @@
 #include "peb_lookup.h"
 
 
-//extern char *dobin;
-char *dobin;
+//extern char *supermega_payload;
+char *supermega_payload;
 
 int main()
 {
@@ -88,7 +88,7 @@ int main()
 	// 11223344 is a magic number which will be replaced in the asm source
 	// with the payload length.
 	for(int n=0; n<11223344; n++) {
-		dest[n] = dobin[n];
+		dest[n] = supermega_payload[n];
 	}
 
 	// Exec shellcode
