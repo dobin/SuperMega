@@ -281,7 +281,7 @@ def start(options):
             output.write(data)
             debug_data["final_shellcode"] = data
 
-        if options["verify"]:
+        if options["verify"] and options["source_style"] == SourceStyle.peb_walk:
             print("--[ Verify final shellcode ]")
             if not verify_shellcode(main_shc_file):
                 print("Could not verify, still continuing")
