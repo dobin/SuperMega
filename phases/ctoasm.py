@@ -15,7 +15,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         "fixup": "",
     }
 
-    # Phase 1: Compile
+    # Phase 1: C To Assembly
     print("---[ Compile: {} ]".format(c_file))
     run_process_checkret([
             config.get("path_cl"),
@@ -30,7 +30,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         return
     asm["initial"] = file_readall_text(asm_file)
 
-    # Phase 2: Assembly cleanup
+    # Phase 1.1: Assembly cleanup
     asm_clean_file = asm_file + ".clean"
     print("---[ Cleanup: {} ]".format(asm_file))
     run_process_checkret([
@@ -45,7 +45,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         shutil.move(asm_clean_file, asm_file)
         asm["cleanup"] = file_readall_text(asm_file)
 
-    # Phase 2: Assembly fixup
+    # Phase 1.2: Assembly fixup
     print("---[ Fixup  : {} ]".format(asm_file))
     if not fixup_asm_file(asm_file, payload_len, capabilities):
         print("Error: Fixup failed")
@@ -57,9 +57,9 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
 
 
 def bytes_to_asm_db(byte_data):
-    # Convert each byte to a string in hexadecimal format suffixed with 'h'
+    # Convert each byte to a string in hexadecimal format 
+    # prefixed with '0' and suffixed with 'h'
     hex_values = [f"0{byte:02x}H" for byte in byte_data]
-    # Join the hex values into a single string with ', ' as separator
     formatted_string = ', '.join(hex_values)
     return "\tDB " + formatted_string
 

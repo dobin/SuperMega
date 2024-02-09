@@ -5,6 +5,8 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_64
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 
+# keystone/capstone stuff
+
 def assemble_and_disassemble_jump(current_address, destination_address):
     #print("    Make jmp from 0x{:X} to 0x{:X}".format(
     #    current_address, destination_address
@@ -42,14 +44,6 @@ def extract_iat(pe):
                 continue
             imp_name = imp.name.decode('utf-8')
             imp_addr = imp.address
-            #pprint.pprint(imp.keys())
-            #print(type(imp))
-
-            #print("{}  {} - 0x{:08X}".format(
-            #    dll_name,
-            #    imp_name,
-            #    imp_addr
-            #))
 
             if not dll_name in iat:
                  iat[dll_name] = []
