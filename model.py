@@ -1,6 +1,29 @@
 from typing import Dict
 import pehelper
 import pefile
+from enum import Enum
+
+class AllocStyle(Enum):
+    RWX = 1
+    RW_X = 2
+    REUSE = 3
+
+class ExecStyle(Enum):
+    CALL = 1,
+    JMP = 2,
+    FIBER = 3,
+
+class CopyStyle(Enum):
+    SIMPLE = 1
+
+class DataRefStyle(Enum):
+    APPEND = 1
+
+#class InjectStyle(Enum):
+    
+class SourceStyle(Enum):
+    peb_walk = 1
+    iat_reuse = 2
 
 
 class Capability():
