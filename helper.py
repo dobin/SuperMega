@@ -60,7 +60,7 @@ def write_code_section(pe_file, new_data):
             with open(pe_file, 'r+b') as f:
                 f.seek(file_offset)
                 f.write(new_data)
-                print("Successfully overwritten the .text section with new data.")
+                #print("Successfully overwritten the .text section with new data.")
             break
 
 

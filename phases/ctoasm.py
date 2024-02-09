@@ -3,8 +3,10 @@ from config import config
 import os
 import pprint
 
+from model import *
 
-def make_c_to_asm(c_file, asm_file, payload_len, exe_capabilities):
+
+def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
     print("--[ C to ASM: {} -> {} ]".format(c_file, asm_file))
 
     asm = {
@@ -45,7 +47,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, exe_capabilities):
 
     # Phase 2: Assembly fixup
     print("---[ Fixup  : {} ]".format(asm_file))
-    if not fixup_asm_file(asm_file, payload_len, exe_capabilities):
+    if not fixup_asm_file(asm_file, payload_len, capabilities):
         print("Error: Fixup failed")
         return
     else:
@@ -62,7 +64,7 @@ def bytes_to_asm_db(byte_data):
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename, payload_len, exe_capabilities):
+def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
@@ -86,15 +88,16 @@ def fixup_asm_file(filename, payload_len, exe_capabilities):
             func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
             print("    > Replace func name: {}".format(func_name))
 
-            if func_name not in exe_capabilities or exe_capabilities[func_name] == None:
-                print("Capabilities not: {}".format(func_name))
+            exeCapability = capabilities.get(func_name)
+            if exeCapability == None:
+            #if func_name not in exe_capabilities or exe_capabilities[func_name] == None:
+                print("Error Capabilities not: {}".format(func_name))
             else:
-                randbytes = os.urandom(6)
+                randbytes: bytes = os.urandom(6)
                 lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
-                exe_capabilities[func_name]["id"] = randbytes
+                exeCapability.id = randbytes
                 #func_addr = exe_capabilities[func_name]
                 #lines[idx] = "\tcall  main\r\n"
-
                 #lines[idx] = "\tcall  rax\r\n"
                 #lines.insert(idx, "\tmov rax, [rax]\r\n")
                 #lines.insert(idx, "\tmov rax, {:X}H\r\n".format(func_addr))

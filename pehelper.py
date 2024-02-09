@@ -6,9 +6,9 @@ from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 
 def assemble_and_disassemble_jump(current_address, destination_address):
-    print("Make jmp from 0x{:X} to 0x{:X}".format(
-        current_address, destination_address
-    ))
+    #print("    Make jmp from 0x{:X} to 0x{:X}".format(
+    #    current_address, destination_address
+    #))
     # Calculate the relative offset
     # For a near jump, the instruction length is typically 5 bytes (E9 xx xx xx xx)
     offset = destination_address - current_address
@@ -19,13 +19,14 @@ def assemble_and_disassemble_jump(current_address, destination_address):
     machine_code = bytes(encoding)
     
     # Disassemble the machine code using Capstone
-    cs = Cs(CS_ARCH_X86, CS_MODE_64)
-    disassembled = next(cs.disasm(machine_code, current_address))
-    
-    print(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
-    print(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
+    #cs = Cs(CS_ARCH_X86, CS_MODE_64)
+    #disassembled = next(cs.disasm(machine_code, current_address))
+    #print(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
+    #print(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
     return machine_code
 
+
+# IAT Stuff
 
 def extract_iat(pe):
     iat = {}
@@ -37,6 +38,8 @@ def extract_iat(pe):
     for entry in pe.DIRECTORY_ENTRY_IMPORT:
         for imp in entry.imports:
             dll_name = entry.dll.decode('utf-8')
+            if imp.name == None:
+                continue
             imp_name = imp.name.decode('utf-8')
             imp_addr = imp.address
             #pprint.pprint(imp.keys())
@@ -65,21 +68,14 @@ def get_addr_for(iat, func_name):
         for entry in iat[dll_name]:
             if entry["func_name"] == func_name:
                 return entry["func_addr"]
-    return None
+    return 0
 
 
 def resolve_iat_capabilities(needed_capabilities, inject_exe):
     pe = pefile.PE(inject_exe)
     iat = extract_iat(pe) 
-
-    print("IAT: ")
-    for cap in needed_capabilities:
-        needed_capabilities[cap] = {
-           "id": None,
-           "addr": get_addr_for(iat, cap),
-        }
-        #print("  {}: {}".format(cap, needed_capabilities[cap]))
-         
+    for _, cap in needed_capabilities.items():
+        cap.addr = get_addr_for(iat, cap.name)
 
 
 def main():
