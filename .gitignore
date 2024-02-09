@@ -12,3 +12,4 @@ out/
 tools/
 doc/
 *.pickle
+logs/

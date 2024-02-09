@@ -45,16 +45,7 @@ def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities: ExeCapabilitie
         code = code.replace(cap.id, jmp)
         write_code_section(exe_out, code)
 
-        #print(" Off: 0x{:X}".format(off))
-        #print(" Off2: 0x{:X}".format(current_address)) # base addr
-        #print(" Diff: 0x{:X}".format())
-        #print("ONE: {}".format(jmp))
-        #print("TWO: {}".format(cap.id))
-        #print("Found! replacing")
-
-        
-
-
+     
 def verify_injected_exe(exefile):
     print("---[ Verify infected exe: {} ]".format(exefile))
     # remove indicator file

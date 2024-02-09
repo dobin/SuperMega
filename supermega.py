@@ -197,18 +197,18 @@ def start(options):
     else:
         options["source_style"] = SourceStyle.peb_walk
 
-    observer.capabilities_a = capabilities
-    observer.options = options
+    observer.add_json("capabilities_a", capabilities)
+    observer.add_json("options", options)
 
     print("--[ SourceStyle: {}".format(options["source_style"].name))
 
     # Copy: loader C files into working directory: build/
     if options["source_style"] == SourceStyle.peb_walk:
-        observer.main_c = file_readall_text("source/peb_walk/main.c")
+        observer.add_text("main_c", file_readall_text("source/peb_walk/main.c"))
         shutil.copy("source/peb_walk/main.c", "build/main.c")
         shutil.copy("source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
     elif options["source_style"] == SourceStyle.iat_reuse:
-        observer.main_c = file_readall_text("source/iat_reuse/main.c")
+        observer.add_text("main_c", file_readall_text("source/iat_reuse/main.c"))
         shutil.copy("source/iat_reuse/main.c", "build/main.c")
 
     # Convert: C -> ASM
@@ -217,16 +217,16 @@ def start(options):
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
             payload_length = len(data_payload)
-            observer.payload_asm_orig = data_payload
+            #observer.add_text("payload_asm_orig", str(data_payload))
         asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, capabilities)
-        #observer.payload_asm_orig = asm["initial"]
-        observer.payload_asm_cleanup = asm["cleanup"]
-        observer.payload_asm_fixup = asm["fixup"]
+        observer.add_text("payload_asm_orig", asm["initial"])
+        observer.add_text("payload_asm_cleanup", asm["cleanup"])
+        observer.add_text("payload_asm_fixup", asm["fixup"])
 
     # Convert: ASM -> Shellcode
     if options["generate_shc_from_asm"]:
         code = make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
-        observer.loader_shellcode = code
+        observer.add_code("generate_shc_from_asm", code) 
     
     # Try: Starting the shellcode (rarely useful)
     if options["try_start_loader_shellcode"]:
@@ -253,7 +253,7 @@ def start(options):
         with open(main_shc_file, 'wb') as output:
             data = data_stager + data_payload
             output.write(data)
-            observer.final_shellcode = data
+            observer.add_code("final_shellcode", data)
 
         if options["verify"] and options["source_style"] == SourceStyle.peb_walk:
             print("--[ Verify final shellcode ]")
