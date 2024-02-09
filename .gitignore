@@ -1,4 +1,6 @@
-*.exe*
+*infected.exe*
+*a.exe*
+exes_more/
 *.obj
 *.lnk
 /*.bin
@@ -7,3 +9,4 @@ __pycache__
 bak/
 build/
 out/
+tools/
