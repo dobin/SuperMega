@@ -4,6 +4,7 @@ import time
 import shutil
 import pathlib
 import sys
+import pefile
 
 from config import config
 
@@ -13,6 +14,54 @@ SHC_VERIFY_SLEEP = 0.1
 
 verify_filename = r'C:\Temp\a'
 build_dir = "build"
+
+
+def remove_trailing_null_bytes(data):
+    for i in range(len(data) - 1, -1, -1):
+        if data[i] != b'\x00'[0]:  # Check for a non-null byte
+            return data[:i + 1]
+    return b''  # If the entire sequence is null bytes
+
+
+def get_code_section(pe_file):
+    try:
+        # Load the PE file
+        pe = pefile.PE(pe_file)
+
+        # Iterate over the sections
+        for section in pe.sections:
+            # Check if this is the code section
+            if '.text' in section.Name.decode().rstrip('\x00'):
+                data = section.get_data()
+                data = remove_trailing_null_bytes(data)
+                print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+                    section.VirtualAddress,
+                    len(data), section.SizeOfRawData))
+                return data
+        else:
+            print("Code section not found.")
+    
+    except FileNotFoundError:
+        print(f"File not found: {pe_file}")
+    except pefile.PEFormatError:
+        print(f"Invalid PE file: {pe_file}")
+
+
+def write_code_section(pe_file, new_data):
+    # Load the PE file
+    pe = pefile.PE(pe_file)
+
+    # Iterate over the sections
+    for section in pe.sections:
+        # Check if this is the code section
+        if '.text' in section.Name.decode().rstrip('\x00'):
+            file_offset = section.PointerToRawData
+            
+            with open(pe_file, 'r+b') as f:
+                f.seek(file_offset)
+                f.write(new_data)
+                print("Successfully overwritten the .text section with new data.")
+            break
 
 
 def clean_files():

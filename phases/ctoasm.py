@@ -1,5 +1,7 @@
 from helper import *
 from config import config
+import os
+import pprint
 
 
 def make_c_to_asm(c_file, asm_file, payload_len, exe_capabilities):
@@ -52,9 +54,24 @@ def make_c_to_asm(c_file, asm_file, payload_len, exe_capabilities):
     return asm
 
 
+def bytes_to_asm_db(byte_data):
+    # Convert each byte to a string in hexadecimal format suffixed with 'h'
+    hex_values = [f"0{byte:02x}H" for byte in byte_data]
+    # Join the hex values into a single string with ', ' as separator
+    formatted_string = ', '.join(hex_values)
+    return "\tDB " + formatted_string
+
+
 def fixup_asm_file(filename, payload_len, exe_capabilities):
-    with open(filename, 'r') as asmfile:
+    with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
+
+    #pprint.pprint(exe_capabilities)
+
+    # FUCK
+    for idx, line in enumerate(lines):
+        if "jmp\tSHORT" in lines[idx]:
+            lines[idx] = lines[idx].replace("SHORT", "")
 
     # do IAT reuse
     for idx, line in enumerate(lines):
@@ -72,10 +89,15 @@ def fixup_asm_file(filename, payload_len, exe_capabilities):
             if func_name not in exe_capabilities or exe_capabilities[func_name] == None:
                 print("Capabilities not: {}".format(func_name))
             else:
-                func_addr = exe_capabilities[func_name]
-                lines[idx] = "\tcall  rax\r\n"
-                lines.insert(idx, "\tmov rax, [rax]\r\n")
-                lines.insert(idx, "\tmov rax, {:X}H\r\n".format(func_addr))
+                randbytes = os.urandom(6)
+                lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
+                exe_capabilities[func_name]["id"] = randbytes
+                #func_addr = exe_capabilities[func_name]
+                #lines[idx] = "\tcall  main\r\n"
+
+                #lines[idx] = "\tcall  rax\r\n"
+                #lines.insert(idx, "\tmov rax, [rax]\r\n")
+                #lines.insert(idx, "\tmov rax, {:X}H\r\n".format(func_addr))
 
             #print("    > Replace__imp_MessageBoxW at line: {}".format(idx))
             #lines[idx] = lines[idx].replace("__imp_MessageBoxW", "ds:[0x123]")

@@ -84,16 +84,18 @@ options_verify = {
     # injecting into exe
     "inject_exe": True,
     "inject_mode": "1,1",
-    "inject_exe_in": "exes/procexp64.exe",
-    "inject_exe_out": "out/procexp64-a.exe",
+    #"inject_exe_in": "exes/procexp64.exe",
+    "inject_exe_in": "exes/iattest-full.exe",
+    #"inject_exe_out": "out/procexp64-a.exe",
+    "inject_exe_out": "out/iatttest-full-a.exe",
 
     # For debugging: Can disable some steps
     "generate_asm_from_c": True,        # phase 2
     "generate_shc_from_asm": True,      # phase 3
     
     # cleanup
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
+    "cleanup_files_on_start": False,
+    "cleanup_files_on_exit": False, # all is just in out/
 
     # doesnt work
     "obfuscate_shc_loader": False,
@@ -161,7 +163,9 @@ def start(options):
 
     # Check: Destination EXE capabilities
     exe_capabilities = {
-        "MessageBoxW": None,
+        #"MessageBoxW": None,
+        "GetEnvironmentVariableW": None,
+        "VirtualAlloc": None,
     }
     resolve_iat_capabilities(exe_capabilities, options["inject_exe_in"])
 
@@ -213,7 +217,8 @@ def start(options):
         if options["verify"]:
             print("--[ Verify final shellcode ]")
             if not verify_shellcode(main_shc_file):
-                return
+                print("Could not verify, still continuing")
+                #return
 
         if options["try_start_final_shellcode"]:
             print("--[ Test Append shellcode ]")
@@ -225,7 +230,12 @@ def start(options):
     if options["inject_exe"]:
         debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
-        inject_exe(main_shc_file, options["inject_exe_in"], options["inject_exe_out"], options["inject_mode"])
+        inject_exe(
+            main_shc_file, 
+            options["inject_exe_in"], 
+            options["inject_exe_out"], 
+            options["inject_mode"],
+            exe_capabilities)
         if options["verify"]:
             print("--[ Verify final exe ]")
             if verify_injected_exe(options["inject_exe_out"]):

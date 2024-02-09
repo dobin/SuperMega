@@ -1,5 +1,30 @@
 import sys
 import pefile
+import pprint
+from keystone import Ks, KS_ARCH_X86, KS_MODE_64
+from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+
+
+def assemble_and_disassemble_jump(current_address, destination_address):
+    print("Make jmp from 0x{:X} to 0x{:X}".format(
+        current_address, destination_address
+    ))
+    # Calculate the relative offset
+    # For a near jump, the instruction length is typically 5 bytes (E9 xx xx xx xx)
+    offset = destination_address - current_address
+    
+    # Assemble the jump instruction using Keystone
+    ks = Ks(KS_ARCH_X86, KS_MODE_64)
+    encoding, _ = ks.asm(f"call qword ptr ds:[{offset}]")
+    machine_code = bytes(encoding)
+    
+    # Disassemble the machine code using Capstone
+    cs = Cs(CS_ARCH_X86, CS_MODE_64)
+    disassembled = next(cs.disasm(machine_code, current_address))
+    
+    print(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
+    print(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
+    return machine_code
 
 
 def extract_iat(pe):
@@ -14,6 +39,8 @@ def extract_iat(pe):
             dll_name = entry.dll.decode('utf-8')
             imp_name = imp.name.decode('utf-8')
             imp_addr = imp.address
+            #pprint.pprint(imp.keys())
+            #print(type(imp))
 
             #print("{}  {} - 0x{:08X}".format(
             #    dll_name,
@@ -47,8 +74,11 @@ def resolve_iat_capabilities(needed_capabilities, inject_exe):
 
     print("IAT: ")
     for cap in needed_capabilities:
-         needed_capabilities[cap] = get_addr_for(iat, cap)
-         print("  {}: {}".format(cap, needed_capabilities[cap]))
+        needed_capabilities[cap] = {
+           "id": None,
+           "addr": get_addr_for(iat, cap),
+        }
+        #print("  {}: {}".format(cap, needed_capabilities[cap]))
          
 
 
