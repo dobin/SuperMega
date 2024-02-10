@@ -31,23 +31,7 @@ class Observer():
         self.idx += 1
 
     def __str__(self):
-        s = ""
-        s += "{} {}\n\n".format(
-            self.capabilities_a,
-            self.options,)
-
-        s += "Main: {} Payload Orig: {} Payload Cleanup: {}\n".format(
-            len(self.main_c),
-            len(self.payload_asm_orig),
-            len(self.payload_asm_cleanup),
-
-        )
-        s += "fixup: {} loader: {} final: {}\n".format(
-            len(self.payload_asm_fixup),
-            len(self.loader_shellcode),
-            len(self.final_shellcode),
-        )
-    
+        s = "<todo>"
         return s
 
 

@@ -2,8 +2,67 @@ from helper import *
 from config import config
 import os
 import pprint
+from observer import observer
+from jinja2 import Template
+from project import project
 
 from model import *
+
+use_templates = True
+
+def create_c_from_template():
+    plugin_allocator = ""
+    plugin_decoder = ""
+    plugin_executor = ""
+
+    with open("plugins/allocator/rwx_1.c", "r", encoding='utf-8') as file:
+        plugin_allocator = file.read()
+
+    with open("plugins/decoder/plain_1.c", "r", encoding='utf-8') as file:
+        plugin_decoder = file.read()
+
+    with open("plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
+        plugin_executor = file.read()
+
+    
+    if project.source_style == SourceStyle.peb_walk:
+        if use_templates:
+            with open("source/peb_walk/template.c", 'r', encoding='utf-8') as file:
+                template_content = file.read()
+                observer.add_text("main_c_template", template_content)
+
+            template = Template(template_content)
+            rendered_template = template.render({
+                'plugin_allocator': plugin_allocator,
+                'plugin_decoder': plugin_decoder,
+                'plugin_executor': plugin_executor,
+            })
+            with open("build/main.c", "w", encoding='utf-8') as file:
+                file.write(rendered_template)
+                observer.add_text("main_c_rendered", rendered_template)
+
+        else:
+            observer.add_text("main_c", file_readall_text("source/peb_walk/main.c"))
+            shutil.copy("source/peb_walk/main.c", "build/main.c")
+            shutil.copy("source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
+
+    elif project.source_style == SourceStyle.iat_reuse:
+        if use_templates:
+            with open("source/iat_reuse/template.c", 'r', encoding='utf-8') as file:
+                template_content = file.read()
+                observer.add_text("main_c_template", template_content)
+            template = Template(template_content)
+            rendered_template = template.render({
+                'plugin_allocator': plugin_allocator,
+                'plugin_decoder': plugin_decoder,
+                'plugin_executor': plugin_executor,
+            })
+            with open("build/main.c", "w", encoding='utf-8') as file:
+                file.write(rendered_template)
+                observer.add_text("main_c_rendered", rendered_template)
+        else:
+            observer.add_text("main_c", file_readall_text("source/iat_reuse/main.c"))
+            shutil.copy("source/iat_reuse/main.c", "build/main.c")
 
 
 def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
@@ -11,12 +70,15 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
 
     asm = {
         "initial": "",
+        "templated": "",
         "cleanup": "",
         "fixup": "",
     }
 
+    # 
+
     # Phase 1: C To Assembly
-    print("---[ Compile: {} ]".format(c_file))
+    print("---[ Make ASM from C: {} ]".format(c_file))
     run_process_checkret([
             config.get("path_cl"),
             "/c",
@@ -29,6 +91,14 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         print("Error: Compiling failed")
         return
     asm["initial"] = file_readall_text(asm_file)
+
+    # Phase 1.2: Assembly fixup
+    print("---[ Fixup  : {} ]".format(asm_file))
+    if not fixup_asm_file(asm_file, payload_len, capabilities):
+        print("Error: Fixup failed")
+        return
+    else:
+        asm["fixup"] = file_readall_text(asm_file)
 
     # Phase 1.1: Assembly cleanup
     asm_clean_file = asm_file + ".clean"
@@ -45,13 +115,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         shutil.move(asm_clean_file, asm_file)
         asm["cleanup"] = file_readall_text(asm_file)
 
-    # Phase 1.2: Assembly fixup
-    print("---[ Fixup  : {} ]".format(asm_file))
-    if not fixup_asm_file(asm_file, payload_len, capabilities):
-        print("Error: Fixup failed")
-        return
-    else:
-        asm["fixup"] = file_readall_text(asm_file)
+
 
     return asm
 
@@ -83,8 +147,6 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
         # Fix call
         if "call" in lines[idx] and "__imp_" in lines[idx]:
             func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
-            print("    > Replace func name: {}".format(func_name))
-
             exeCapability = capabilities.get(func_name)
             if exeCapability == None:
                 print("Error Capabilities not: {}".format(func_name))
@@ -92,6 +154,9 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
                 randbytes: bytes = os.urandom(6)
                 lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
                 exeCapability.id = randbytes
+
+                print("    > Replace func name: {} with {}".format(
+                    func_name, randbytes))
         
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 

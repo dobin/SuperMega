@@ -5,9 +5,10 @@ import shutil
 import pathlib
 import sys
 import pefile
+import glob
 
 from config import config
-
+from project import project
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -94,7 +95,10 @@ def run_process_checkret(args):
         print(ret.stdout)
         print(ret.stderr)
         raise Exception("Command failed")
-
+    if project.show_command_output:
+        print("> " + " ".join(args))
+        print(ret.stdout)
+        print(ret.stderr)
 
 def try_start_shellcode(shc_file):
     print("--[ Blindly execute shellcode: {} ]".format(shc_file))
@@ -114,3 +118,13 @@ def file_readall_binary(filepath) -> bytes:
     with open(filepath, "rb") as f:
         data = f.read()
     return data
+
+
+def delete_all_files_in_directory(directory_path):
+    files = glob.glob(os.path.join(directory_path, '*'))
+    for file_path in files:
+        try:
+            os.remove(file_path)
+            #print(f"Deleted {file_path}")
+        except Exception as e:
+            print(f"Error deleting {file_path}: {e}")

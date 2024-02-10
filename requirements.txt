@@ -1,3 +1,4 @@
 pefile
 capstone
 keystone-engine
+jinja2

