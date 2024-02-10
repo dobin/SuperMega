@@ -52,7 +52,10 @@ def main():
             project.inject_exe_out = "out/iatttest-full-a.exe"
         else:
             print("Unknown verify option {}, use std/iat".format(args.verify))
+
     else:
+        project.try_start_final_infected_exe = True
+
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
                 print("Could not find: {}".format(args.shellcode))
@@ -65,6 +68,7 @@ def main():
             project.inject = True
             project.inject_exe_in = args.inject
             project.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
+
     start()
 
 
