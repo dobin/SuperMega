@@ -9,6 +9,7 @@ import glob
 
 from config import config
 from project import project
+from pehelper import *
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -24,24 +25,34 @@ def remove_trailing_null_bytes(data):
     return b''  # If the entire sequence is null bytes
 
 
-def get_code_section(pe_file):
+def get_code_section_data(pe_file):
     try:
         # Load the PE file
         pe = pefile.PE(pe_file)
 
         # Iterate over the sections
-        for section in pe.sections:
-            # Check if this is the code section
-            if '.text' in section.Name.decode().rstrip('\x00'):
-                data = section.get_data()
-                data = remove_trailing_null_bytes(data)
-                print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
-                    section.VirtualAddress,
-                    len(data), section.SizeOfRawData))
-                return data
-        else:
-            print("Code section not found.")
-    
+        #for section in pe.sections:
+        #    # Check if this is the code section
+        #    if '.text' in section.Name.decode().rstrip('\x00'):
+        #        data = section.get_data()
+        #        data = remove_trailing_null_bytes(data)
+        #        print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+        #            section.VirtualAddress,
+        #            len(data), section.SizeOfRawData))
+        #        return data
+
+        section = get_code_section(pe)
+        if section == None:
+            raise Exception("Code section not found.")
+            
+        print("--[ Code section: {}".format(section.Name.decode().rstrip('\x00')))
+        data = section.get_data()
+        data = remove_trailing_null_bytes(data)
+        print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+            section.VirtualAddress,
+            len(data), section.SizeOfRawData))
+        return data
+
     except FileNotFoundError:
         print(f"File not found: {pe_file}")
     except pefile.PEFormatError:

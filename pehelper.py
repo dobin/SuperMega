@@ -5,6 +5,40 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_64
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 
+def get_code_section(pe):
+    entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+
+    for sect in pe.sections:
+        name = sect.Name.decode()
+        #print("Checking: {} and 0x{:x}".format(name, sect.Characteristics))
+
+        if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
+            if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
+                return sect
+            #else:
+            #    print("NOOO: 0x{:x} 0x{:x} 0x{:x}".format(
+            #        entrypoint,
+            #        sect.VirtualAddress,
+            #        sect.VirtualAddress + sect.SizeOfRawData,
+            #    ))
+
+    return None
+
+
+# RWX
+def get_rwx_section(pe):
+    entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+    for section in pe.sections:
+        if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
+            section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
+            section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
+        ):
+            #name = section.Name.decode().rstrip('\x00')
+            if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.SizeOfRawData:
+                return section
+    return None
+
+
 # keystone/capstone stuff
 
 def assemble_and_disassemble_jump(current_address, destination_address):

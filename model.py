@@ -56,6 +56,7 @@ class ExeCapabilities():
 
         self.iat = {}
         self.base_relocs = []
+        self.rwx_section = None
 
         for cap in capabilities:
             self.capabilities[cap] = Capability(cap)
@@ -63,6 +64,9 @@ class ExeCapabilities():
 
     def parse_from_exe(self, filepath):
         pe = pefile.PE(filepath)
+
+        if pe.FILE_HEADER.Machine != 0x8664:
+            raise Exception("Binary is not 64bit: {}".format(filepath))
 
         # image base
         self.image_base = pe.OPTIONAL_HEADER.ImageBase
@@ -85,14 +89,18 @@ class ExeCapabilities():
         self.iat = iat
 
         # relocs
-        for base_reloc in pe.DIRECTORY_ENTRY_BASERELOC:
-            for entry in base_reloc.entries:
-                entry_rva = entry.rva
-                reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
-                self.base_relocs.append({
-                    'rva': entry_rva,
-                    'type': reloc_type,
-                })
+        if hasattr(pe, 'DIRECTORY_ENTRY_BASERELOC'):
+            for base_reloc in pe.DIRECTORY_ENTRY_BASERELOC:
+                for entry in base_reloc.entries:
+                    entry_rva = entry.rva
+                    reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
+                    self.base_relocs.append({
+                        'rva': entry_rva,
+                        'type': reloc_type,
+                    })
+        
+        # rwx
+        self.rwx_section = pehelper.get_rwx_section(pe)
 
 
     def get(self, func_name):

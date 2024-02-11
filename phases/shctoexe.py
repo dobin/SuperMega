@@ -29,27 +29,27 @@ def inject_exe(shc_file: FilePath):
         exe_out
     ])
 
-    # get code section of exe_out
-    code = get_code_section(exe_out)
-
     # replace IAT in shellcode in code
     # and re-implant it
-    for cap in exe_capabilities.get_all().values():
-        if not cap.id in code:
-            print("Capability ID {} not found, abort".format(cap.id))
-            raise Exception()
-        
-        off = code.index(cap.id)
-        current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
-        destination_address = cap.addr
-        print("    Replace at 0x{:x} with call to 0x{:x}".format(
-            current_address, destination_address
-        ))
-        jmp = assemble_and_disassemble_jump(
-            current_address, destination_address
-        )
-        code = code.replace(cap.id, jmp)
-        write_code_section(exe_out, code)
+    if project.source_style == SourceStyle.iat_reuse:
+        # get code section of exe_out
+        code = get_code_section_data(exe_out)
+        for cap in exe_capabilities.get_all().values():
+            if not cap.id in code:
+                print("Capability ID {} not found, abort".format(cap.id))
+                raise Exception()
+            
+            off = code.index(cap.id)
+            current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
+            destination_address = cap.addr
+            print("    Replace at 0x{:x} with call to 0x{:x}".format(
+                current_address, destination_address
+            ))
+            jmp = assemble_and_disassemble_jump(
+                current_address, destination_address
+            )
+            code = code.replace(cap.id, jmp)
+            write_code_section(exe_out, code)
 
      
 def verify_injected_exe(exefile):

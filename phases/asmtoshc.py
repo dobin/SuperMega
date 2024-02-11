@@ -6,6 +6,7 @@ from helper import *
 from config import config
 from observer import observer
 from project import project
+from pehelper import *
 
 
 def make_shc_from_asm(asm_file, exe_file, shc_file):
@@ -24,7 +25,7 @@ def make_shc_from_asm(asm_file, exe_file, shc_file):
         return
 
     print("---[ EXE to SHC: {} -> {} ]".format(exe_file, shc_file))
-    code = get_code_section(exe_file)
+    code = get_code_section_data(exe_file)
     with open(shc_file, 'wb') as f:
         f.write(code)
 

