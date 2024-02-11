@@ -52,6 +52,10 @@ class ExeCapabilities():
         self.capabilities: Dict[str, Capability] = {}
         self.image_base = 0
         self.text_virtaddr = 0
+        self.dynamic_base = False
+
+        self.iat = {}
+        self.base_relocs = []
 
         for cap in capabilities:
             self.capabilities[cap] = Capability(cap)
@@ -63,6 +67,12 @@ class ExeCapabilities():
         # image base
         self.image_base = pe.OPTIONAL_HEADER.ImageBase
 
+        # dynamic base / ASLR
+        if pe.OPTIONAL_HEADER.DllCharacteristics & pefile.DLL_CHARACTERISTICS['IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE']:
+            self.dynamic_base = True
+        else:
+            self.dynamic_base = False
+
         # .text virtual address
         for section in pe.sections:
             if section.Name.decode().rstrip('\x00') == '.text':
@@ -72,6 +82,17 @@ class ExeCapabilities():
         iat = pehelper.extract_iat(pe) 
         for _, cap in self.capabilities.items():
             cap.addr = pehelper.get_addr_for(iat, cap.name)
+        self.iat = iat
+
+        # relocs
+        for base_reloc in pe.DIRECTORY_ENTRY_BASERELOC:
+            for entry in base_reloc.entries:
+                entry_rva = entry.rva
+                reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
+                self.base_relocs.append({
+                    'rva': entry_rva,
+                    'type': reloc_type,
+                })
 
 
     def get(self, func_name):
