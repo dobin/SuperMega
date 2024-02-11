@@ -4,11 +4,12 @@ import os
 import pprint
 from observer import observer
 from jinja2 import Template
-from project import project
 
+from project import project
 from model import *
 
 use_templates = True
+
 
 def create_c_from_template():
     plugin_allocator = ""
@@ -18,8 +19,12 @@ def create_c_from_template():
     with open("plugins/allocator/rwx_1.c", "r", encoding='utf-8') as file:
         plugin_allocator = file.read()
 
-    with open("plugins/decoder/plain_1.c", "r", encoding='utf-8') as file:
-        plugin_decoder = file.read()
+    if project.decoder_style == DecoderStyle.PLAIN_1:
+        with open("plugins/decoder/plain_1.c", "r", encoding='utf-8') as file:
+            plugin_decoder = file.read()
+    elif project.decoder_style == DecoderStyle.XOR_1:
+        with open("plugins/decoder/xor_1.c", "r", encoding='utf-8') as file:
+            plugin_decoder = file.read()
 
     with open("plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
         plugin_executor = file.read()
@@ -115,8 +120,6 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
         shutil.move(asm_clean_file, asm_file)
         asm["cleanup"] = file_readall_text(asm_file)
 
-
-
     return asm
 
 
@@ -171,7 +174,7 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
     for idx, line in enumerate(lines): 
         if "11223344" in lines[idx]:
             print("    > Replace payload length at line: {}".format(idx))
-            lines[idx] = lines[idx].replace("11223344", str(payload_len+1))
+            lines[idx] = lines[idx].replace("11223344", str(payload_len))
             break
             
     # add label at end of code
@@ -179,7 +182,6 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
         if lines[idx].startswith("END"):
             print("    > Add end of code label at line: {}".format(idx))
             lines.insert(idx-1, "shcstart:\r\n")
-            lines.insert(idx, "\tnop\r\n")
             break
     
     with open(filename, 'w') as asmfile:

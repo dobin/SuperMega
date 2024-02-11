@@ -1,3 +1,4 @@
-for (i=0; i<11223344; i++){
-    dest[i] = supermega_payload[i] ^ 0x42;
-}
+    for (int n=0; n<11223344; n++){
+        dest[n] = supermega_payload[n];
+        dest[n] = dest[n] ^ 0x42;
+    }

@@ -135,19 +135,7 @@ def start():
 
     # Merge shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
-        print("--[ Merge stager: {} + {} -> {} ] ".format(
-            main_shc_file, project.payload, main_shc_file))
-        with open(main_shc_file, 'rb') as input1:
-            data_stager = input1.read()
-        with open(project.payload, 'rb') as input2:
-            data_payload = input2.read()
-        print("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
-            len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
-
-        with open(main_shc_file, 'wb') as output:
-            data = data_stager + data_payload
-            output.write(data)
-            observer.add_code("final_shellcode", data)
+        merge_loader_payload(main_shc_file)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:
             print("--[ Verify final shellcode ]")
@@ -180,9 +168,9 @@ def start():
             ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     # dump the info i gathered
-    file = open('latest.pickle', 'wb')
-    pickle.dump(data, file)
-    file.close()
+    #file = open('latest.pickle', 'wb')
+    #pickle.dump(data, file)
+    #file.close()
 
     # delete files
     if project.cleanup_files_on_exit:
