@@ -18,16 +18,16 @@ int main()
 
 	// Allocate RWX segment
     // char *dest = ...
-    {{ plugin_allocator }}
+{{ plugin_allocator }}
 
 	// Copy
 	// from: supermega_payload[]
 	// to:   dest[]
     // len:  0x11223344
-    {{ plugin_decoder }}
+{{ plugin_decoder }}
 
     // Execute *dest
-    {{ plugin_executor }}
+{{ plugin_executor }}
 
 	return 0;
 }
