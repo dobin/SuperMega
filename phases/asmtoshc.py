@@ -6,7 +6,6 @@ from helper import *
 from config import config
 from observer import observer
 from project import project
-from pehelper import *
 
 
 def make_shc_from_asm(asm_file, exe_file, shc_file):
