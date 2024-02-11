@@ -28,7 +28,11 @@ def main():
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
     parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
+    parser.add_argument('--show', type=str, help='Debug: Show tool output')
     args = parser.parse_args()
+
+    if args.show:
+        project.show_command_output = True
 
     if args.verify:
         project.payload = "shellcodes/createfile.bin"

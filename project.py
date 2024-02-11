@@ -19,7 +19,7 @@ class Project():
         self.exe_capabilities: ExeCapabilities = None
 
         # debug
-        self.show_command_output = True
+        self.show_command_output = False
         self.verify: bool = False
 
         self.try_start_loader_shellcode: bool = False

