@@ -54,6 +54,13 @@ def main():
             project.inject_mode = "1,1"
             project.inject_exe_in = "exes/iattest-full.exe"
             project.inject_exe_out = "out/iatttest-full-a.exe"
+        elif args.verify == "rwx":
+            project.source_style = SourceStyle.peb_walk
+            project.inject = True
+            project.inject_mode = "1,1"
+            project.inject_exe_in = "exes/wifiinfoview.exe"
+            project.inject_exe_out = "out/wifiinfoview.exe-a.exe"
+
         else:
             print("Unknown verify option {}, use std/iat".format(args.verify))
 
