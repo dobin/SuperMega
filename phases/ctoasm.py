@@ -166,9 +166,18 @@ def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
     for idx, line in enumerate(lines): 
         if "supermega_payload" in lines[idx]:
             print("    > Replace external reference at line: {}".format(idx))
+            #lines[idx] = lines[idx].replace(
+            #    "mov	r8, QWORD PTR supermega_payload",
+            #    "lea	r8, [shcstart]"
+            #)
+            # better keep register (hack)
             lines[idx] = lines[idx].replace(
-                "mov	r8, QWORD PTR supermega_payload",
-                "lea	r8, [shcstart]"
+                "mov	",
+                "lea	"
+            )
+            lines[idx] = lines[idx].replace(
+                "QWORD PTR supermega_payload",
+                "[shcstart]"
             )
 
     # replace payload length
