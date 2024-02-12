@@ -98,18 +98,32 @@ def clean_files():
         pathlib.Path(file).unlink(missing_ok=True)
 
 
-def run_process_checkret(args):
-    ret = None
-    ret = subprocess.run(args, capture_output=True, text=True)
-    if ret.returncode != 0:
+def run_process_checkret(args, check=True):
+    ret = subprocess.run(args, 
+        capture_output=True)
+    
+    with open("logs/log.txt", "ab") as f:
+        cmd = "------------------------------------\n"
+        cmd += "--- " + " ".join(args)
+        f.write(cmd.encode('utf-8'))
+        if ret.stdout != None:
+            f.write(ret.stdout)
+        if ret.stderr != None:
+            f.write(ret.stderr)
+    if ret.returncode != 0 and check:
         print("----! FAILED Command: {}".format(" ".join(args)))
-        print(ret.stdout)
-        print(ret.stderr)
-        raise Exception("Command failed")
+        if ret.stdout != None:
+            print(ret.stdout.decode('utf-8'))
+        if ret.stderr != None:
+            print(ret.stderr.decode('utf-8'))
+        raise Exception("Command failed: " + " ".join(args))
     if project.show_command_output:
         print("> " + " ".join(args))
-        print(ret.stdout)
-        print(ret.stderr)
+        if ret.stdout != None:
+            print(ret.stdout.decode('utf-8'))
+        if ret.stderr != None:
+            print(ret.stderr.decode('utf-8'))
+
 
 def try_start_shellcode(shc_file):
     print("--[ Blindly execute shellcode: {} ]".format(shc_file))

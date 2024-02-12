@@ -57,9 +57,9 @@ def verify_injected_exe(exefile):
     # remove indicator file
     pathlib.Path(verify_filename).unlink(missing_ok=True)
 
-    subprocess.run([
+    run_process_checkret([
         exefile,
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
+    ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
         print("---> Verify OK. Infected exe works (file was created)")

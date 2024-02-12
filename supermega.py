@@ -178,9 +178,9 @@ def start():
 
         if project.try_start_final_infected_exe:
             print("--[ Start infected exe ]")
-            subprocess.run([
+            run_process_checkret([
                 project.inject_exe_out,
-            ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            ], check=False)
 
     # dump the info i gathered
     #file = open('latest.pickle', 'wb')
@@ -196,7 +196,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
     print("--[ Convert with SGN ]")
     if True:
         path_sgn = r'C:\tools\sgn2.0\sgn.exe'
-        subprocess.run([
+        run_process_checkret([
             path_sgn,
             "-a", "64",
             "{}".format(file_shc_in),
@@ -204,7 +204,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
         #shutil.copy(file_shc_in + ".sgn", file_shc_out)
     else:
         path_sgn = r'C:\training\tools\sgn\sgn.exe'
-        subprocess.run([
+        run_process_checkret([
             path_sgn,
             "--arch=64",
             "-i", "{}".format(file_shc_in),
@@ -229,10 +229,10 @@ def verify_shellcode(shc_name):
     # remove indicator file
     pathlib.Path(verify_filename).unlink(missing_ok=True)
 
-    subprocess.run([
+    run_process_checkret([
         config.get("path_runshc"),
         "{}".format(shc_name),
-    ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)  # , check=True
+    ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
         print("---> Verify OK. Shellcode works (file was created)")
