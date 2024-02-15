@@ -22,7 +22,6 @@ main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
 
 
-
 # ANSI escape sequences for colors
 class LogColors:
     HEADER = '\033[95m'
@@ -33,7 +32,6 @@ class LogColors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-
 
 # Custom formatter to include colors in log output
 class CustomFormatter(logging.Formatter):
@@ -52,7 +50,6 @@ class CustomFormatter(logging.Formatter):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
         return formatter.format(record)
-
 
 # Configure logging
 handler = logging.StreamHandler()
@@ -83,7 +80,7 @@ def main():
         project.try_start_final_shellcode = False
         project.try_start_final_infected_exe = False
 
-        if args.verify == "std":
+        if args.verify == "peb":
             project.source_style = SourceStyle.peb_walk
             project.inject = True
             project.inject_mode = "1,1"
@@ -142,6 +139,7 @@ def start():
     if project.exe_capabilities.has_all():
         project.source_style = SourceStyle.iat_reuse
     else:
+        logger.info("--[ Some imports are missing for the shellcode to use IAT_REUSE")
         project.source_style = SourceStyle.peb_walk
 
     #observer.add_json("capabilities_a", project.exe_capabilities)
