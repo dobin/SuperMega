@@ -6,10 +6,13 @@ import pathlib
 import sys
 import pefile
 import glob
+import logging
 
 from config import config
 from project import project
 from pehelper import *
+
+logger = logging.getLogger("Helper")
 
 SHC_VERIFY_SLEEP = 0.1
 
@@ -36,7 +39,7 @@ def get_code_section_data(pe_file):
         #    if '.text' in section.Name.decode().rstrip('\x00'):
         #        data = section.get_data()
         #        data = remove_trailing_null_bytes(data)
-        #        print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+        #        logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
         #            section.VirtualAddress,
         #            len(data), section.SizeOfRawData))
         #        return data
@@ -45,18 +48,18 @@ def get_code_section_data(pe_file):
         if section == None:
             raise Exception("Code section not found.")
             
-        print("--[ Code section: {}".format(section.Name.decode().rstrip('\x00')))
+        logger.info("--[ Code section: {}".format(section.Name.decode().rstrip('\x00')))
         data = section.get_data()
         data = remove_trailing_null_bytes(data)
-        print("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+        logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
             section.VirtualAddress,
             len(data), section.SizeOfRawData))
         return data
 
     except FileNotFoundError:
-        print(f"File not found: {pe_file}")
+        logger.info(f"File not found: {pe_file}")
     except pefile.PEFormatError:
-        print(f"Invalid PE file: {pe_file}")
+        logger.info(f"Invalid PE file: {pe_file}")
 
 
 def write_code_section(pe_file, new_data):
@@ -72,12 +75,12 @@ def write_code_section(pe_file, new_data):
             with open(pe_file, 'r+b') as f:
                 f.seek(file_offset)
                 f.write(new_data)
-                #print("Successfully overwritten the .text section with new data.")
+                #logger.info("Successfully overwritten the .text section with new data.")
             break
 
 
 def clean_files():
-    print("--[ Remove old files ]")
+    logger.info("--[ Remove old files ]")
     
     files_to_clean = [
         # compile artefacts in current dir
@@ -111,22 +114,22 @@ def run_process_checkret(args, check=True):
         if ret.stderr != None:
             f.write(ret.stderr)
     if ret.returncode != 0 and check:
-        print("----! FAILED Command: {}".format(" ".join(args)))
+        logger.info("----! FAILED Command: {}".format(" ".join(args)))
         if ret.stdout != None:
-            print(ret.stdout.decode('utf-8'))
+            logger.info(ret.stdout.decode('utf-8'))
         if ret.stderr != None:
-            print(ret.stderr.decode('utf-8'))
+            logger.info(ret.stderr.decode('utf-8'))
         raise Exception("Command failed: " + " ".join(args))
     if project.show_command_output:
-        print("> " + " ".join(args))
+        logger.info("> " + " ".join(args))
         if ret.stdout != None:
-            print(ret.stdout.decode('utf-8'))
+            logger.info(ret.stdout.decode('utf-8'))
         if ret.stderr != None:
-            print(ret.stderr.decode('utf-8'))
+            logger.info(ret.stderr.decode('utf-8'))
 
 
 def try_start_shellcode(shc_file):
-    print("--[ Blindly execute shellcode: {} ]".format(shc_file))
+    logger.info("--[ Blindly execute shellcode: {} ]".format(shc_file))
     subprocess.run([
         config.get["path_runshc"],
         shc_file,
@@ -150,6 +153,6 @@ def delete_all_files_in_directory(directory_path):
     for file_path in files:
         try:
             os.remove(file_path)
-            #print(f"Deleted {file_path}")
+            #logger.info(f"Deleted {file_path}")
         except Exception as e:
-            print(f"Error deleting {file_path}: {e}")
+            logger.info(f"Error deleting {file_path}: {e}")

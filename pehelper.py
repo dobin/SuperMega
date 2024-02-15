@@ -3,6 +3,9 @@ import pefile
 import pprint
 from keystone import Ks, KS_ARCH_X86, KS_MODE_64
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+import logging
+
+logger = logging.getLogger("PEHelper")
 
 
 def get_code_section(pe):
@@ -10,13 +13,13 @@ def get_code_section(pe):
 
     for sect in pe.sections:
         name = sect.Name.decode()
-        #print("Checking: {} and 0x{:x}".format(name, sect.Characteristics))
+        #logger.info("Checking: {} and 0x{:x}".format(name, sect.Characteristics))
 
         if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
             if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
                 return sect
             #else:
-            #    print("NOOO: 0x{:x} 0x{:x} 0x{:x}".format(
+            #    logger.info("NOOO: 0x{:x} 0x{:x} 0x{:x}".format(
             #        entrypoint,
             #        sect.VirtualAddress,
             #        sect.VirtualAddress + sect.SizeOfRawData,
@@ -42,7 +45,7 @@ def get_rwx_section(pe):
 # keystone/capstone stuff
 
 def assemble_and_disassemble_jump(current_address, destination_address):
-    #print("    Make jmp from 0x{:X} to 0x{:X}".format(
+    #logger.info("    Make jmp from 0x{:X} to 0x{:X}".format(
     #    current_address, destination_address
     #))
     # Calculate the relative offset
@@ -57,8 +60,8 @@ def assemble_and_disassemble_jump(current_address, destination_address):
     # Disassemble the machine code using Capstone
     #cs = Cs(CS_ARCH_X86, CS_MODE_64)
     #disassembled = next(cs.disasm(machine_code, current_address))
-    #print(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
-    #print(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
+    #logger.info(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
+    #logger.info(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
     return machine_code
 
 

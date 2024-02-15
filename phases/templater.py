@@ -1,6 +1,7 @@
 from jinja2 import Template
 import pprint
 import shutil
+import logging
 
 from helper import *
 from config import config
@@ -9,7 +10,7 @@ from model import *
 from observer import observer
 
 use_templates = True
-
+logger = logging.getLogger("Assembler")
 
 # INPUT:
 #   plugins/

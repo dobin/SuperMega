@@ -1,10 +1,13 @@
 from helper import *
 import shutil
 import pprint
+import logging
 
 from pehelper import *
 from model import *
 from project import project
+
+logger = logging.getLogger("Injector")
 
 
 def inject_exe(shc_file: FilePath):
@@ -12,7 +15,7 @@ def inject_exe(shc_file: FilePath):
     exe_out: FilePath = project.inject_exe_out
     exe_capabilities: ExeCapabilities = project.exe_capabilities
 
-    print("--[ Injecting: {} into: {} -> {} ]".format(
+    logger.info("--[ Injecting: {} into: {} -> {} ]".format(
         shc_file, exe_in, exe_out
     ))
 
@@ -36,13 +39,13 @@ def inject_exe(shc_file: FilePath):
         code = get_code_section_data(exe_out)
         for cap in exe_capabilities.get_all().values():
             if not cap.id in code:
-                print("Capability ID {} not found, abort".format(cap.id))
+                logger.error("Capability ID {} not found, abort".format(cap.id))
                 raise Exception()
             
             off = code.index(cap.id)
             current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
             destination_address = cap.addr
-            print("    Replace at 0x{:x} with call to 0x{:x}".format(
+            logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
                 current_address, destination_address
             ))
             jmp = assemble_and_disassemble_jump(
@@ -53,7 +56,7 @@ def inject_exe(shc_file: FilePath):
 
      
 def verify_injected_exe(exefile):
-    print("---[ Verify infected exe: {} ]".format(exefile))
+    logger.info("---[ Verify infected exe: {} ]".format(exefile))
     # remove indicator file
     pathlib.Path(verify_filename).unlink(missing_ok=True)
 
@@ -62,11 +65,11 @@ def verify_injected_exe(exefile):
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(verify_filename):
-        print("---> Verify OK. Infected exe works (file was created)")
+        logger.info("---> Verify OK. Infected exe works (file was created)")
         # better to remove it immediately
         os.remove(verify_filename)
         return True
     else:
-        print("---> Verify FAIL. Infected exe does not work (no file created)")
+        logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
         return False
 

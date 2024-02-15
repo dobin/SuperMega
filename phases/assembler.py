@@ -1,5 +1,6 @@
 import pefile
 import pprint
+import logging
 
 from model import *
 from helper import *
@@ -7,11 +8,12 @@ from config import config
 from observer import observer
 from project import project
 
+logger = logging.getLogger("Assembler")
 
 def make_shc_from_asm(asm_file, exe_file, shc_file):
-    print("--[ Assemble to exe: {} -> {} -> {} ]".format(asm_file, exe_file, shc_file))
+    logger.info("--[ Assemble to exe: {} -> {} -> {} ]".format(asm_file, exe_file, shc_file))
 
-    print("---[ Assemble ASM to EXE: {} -> {} ]".format(asm_file, exe_file))
+    logger.info("---[ Assemble ASM to EXE: {} -> {} ]".format(asm_file, exe_file))
     run_process_checkret([
         config.get("path_ml64"),
         asm_file,
@@ -20,20 +22,20 @@ def make_shc_from_asm(asm_file, exe_file, shc_file):
         "/entry:AlignRSP"
     ])
     if not os.path.isfile(exe_file):
-        print("Error")
+        logger.error("Error")
         return
 
-    print("---[ EXE to SHC: {} -> {} ]".format(exe_file, shc_file))
+    logger.info("---[ EXE to SHC: {} -> {} ]".format(exe_file, shc_file))
     code = get_code_section_data(exe_file)
     with open(shc_file, 'wb') as f:
         f.write(code)
 
     return code
-    #print("---[ Shellcode from {} written to: {}  (size: {}) ]".format(exe_file, shc_file, len(code)))
+    #logger.info("---[ Shellcode from {} written to: {}  (size: {}) ]".format(exe_file, shc_file, len(code)))
 
 
 def merge_loader_payload(main_shc_file):
-    print("--[ Merge stager: {} + {} -> {} ] ".format(
+    logger.info("--[ Merge stager: {} + {} -> {} ] ".format(
         main_shc_file, project.payload, main_shc_file))
     with open(main_shc_file, 'rb') as input1:
         data_stager = input1.read()
@@ -44,10 +46,10 @@ def merge_loader_payload(main_shc_file):
         pass
     elif project.decoder_style == DecoderStyle.XOR_1:
         xor_key = 0x42
-        print("---[ XOR payload with key 0x{:x}".format(xor_key))
+        logger.info("---[ XOR payload with key 0x{:x}".format(xor_key))
         data_payload = bytes([byte ^ xor_key for byte in data_payload])
 
-    print("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
+    logger.info("---[ Size: Stager: {} and Payload: {}  Sum: {} ]".format(
         len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
     with open(main_shc_file, 'wb') as output:

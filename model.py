@@ -2,6 +2,9 @@ from typing import Dict
 import pehelper
 import pefile
 from enum import Enum
+import logging
+
+logger = logging.getLogger("Model")
 
 
 class FilePath(str):
@@ -129,6 +132,6 @@ class ExeCapabilities():
 
 
     def print(self):
-        print("--( Capabilities: ")
+        logger.info("--( Capabilities: ")
         for _, cap in self.capabilities.items():
-            print("  " + str(cap))
+            logger.info("  " + str(cap))
