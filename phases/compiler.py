@@ -13,7 +13,7 @@ use_templates = True
 
 
 def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
-    logger.info("--[ C to ASM: {} -> {} ]".format(c_file, asm_file))
+    logger.info("--[ C to ASM: {} -> {} ".format(c_file, asm_file))
 
     asm = {
         "initial": "",
@@ -23,7 +23,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
     }
 
     # Phase 1: C To Assembly
-    logger.info("---[ Make ASM from C: {} ]".format(c_file))
+    logger.info("---[ Make ASM from C: {} ".format(c_file))
     run_process_checkret([
             config.get("path_cl"),
             "/c",
@@ -38,7 +38,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
     asm["initial"] = file_readall_text(asm_file)
 
     # Phase 1.2: Assembly fixup
-    logger.info("---[ Fixup  : {} ]".format(asm_file))
+    logger.info("---[ Fixup  : {} ".format(asm_file))
     if not fixup_asm_file(asm_file, payload_len, capabilities):
         logger.error("Error: Fixup failed")
         return
@@ -47,7 +47,7 @@ def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
 
     # Phase 1.1: Assembly cleanup
     asm_clean_file = asm_file + ".clean"
-    logger.info("---[ Cleanup: {} ]".format(asm_file))
+    logger.info("---[ Cleanup: {} ".format(asm_file))
     run_process_checkret([
         config.get("path_masmshc"),
         asm_file,

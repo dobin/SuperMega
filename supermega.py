@@ -180,24 +180,25 @@ def start():
         phases.assembler.merge_loader_payload(main_shc_file)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:
-            logger.info("--[ Verify final shellcode ]")
+            logger.info("--[ Verify final shellcode")
             if not verify_shellcode(main_shc_file):
                 logger.info("Could not verify, still continuing")
                 #return
 
         if project.try_start_final_shellcode:
-            logger.info("--[ Test Append shellcode ]")
+            logger.info("--[ Test Append shellcode")
             try_start_shellcode(main_shc_file)
 
         # copy it to out
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
-
     # SGN
     #  after we packed everything (so jmp to end of code still works)
     #if options["obfuscate_shc_loader"] and project.exe_capabilities.rwx_section != None:
     if project.exe_capabilities.rwx_section != None:
-        logger.info("--[ Use SGN]")
+        logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
+            project.exe_capabilities.rwx_section.Name.decode().rstrip('\x00')
+        ))
         obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
 
         observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
@@ -213,13 +214,13 @@ def start():
 
         phases.injector.inject_exe(main_shc_file)
         if project.verify:
-            logger.info("--[ Verify final exe ]")
+            logger.info("--[ Verify final exe")
             if phases.injector.verify_injected_exe(project.inject_exe_out):
                 #debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
                 pass
 
         if project.try_start_final_infected_exe:
-            logger.info("--[ Start infected exe ]")
+            logger.info("--[ Start infected exe")
             run_process_checkret([
                 project.inject_exe_out,
             ], check=False)
@@ -235,7 +236,7 @@ def start():
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
-    logger.info("--[ Convert with SGN ]")
+    logger.info("--[ Obfuscate shellcode with SGN")
     if True:
         path_sgn = r'C:\tools\sgn2.0\sgn.exe'
         run_process_checkret([
@@ -261,7 +262,7 @@ def obfuscate_shc_loader(file_shc_in, file_shc_out):
 
 
 def verify_shellcode(shc_name):
-    logger.info("---[ Verify shellcode: {} ]".format(shc_name))
+    logger.info("---[ Verify shellcode: {}".format(shc_name))
 
     # check if directory exists
     if not os.path.exists(os.path.dirname(verify_filename)):

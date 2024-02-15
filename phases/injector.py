@@ -15,7 +15,7 @@ def inject_exe(shc_file: FilePath):
     exe_out: FilePath = project.inject_exe_out
     exe_capabilities: ExeCapabilities = project.exe_capabilities
 
-    logger.info("--[ Injecting: {} into: {} -> {} ]".format(
+    logger.info("--[ Injecting: {} into: {} -> {} ".format(
         shc_file, exe_in, exe_out
     ))
 
@@ -56,7 +56,7 @@ def inject_exe(shc_file: FilePath):
 
      
 def verify_injected_exe(exefile):
-    logger.info("---[ Verify infected exe: {} ]".format(exefile))
+    logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
     pathlib.Path(verify_filename).unlink(missing_ok=True)
 

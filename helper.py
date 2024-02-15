@@ -80,7 +80,7 @@ def write_code_section(pe_file, new_data):
 
 
 def clean_files():
-    logger.info("--[ Remove old files ]")
+    logger.info("--[ Remove old files")
     
     files_to_clean = [
         # compile artefacts in current dir
@@ -129,7 +129,7 @@ def run_process_checkret(args, check=True):
 
 
 def try_start_shellcode(shc_file):
-    logger.info("--[ Blindly execute shellcode: {} ]".format(shc_file))
+    logger.info("--[ Blindly execute shellcode: {}".format(shc_file))
     subprocess.run([
         config.get["path_runshc"],
         shc_file,
