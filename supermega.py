@@ -68,6 +68,8 @@ def main():
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
+    parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
+    parser.add_argument('--no-clean-at-exit', action='store_true', help='Debug: Dont remove any temporary files at exit')
     parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
     parser.add_argument('--show', action='store_true', help='Debug: Show tool output')
     args = parser.parse_args()
@@ -108,6 +110,9 @@ def main():
         project.try_start_final_infected_exe = args.start_injected
         project.try_start_final_shellcode = args.start_final_shellcode
         project.try_start_loader_shellcode = args.start_loader_shellcode
+
+        project.cleanup_files_on_start = not args.no_clean_at_start
+        project.cleanup_files_on_exit =not args.no_clean_at_exit
 
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
