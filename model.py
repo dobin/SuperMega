@@ -121,17 +121,18 @@ class ExeCapabilities():
     
     def has_all(self):
         needs = [ 'GetEnvironmentVariableW', 'VirtualAlloc']
-
         for need in needs: 
             if not need in self.capabilities:
                 return False
             if self.capabilities[need].addr == 0:
                 return False
-
         return True
-
+    
 
     def print(self):
         logger.info("--( Capabilities: ")
         for _, cap in self.capabilities.items():
-            logger.info("  " + str(cap))
+            if cap.addr == 0:
+                logger.info("   {:28} {}".format(cap.name, "N/A"))
+            else:
+                logger.info("   {:28} 0x{:x}".format(cap.name, cap.addr))
