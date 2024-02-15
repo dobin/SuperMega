@@ -65,8 +65,11 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
+    parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
+    parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
+    parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
     parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
-    parser.add_argument('--show', type=str, help='Debug: Show tool output')
+    parser.add_argument('--show', action='store_true', help='Debug: Show tool output')
     args = parser.parse_args()
 
     if args.show:
@@ -78,7 +81,6 @@ def main():
 
         project.try_start_final_infected_exe = False
         project.try_start_final_shellcode = False
-        project.try_start_final_infected_exe = False
 
         if args.verify == "peb":
             project.source_style = SourceStyle.peb_walk
@@ -103,7 +105,9 @@ def main():
             logger.info("Unknown verify option {}, use std/iat".format(args.verify))
 
     else:
-        project.try_start_final_infected_exe = True
+        project.try_start_final_infected_exe = args.start_injected
+        project.try_start_final_shellcode = args.start_final_shellcode
+        project.try_start_loader_shellcode = args.start_loader_shellcode
 
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
@@ -170,7 +174,6 @@ def start():
     # Try: Starting the shellcode (rarely useful)
     if project.try_start_loader_shellcode:
         try_start_shellcode(main_shc_file)
-
 
     # Merge shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
