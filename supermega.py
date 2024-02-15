@@ -114,6 +114,11 @@ def main():
         project.cleanup_files_on_start = not args.no_clean_at_start
         project.cleanup_files_on_exit =not args.no_clean_at_exit
 
+        if not args.shellcode or not args.inject:
+            logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
+            logger.info(r"Example: .\supermega.py --shellcode .\shellcodes\calc64.bin --inject .\exes\7z.exe")
+            return 1
+
         if args.shellcode:
             if not os.path.isfile(args.shellcode):
                 logger.info("Could not find: {}".format(args.shellcode))
@@ -154,7 +159,7 @@ def start():
     #observer.add_json("capabilities_a", project.exe_capabilities)
     #observer.add_json("options", options)
 
-    logger.info("--[ SourceStyle: {}".format(project.source_style.name))
+    logger.warning("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
     phases.templater.create_c_from_template()
