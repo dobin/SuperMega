@@ -8,9 +8,12 @@ import pickle
 from model import *
 from config import config
 from pehelper import *
-from phases.ctoasm import *
-from phases.asmtoshc import *
-from phases.shctoexe import *
+
+import phases.templater
+import phases.compiler
+import phases.assembler
+import phases.injector
+
 from observer import observer
 from project import project
 
@@ -109,7 +112,7 @@ def start():
     print("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
-    create_c_from_template()
+    phases.templater.create_c_from_template()
 
     # Convert: C -> ASM
     if project.generate_asm_from_c:
@@ -118,14 +121,14 @@ def start():
             data_payload = input2.read()
             payload_length = len(data_payload)
             #observer.add_text("payload_asm_orig", str(data_payload))
-        asm = make_c_to_asm(main_c_file, main_asm_file, payload_length, project.exe_capabilities)
+        asm = phases.compiler.make_c_to_asm(main_c_file, main_asm_file, payload_length, project.exe_capabilities)
         observer.add_text("payload_asm_orig", asm["initial"])
         observer.add_text("payload_asm_cleanup", asm["cleanup"])
         observer.add_text("payload_asm_fixup", asm["fixup"])
 
     # Convert: ASM -> Shellcode
     if project.generate_shc_from_asm:
-        code = make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
+        code = phases.assembler.make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
         observer.add_code("generate_shc_from_asm", code) 
     
     # Try: Starting the shellcode (rarely useful)
@@ -135,7 +138,7 @@ def start():
 
     # Merge shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
-        merge_loader_payload(main_shc_file)
+        phases.assembler.merge_loader_payload(main_shc_file)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:
             print("--[ Verify final shellcode ]")
@@ -169,10 +172,10 @@ def start():
     if project.inject:
         #debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
-        inject_exe(main_shc_file)
+        phases.injector.inject_exe(main_shc_file)
         if project.verify:
             print("--[ Verify final exe ]")
-            if verify_injected_exe(project.inject_exe_out):
+            if phases.injector.verify_injected_exe(project.inject_exe_out):
                 #debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
                 pass
 

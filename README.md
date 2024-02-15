@@ -51,10 +51,11 @@ Plugins:
 
 ## Installation
 
+### Paths
+
 Configure `config.yaml` with: 
 * Path to Visual Studio 2022 compiler and assembler
 * Path to mash_shc and runshc: https://github.com/hasherezade/masm_shc. 
-
 
 `config.yaml`:
 ```yaml
@@ -69,12 +70,22 @@ Make sure its the `Hostx64/x64/` one exe. Make sure to compile
 msmshc and runshc as 64bit. You can also replace runshc with
 your own shellcode loader. 
 
-Alternatively, you can maybe use a 64bit Visual Studio developer console or insert env paths:
+### Environment Variables
+
+Use
 ```
 "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"
 ```
-And just use executable "cl.exe" and "ml64.exe". 
 
+or the VS developer console to find the damn environment variables, and set 
+it in your python console. In my case:
+```
+$env:INCLUDE = "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\ATLMFC\include;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\VS\include;C:\Program Files (x86)\Windows Kits\10\include\10.0.22621.0\ucrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\um;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\shared;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\winrt;C:\Program Files (x86)\Windows Kits\10\\include\10.0.22621.0\\cppwinrt;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\include\um"
+$env:LIB="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\lib\x64;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.8\lib\um\x64;C:\Program Files (x86)\Windows Kits\10\lib\10.0.22621.0\ucrt\x64;C:\Program Files (x86)\Windows Kits\10\\lib\10.0.22621.0\\um\x64"
+$env:LIBPATH="C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\ATLMFC\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\lib\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\lib\x86\store\references;C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.22621.0;C:\Program Files (x86)\Windows Kits\10\References\10.0.22621.0;C:\Windows\Microsoft.NET\Framework64\v4.0.30319"
+```
+
+### VS2022 Components
 
 A list of packages/components which may be required for Visual Studio 2022:
 * C++ 2022 Redistributable Update
