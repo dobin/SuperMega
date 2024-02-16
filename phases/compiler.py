@@ -15,8 +15,7 @@ use_templates = True
 def compile(
     c_in: FilePath, 
     asm_out: FilePath,
-    payload_len: int, 
-    exe_info: ExeInfo
+    payload_len: int
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
@@ -36,7 +35,7 @@ def compile(
 
     # Assembly text fixup (SuperMega)
     logger.info("---[ Fixup  : {} ".format(asm_out))
-    if not fixup_asm_file(asm_out, payload_len, exe_info):
+    if not fixup_asm_file(asm_out, payload_len):
         raise Exception("Error: Fixup failed")
     observer.add_text("payload_asm_fixup", file_readall_text(asm_out))
 
@@ -64,7 +63,7 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename: FilePath, payload_len: int, exe_info: ExeInfo):
+def fixup_asm_file(filename: FilePath, payload_len: int):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 

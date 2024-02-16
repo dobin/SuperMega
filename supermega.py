@@ -150,8 +150,7 @@ def start():
         phases.compiler.compile(
             c_in = main_c_file, 
             asm_out = main_asm_file, 
-            payload_len = len(project.payload_data), 
-            exe_info = project.exe_info)
+            payload_len = len(project.payload_data))
         
     # Decide if we can use IAT_REUSE (all function calls available as import)
     required_functions = phases.compiler.get_function_stubs(main_asm_file)
@@ -178,8 +177,7 @@ def start():
             phases.compiler.compile(
                 c_in = main_c_file, 
                 asm_out = main_asm_file, 
-                payload_len = len(project.payload_data), 
-                exe_info = project.exe_info)
+                payload_len = len(project.payload_data))
 
     # Assemble: ASM -> Shellcode
     if project.generate_shc_from_asm:
