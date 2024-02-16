@@ -4,6 +4,7 @@ from model import *
 from config import config
 from observer import observer
 from pehelper import *
+from helper import *
 
 logger = logging.getLogger("Assembler")
 

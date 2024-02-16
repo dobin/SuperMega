@@ -14,11 +14,12 @@ class Project():
         self.decoder_style: DecoderStyle = DecoderStyle.PLAIN_1
         self.dataref_style: DataRefStyle = DataRefStyle.APPEND
 
+        # Injectable
         self.inject: bool = False
         self.inject_mode: str = "1,1"
         self.inject_exe_in: FilePath = ""
         self.inject_exe_out: FilePath = ""
-        self.exe_capabilities: ExeCapabilities = None
+        self.exe_info: ExeInfo = None
 
         # debug
         self.show_command_output = False
@@ -40,6 +41,11 @@ class Project():
     def load_payload(self):
         with open(self.payload_path, 'rb') as input2:
             self.payload_data = input2.read()
+
+
+    def load_injectable(self, tmp_caps):
+        self.exe_info = ExeInfo(tmp_caps)
+        self.exe_info.parse_from_exe(self.inject_exe_in)
         
 
 project = Project()

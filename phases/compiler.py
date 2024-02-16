@@ -16,7 +16,7 @@ def compile(
     c_in: FilePath, 
     asm_out: FilePath,
     payload_len: int, 
-    exe_capabilities: ExeCapabilities
+    exe_info: ExeInfo
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
@@ -36,7 +36,7 @@ def compile(
 
     # Phase 1.2: Assembly fixup
     logger.info("---[ Fixup  : {} ".format(asm_out))
-    if not fixup_asm_file(asm_out, payload_len, exe_capabilities):
+    if not fixup_asm_file(asm_out, payload_len, exe_info):
         raise Exception("Error: Fixup failed")
     observer.add_text("payload_asm_fixup", file_readall_text(asm_out))
 
@@ -63,7 +63,7 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeCapabilities):
+def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeInfo):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 

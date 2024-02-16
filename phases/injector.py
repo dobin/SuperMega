@@ -14,7 +14,7 @@ def inject_exe(
     shellcode_in: FilePath,
     exe_in: FilePath,
     exe_out: FilePath,
-    exe_capabilities: ExeCapabilities,
+    exe_info: ExeInfo,
 ):
     logger.info("--[ Injecting: {} into: {} -> {} ".format(
         shellcode_in, exe_in, exe_out
@@ -38,12 +38,12 @@ def inject_exe(
     if project.source_style == SourceStyle.iat_reuse:
         # get code section of exe_out
         code = extract_code_from_exe(exe_out)
-        for cap in exe_capabilities.get_all().values():
+        for cap in exe_info.get_all().values():
             if not cap.id in code:
                 raise Exception("Capability ID {} not found, abort".format(cap.id))
             
             off = code.index(cap.id)
-            current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
+            current_address = off + exe_info.image_base + exe_info.code_virtaddr
             destination_address = cap.addr
             logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
                 current_address, destination_address

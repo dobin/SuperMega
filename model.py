@@ -22,12 +22,15 @@ class Capability():
         )
 
 
-class ExeCapabilities():
+class ExeInfo():
     def __init__(self, capabilities):
         self.capabilities: Dict[str, Capability] = {}
         self.image_base = 0
-        self.text_virtaddr = 0
         self.dynamic_base = False
+
+        self.code_virtaddr = 0
+        self.code_size = 0
+        self.code_section = None
 
         self.iat = {}
         self.base_relocs = []
@@ -53,9 +56,9 @@ class ExeCapabilities():
             self.dynamic_base = False
 
         # .text virtual address
-        for section in pe.sections:
-            if section.Name.decode().rstrip('\x00') == '.text':
-                self.text_virtaddr = section.VirtualAddress
+        self.code_section = pehelper.get_code_section(pe)
+        self.code_virtaddr = self.code_section.VirtualAddress
+        self.code_rawsize = self.code_section.SizeOfRawData
 
         # iat
         iat = pehelper.extract_iat(pe) 

