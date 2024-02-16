@@ -1,13 +1,8 @@
-import pefile
-import pprint
 import logging
 
 from model import *
-from helper import *
 from config import config
 from observer import observer
-from project import project
-from helper import *
 from pehelper import *
 
 logger = logging.getLogger("Assembler")

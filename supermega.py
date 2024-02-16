@@ -17,11 +17,6 @@ import phases.injector
 from observer import observer
 from project import project
 
-main_c_file = os.path.join(project.build_dir, "main.c")
-main_asm_file = os.path.join(project.build_dir, "main.asm")
-main_exe_file = os.path.join(project.build_dir, "main.exe")
-main_shc_file = os.path.join(project.build_dir, "main.bin")
-
 
 # ANSI escape sequences for colors
 class LogColors:
@@ -163,7 +158,13 @@ def start():
     logger.warning("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
-    phases.templater.create_c_from_template()
+    phases.templater.create_c_from_template(
+        source_style = project.source_style,
+        alloc_style  = project.alloc_style,
+        exec_style   = project.exec_style,
+        decoder_style= project.decoder_style,
+        build_dir    = project.build_dir,
+    )
 
     # Convert: C -> ASM
     if project.generate_asm_from_c:
