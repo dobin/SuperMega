@@ -149,7 +149,7 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
 
             randbytes: bytes = os.urandom(6)
             lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
-            exe_info.add_capability(func_name, randbytes)
+            exe_info.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
                 func_name, randbytes))

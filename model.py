@@ -37,7 +37,7 @@ class ExeInfo():
         self.rwx_section = None
 
 
-    def add_capability(self, func_name, placeholder):
+    def add_iat_resolve(self, func_name, placeholder):
         self.iat_resolves[func_name] = IatResolve(
             func_name, placeholder, pehelper.get_addr_for(self.iat, func_name))
 
