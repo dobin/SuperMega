@@ -23,11 +23,11 @@ def clean_files():
         "mllink$.lnk",
 
         # out/ stuff
-        os.path.join(project.build_dir, "main.asm"),
-        os.path.join(project.build_dir, "main.bin"),
-        os.path.join(project.build_dir, "main.c"),
-        os.path.join(project.build_dir, "peb_lookup.h"),
-        #os.path.join(project.build_dir, "main.exe"),
+        os.path.join(build_dir, "main.asm"),
+        os.path.join(build_dir, "main.bin"),
+        os.path.join(build_dir, "main.c"),
+        os.path.join(build_dir, "peb_lookup.h"),
+        #os.path.join(build_dir, "main.exe"),
         
         project.verify_filename,
     ]

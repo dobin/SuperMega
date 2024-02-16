@@ -23,7 +23,6 @@ def create_c_from_template(
     alloc_style: AllocStyle, 
     exec_style: ExecStyle,
     decoder_style: DecoderStyle,
-    build_dir: FilePath,
 ):
     plugin_allocator = ""
     plugin_decoder = ""

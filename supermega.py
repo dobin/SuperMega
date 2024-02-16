@@ -163,7 +163,6 @@ def start():
         alloc_style  = project.alloc_style,
         exec_style   = project.exec_style,
         decoder_style= project.decoder_style,
-        build_dir    = project.build_dir,
     )
 
     # Convert: C -> ASM

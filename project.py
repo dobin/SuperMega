@@ -33,7 +33,6 @@ class Project():
         self.generate_shc_from_asm: bool = True
 
         self.verify_filename = r'C:\Temp\a'
-        self.build_dir = "build"
-
+        
 
 project = Project()
