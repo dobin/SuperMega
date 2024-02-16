@@ -56,8 +56,8 @@ def inject_exe(
         # write back our patched code into the exe
         write_code_section(exe_file=exe_out, new_data=code)
 
-     
-def verify_injected_exe(exefile: FilePath):
+
+def verify_injected_exe(exefile: FilePath) -> int:
     logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
     pathlib.Path(project.verify_filename).unlink(missing_ok=True)
@@ -70,8 +70,8 @@ def verify_injected_exe(exefile: FilePath):
         logger.info("---> Verify OK. Infected exe works (file was created)")
         # better to remove it immediately
         os.remove(project.verify_filename)
-        return True
+        return 0
     else:
         logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
-        return False
+        return 1
 

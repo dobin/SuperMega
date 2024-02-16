@@ -1,6 +1,7 @@
 from model import *
 from defs import *
 
+
 class Project():
     def __init__(self):
         # User, generating normally
@@ -32,7 +33,7 @@ class Project():
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
 
-        self.verify_filename = r'C:\Temp\a'
+        self.verify_filename: FilePath = r'C:\Temp\a'
         
 
 project = Project()

@@ -151,10 +151,6 @@ def start():
     else:
         logger.info("--[ Some imports are missing for the shellcode to use IAT_REUSE")
         project.source_style = SourceStyle.peb_walk
-
-    #observer.add_json("capabilities_a", project.exe_capabilities)
-    #observer.add_json("options", options)
-
     logger.warning("--[ SourceStyle: {}".format(project.source_style.name))
 
     # Copy: loader C files into working directory: build/
@@ -165,7 +161,7 @@ def start():
         decoder_style= project.decoder_style,
     )
 
-    # Convert: C -> ASM
+    # Compile: C -> ASM
     if project.generate_asm_from_c:
         # Find payload size
         with open(project.payload, 'rb') as input2:
@@ -177,18 +173,18 @@ def start():
             payload_len = payload_length, 
             exe_capabilities = project.exe_capabilities)
 
-    # Convert: ASM -> Shellcode
+    # Assemble: ASM -> Shellcode
     if project.generate_shc_from_asm:
         phases.assembler.asm_to_shellcode(
             asm_in = main_asm_file, 
             build_exe = main_exe_file, 
             shellcode_out = main_shc_file)
     
-    # Try: Starting the shellcode (rarely useful)
+    # Try: Starting the loader-shellcode (rarely useful)
     if project.try_start_loader_shellcode:
         try_start_shellcode(main_shc_file)
 
-    # Merge shellcode/loader with payload
+    # Merge: shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
         phases.assembler.merge_loader_payload(
             shellcode_in = main_shc_file,
@@ -209,26 +205,18 @@ def start():
         # copy it to out
         shutil.copyfile(main_shc_file, os.path.join("out/", os.path.basename(main_shc_file)))
 
-    # SGN
-    #  after we packed everything (so jmp to end of code still works)
-    #if options["obfuscate_shc_loader"] and project.exe_capabilities.rwx_section != None:
+    # RWX Injection
     if project.exe_capabilities.rwx_section != None:
         logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
             project.exe_capabilities.rwx_section.Name.decode().rstrip('\x00')
         ))
         obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
-
         observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
         shutil.move(main_shc_file + ".sgn", main_shc_file)
-    
-        #if options["verify"]:
-        #    if not verify_shellcode("main-clean.bin"):
-        #        return
 
     # inject merged loader into an exe
+    exit_code = 0
     if project.inject:
-        #debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
-
         phases.injector.inject_exe(
             shellcode_in = main_shc_file,
             exe_in = project.inject_exe_in,
@@ -236,25 +224,20 @@ def start():
             exe_capabilities = project.exe_capabilities
         )
         if project.verify:
-            logger.info("--[ Verify final exe")
-            if phases.injector.verify_injected_exe(project.inject_exe_out):
-                #debug_data["infected_exe"] = file_readall_binary(options["inject_exe_out"])
-                pass
+            logger.info("--[ Verify infected exe")
+            exit_code = phases.injector.verify_injected_exe(project.inject_exe_out)
 
-        if project.try_start_final_infected_exe:
+        elif project.try_start_final_infected_exe:
             logger.info("--[ Start infected exe")
             run_process_checkret([
                 project.inject_exe_out,
             ], check=False)
 
-    # dump the info i gathered
-    #file = open('latest.pickle', 'wb')
-    #pickle.dump(data, file)
-    #file.close()
-
-    # delete files
+    # Cleanup files
     if project.cleanup_files_on_exit:
         clean_files()
+
+    exit(exit_code)
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):

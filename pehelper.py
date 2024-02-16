@@ -32,7 +32,7 @@ def write_code_section(exe_file: FilePath, new_data: bytes):
         f.write(new_data)
 
 
-def get_code_section(pe) -> pefile.SectionStructure:
+def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
     for sect in pe.sections:
         if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
@@ -106,7 +106,7 @@ def extract_iat(pe: pefile.PE):
     return iat
 
 
-def get_addr_for(iat, func_name):
+def get_addr_for(iat, func_name: str) -> int:
     for dll_name in iat:
         for entry in iat[dll_name]:
             if entry["func_name"] == func_name:
