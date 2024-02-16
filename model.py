@@ -7,14 +7,14 @@ import pehelper
 logger = logging.getLogger("Model")
 
 
-class Capability():
-    def __init__(self, name):
-        self.name = name
-        self.id: bytes = b""
-        self.addr: int = 0
+class IatResolve():
+    def __init__(self, name: str, placeholder: bytes, addr: int):
+        self.name: str = name           # Function Name, like "VirtualAlloc"
+        self.id: bytes = placeholder    # Random bytes
+        self.addr: int = addr           # The address of the IAT entry (incl. image_base)
 
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "0x{:X}: {} ({})".format(
             self.addr,
             self.name,
@@ -23,8 +23,8 @@ class Capability():
 
 
 class ExeInfo():
-    def __init__(self, capabilities):
-        self.capabilities: Dict[str, Capability] = {}
+    def __init__(self):
+        self.iat_resolves: Dict[str, IatResolve] = {}
         self.image_base = 0
         self.dynamic_base = False
 
@@ -36,8 +36,10 @@ class ExeInfo():
         self.base_relocs = []
         self.rwx_section = None
 
-        for cap in capabilities:
-            self.capabilities[cap] = Capability(cap)
+
+    def add_capability(self, func_name, placeholder):
+        self.iat_resolves[func_name] = IatResolve(
+            func_name, placeholder, pehelper.get_addr_for(self.iat, func_name))
 
 
     def parse_from_exe(self, filepath):
@@ -61,10 +63,7 @@ class ExeInfo():
         self.code_rawsize = self.code_section.SizeOfRawData
 
         # iat
-        iat = pehelper.extract_iat(pe) 
-        for _, cap in self.capabilities.items():
-            cap.addr = pehelper.get_addr_for(iat, cap.name)
-        self.iat = iat
+        self.iat = pehelper.extract_iat(pe)
 
         # relocs
         if hasattr(pe, 'DIRECTORY_ENTRY_BASERELOC'):
@@ -81,32 +80,23 @@ class ExeInfo():
         self.rwx_section = pehelper.get_rwx_section(pe)
 
 
-    def get(self, func_name):
-        if not func_name in self.capabilities:
-            return None
-        if self.capabilities[func_name].addr == 0:
-            return None
-        
-        return self.capabilities[func_name]
+    def get_all_iat_resolvs(self) -> Dict[str, IatResolve]:
+        return self.iat_resolves
     
-
-    def get_all(self) -> Dict[str, Capability]:
-        return self.capabilities
-
     
-    def has_all(self):
-        needs = [ 'GetEnvironmentVariableW', 'VirtualAlloc']
-        for need in needs: 
-            if not need in self.capabilities:
-                return False
-            if self.capabilities[need].addr == 0:
-                return False
-        return True
+    def has_all_functions(self, needs):
+        is_ok = True
+        for func_name in needs:
+            addr = pehelper.get_addr_for(self.iat, func_name)
+            if addr == 0:
+                logging.warn("Not available as import: {}".format(func_name))
+                is_ok = False
+        return is_ok
     
 
     def print(self):
-        logger.info("--( Capabilities: ")
-        for _, cap in self.capabilities.items():
+        logger.info("--( Required IAT Resolves: ")
+        for _, cap in self.iat_resolves.items():
             if cap.addr == 0:
                 logger.info("   {:28} {}".format(cap.name, "N/A"))
             else:

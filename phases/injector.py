@@ -14,7 +14,6 @@ def inject_exe(
     shellcode_in: FilePath,
     exe_in: FilePath,
     exe_out: FilePath,
-    exe_info: ExeInfo,
 ):
     logger.info("--[ Injecting: {} into: {} -> {} ".format(
         shellcode_in, exe_in, exe_out
@@ -33,28 +32,29 @@ def inject_exe(
         exe_out
     ])
 
-    # replace IAT in shellcode in code
-    # and re-implant it
-    if project.source_style == SourceStyle.iat_reuse:
-        # get code section of exe_out
-        code = extract_code_from_exe(exe_out)
-        for cap in exe_info.get_all().values():
-            if not cap.id in code:
-                raise Exception("Capability ID {} not found, abort".format(cap.id))
-            
-            off = code.index(cap.id)
-            current_address = off + exe_info.image_base + exe_info.code_virtaddr
-            destination_address = cap.addr
-            logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
-                current_address, destination_address
-            ))
-            jmp = assemble_and_disassemble_jump(
-                current_address, destination_address
-            )
-            code = code.replace(cap.id, jmp)
 
-        # write back our patched code into the exe
-        write_code_section(exe_file=exe_out, new_data=code)
+def injected_fix_iat(exe_out: FilePath, exe_info: ExeInfo):
+    """replace IAT in shellcode in code and re-implant it"""
+
+    # get code section of exe_out
+    code = extract_code_from_exe(exe_out)
+    for cap in exe_info.get_all_iat_resolvs().values():
+        if not cap.id in code:
+            raise Exception("IatResolve ID {} not found, abort".format(cap.id))
+        
+        off = code.index(cap.id)
+        current_address = off + exe_info.image_base + exe_info.code_virtaddr
+        destination_address = cap.addr
+        logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
+            current_address, destination_address
+        ))
+        jmp = assemble_and_disassemble_jump(
+            current_address, destination_address
+        )
+        code = code.replace(cap.id, jmp)
+
+    # write back our patched code into the exe
+    write_code_section(exe_file=exe_out, new_data=code)
 
 
 def verify_injected_exe(exefile: FilePath) -> int:

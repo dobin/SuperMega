@@ -113,13 +113,6 @@ def get_addr_for(iat, func_name: str) -> int:
     return 0
 
 
-def resolve_iat_capabilities(needed_capabilities, inject_exe):
-    pe = pefile.PE(inject_exe)
-    iat = extract_iat(pe) 
-    for _, cap in needed_capabilities.items():
-        cap.addr = get_addr_for(iat, cap.name)
-
-
 ## Utils
 
 def remove_trailing_null_bytes(data: bytes) -> bytes:

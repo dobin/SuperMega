@@ -39,13 +39,15 @@ class Project():
 
 
     def load_payload(self):
+        logging.info("Load payload: {}".format(self.payload_path))
         with open(self.payload_path, 'rb') as input2:
             self.payload_data = input2.read()
 
 
-    def load_injectable(self, tmp_caps):
-        self.exe_info = ExeInfo(tmp_caps)
+    def load_injectable(self):
+        logging.info("Load injectable: {}".format(self.inject_exe_in))
+        self.exe_info = ExeInfo()
         self.exe_info.parse_from_exe(self.inject_exe_in)
-        
+
 
 project = Project()

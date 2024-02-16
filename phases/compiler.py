@@ -20,7 +20,7 @@ def compile(
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
-    # Phase 1: C To Assembly
+    # Compile C To Assembly (text)
     logger.info("---[ Make ASM from C: {} ".format(c_in))
     run_process_checkret([
             config.get("path_cl"),
@@ -34,13 +34,13 @@ def compile(
         raise Exception("Error: Compiling failed")
     observer.add_text("payload_asm_orig", file_readall_text(asm_out))
 
-    # Phase 1.2: Assembly fixup
+    # Assembly text fixup (SuperMega)
     logger.info("---[ Fixup  : {} ".format(asm_out))
     if not fixup_asm_file(asm_out, payload_len, exe_info):
         raise Exception("Error: Fixup failed")
     observer.add_text("payload_asm_fixup", file_readall_text(asm_out))
 
-    # Phase 1.1: Assembly cleanup
+    # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
     logger.info("---[ Cleanup: {} ".format(asm_out))
     run_process_checkret([
@@ -51,6 +51,7 @@ def compile(
     if not os.path.isfile(asm_clean_file):
         raise Exception("Error: Cleanup filed")
 
+    # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
     observer.add_text("payload_asm_cleanup", file_readall_text(asm_out))
 
@@ -63,7 +64,7 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeInfo):
+def fixup_asm_file(filename: FilePath, payload_len: int, exe_info: ExeInfo):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
@@ -72,27 +73,6 @@ def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeInfo):
     #    if "jmp\tSHORT" in lines[idx]:
     #        lines[idx] = lines[idx].replace("SHORT", "")
 
-    # do IAT reuse
-    for idx, line in enumerate(lines):
-        # Remove EXTRN, we dont need it
-        if "EXTRN	__imp_" in lines[idx]:
-            lines[idx] = "; " + lines[idx]
-            continue
-
-        # Fix call
-        if "call" in lines[idx] and "__imp_" in lines[idx]:
-            func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
-            exeCapability = capabilities.get(func_name)
-            if exeCapability == None:
-                logger.error("Error Capabilities not: {}".format(func_name))
-            else:
-                randbytes: bytes = os.urandom(6)
-                lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
-                exeCapability.id = randbytes
-
-                logger.info("    > Replace func name: {} with {}".format(
-                    func_name, randbytes))
-        
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
         if "supermega_payload" in lines[idx]:
@@ -129,3 +109,51 @@ def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeInfo):
         asmfile.writelines(lines)
 
     return True
+
+
+def get_function_stubs(asm_in: FilePath):
+    functions = []
+
+    with open(asm_in, 'r', encoding='utf-8') as asmfile:
+        lines = asmfile.readlines()
+
+    # EXTRN	__imp_GetEnvironmentVariableW:PROC
+    for line in lines:
+        if "EXTRN	__imp_" in line:
+            a = line
+            a = a.split("__imp_")[1]
+            a = a.split(":PROC")[0]
+            func_name = a
+            #func_name = line.strip("\r\n ")
+            #func_name = line.replace("EXTRN\t__imp_", "")
+            #func_name = line.replace(":PROC", "")
+            functions.append(func_name)
+
+    return functions
+
+
+def fixup_iat_reuse(filename: FilePath, exe_info):
+    with open(filename, 'r', encoding='utf-8') as asmfile:
+        lines = asmfile.readlines()
+
+    # do IAT reuse
+    for idx, line in enumerate(lines):
+        # Remove EXTRN, we dont need it
+        if "EXTRN	__imp_" in lines[idx]:
+            lines[idx] = "; " + lines[idx]
+            continue
+
+        # Fix call
+        # call	QWORD PTR __imp_GetEnvironmentVariableW
+        if "call" in lines[idx] and "__imp_" in lines[idx]:
+            func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
+
+            randbytes: bytes = os.urandom(6)
+            lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
+            exe_info.add_capability(func_name, randbytes)
+
+            logger.info("    > Replace func name: {} with {}".format(
+                func_name, randbytes))
+    
+    with open(filename, 'w') as asmfile:
+        asmfile.writelines(lines)
