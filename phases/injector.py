@@ -6,7 +6,6 @@ import time
 
 from pehelper import *
 from model import *
-from project import project
 
 logger = logging.getLogger("Injector")
 

@@ -6,65 +6,56 @@ import shutil
 from helper import *
 from config import config
 from observer import observer
-from project import project
 from model import *
 
 logger = logging.getLogger("Compiler")
 use_templates = True
 
 
-def make_c_to_asm(c_file, asm_file, payload_len, capabilities: ExeCapabilities):
-    logger.info("--[ C to ASM: {} -> {} ".format(c_file, asm_file))
-
-    asm = {
-        "initial": "",
-        "templated": "",
-        "cleanup": "",
-        "fixup": "",
-    }
+def compile(
+    c_in: FilePath, 
+    asm_out: FilePath,
+    payload_len: int, 
+    exe_capabilities: ExeCapabilities
+):
+    logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Phase 1: C To Assembly
-    logger.info("---[ Make ASM from C: {} ".format(c_file))
+    logger.info("---[ Make ASM from C: {} ".format(c_in))
     run_process_checkret([
             config.get("path_cl"),
             "/c",
             "/FA",
             "/GS-",
-            "/Fa{}/".format(os.path.dirname(c_file)),
-            c_file,
+            "/Fa{}/".format(os.path.dirname(c_in)),
+            c_in,
     ])
-    if not os.path.isfile(asm_file):
-        logger.error("Error: Compiling failed")
-        return
-    asm["initial"] = file_readall_text(asm_file)
+    if not os.path.isfile(asm_out):
+        raise Exception("Error: Compiling failed")
+    observer.add_text("payload_asm_orig", file_readall_text(asm_out))
 
     # Phase 1.2: Assembly fixup
-    logger.info("---[ Fixup  : {} ".format(asm_file))
-    if not fixup_asm_file(asm_file, payload_len, capabilities):
-        logger.error("Error: Fixup failed")
-        return
-    else:
-        asm["fixup"] = file_readall_text(asm_file)
+    logger.info("---[ Fixup  : {} ".format(asm_out))
+    if not fixup_asm_file(asm_out, payload_len, exe_capabilities):
+        raise Exception("Error: Fixup failed")
+    observer.add_text("payload_asm_fixup", file_readall_text(asm_out))
 
     # Phase 1.1: Assembly cleanup
-    asm_clean_file = asm_file + ".clean"
-    logger.info("---[ Cleanup: {} ".format(asm_file))
+    asm_clean_file = asm_out + ".clean"
+    logger.info("---[ Cleanup: {} ".format(asm_out))
     run_process_checkret([
         config.get("path_masmshc"),
-        asm_file,
+        asm_out,
         asm_clean_file,
     ])
     if not os.path.isfile(asm_clean_file):
-        logger.info("Error: Cleanup filed")
-        return
-    else:
-        shutil.move(asm_clean_file, asm_file)
-        asm["cleanup"] = file_readall_text(asm_file)
+        raise Exception("Error: Cleanup filed")
 
-    return asm
+    shutil.move(asm_clean_file, asm_out)
+    observer.add_text("payload_asm_cleanup", file_readall_text(asm_out))
 
 
-def bytes_to_asm_db(byte_data):
+def bytes_to_asm_db(byte_data: bytes) -> bytes:
     # Convert each byte to a string in hexadecimal format 
     # prefixed with '0' and suffixed with 'h'
     hex_values = [f"0{byte:02x}H" for byte in byte_data]
@@ -72,7 +63,7 @@ def bytes_to_asm_db(byte_data):
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename, payload_len, capabilities: ExeCapabilities):
+def fixup_asm_file(filename: FilePath, payload_len: int, capabilities: ExeCapabilities):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 

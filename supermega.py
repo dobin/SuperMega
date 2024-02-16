@@ -171,11 +171,11 @@ def start():
         with open(project.payload, 'rb') as input2:
             data_payload = input2.read()
             payload_length = len(data_payload)
-            #observer.add_text("payload_asm_orig", str(data_payload))
-        asm = phases.compiler.make_c_to_asm(main_c_file, main_asm_file, payload_length, project.exe_capabilities)
-        observer.add_text("payload_asm_orig", asm["initial"])
-        observer.add_text("payload_asm_cleanup", asm["cleanup"])
-        observer.add_text("payload_asm_fixup", asm["fixup"])
+        phases.compiler.compile(
+            c_in = main_c_file, 
+            asm_out = main_asm_file, 
+            payload_len = payload_length, 
+            exe_capabilities = project.exe_capabilities)
 
     # Convert: ASM -> Shellcode
     if project.generate_shc_from_asm:
