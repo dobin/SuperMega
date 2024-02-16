@@ -16,7 +16,7 @@ class Project():
 
         # Injectable
         self.inject: bool = False
-        self.inject_mode: str = "1,1"
+        self.inject_mode: str = "1,2"
         self.inject_exe_in: FilePath = ""
         self.inject_exe_out: FilePath = ""
         self.exe_info: ExeInfo = None

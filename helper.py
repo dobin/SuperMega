@@ -90,3 +90,14 @@ def delete_all_files_in_directory(directory_path):
             #logger.info(f"Deleted {file_path}")
         except Exception as e:
             logger.info(f"Error deleting {file_path}: {e}")
+
+
+def rbrunmode_str(rbrunmode):
+    if rbrunmode == "1":
+        return "change AddressOfEntryPoint"
+    elif rbrunmode == "2":
+        return "hijack branching instruction at Original Entry Point (jmp, call, ...)"
+    elif rbrunmode == "3":
+        return "setup TLS callback"
+    else:
+        return "Invalid"
