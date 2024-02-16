@@ -19,12 +19,11 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FileP
         "/entry:AlignRSP"
     ])
     if not os.path.isfile(build_exe):
-        logger.error("Error")
-        return
+        raise Exception("Compiling failed")
     code = extract_code_from_exe(build_exe)
+    observer.add_code("generate_shc_from_asm", code) 
     with open(shellcode_out, 'wb') as f:
         f.write(code)
-    return code
 
 
 def merge_loader_payload(shellcode_in: FilePath, shellcode_out: FilePath, payload: FilePath, decoder_style: DecoderStyle):
@@ -36,6 +35,7 @@ def merge_loader_payload(shellcode_in: FilePath, shellcode_out: FilePath, payloa
         data_payload = input2.read()
 
     if project.decoder_style == DecoderStyle.PLAIN_1:
+        # Nothing to do
         pass
     elif project.decoder_style == DecoderStyle.XOR_1:
         xor_key = 0x42

