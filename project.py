@@ -1,5 +1,5 @@
 from model import *
-
+from defs import *
 
 class Project():
     def __init__(self):
@@ -31,6 +31,9 @@ class Project():
 
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
+
+        self.verify_filename = r'C:\Temp\a'
+        self.build_dir = "build"
 
 
 project = Project()

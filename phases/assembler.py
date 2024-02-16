@@ -8,37 +8,34 @@ from config import config
 from observer import observer
 from project import project
 from helper import *
+from pehelper import *
 
 logger = logging.getLogger("Assembler")
 
-def make_shc_from_asm(asm_file, exe_file, shc_file):
-    logger.info("--[ Assemble to exe: {} -> {} -> {}".format(asm_file, exe_file, shc_file))
 
-    logger.info("---[ Assemble ASM to EXE: {} -> {}".format(asm_file, exe_file))
+def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FilePath):
+    """Takes ASM source file asm_in, compiles it into build_exe, extracts its code section and write into shellcode_out"""
+    logger.info("--[ Assemble to exe: {} -> {} -> {}".format(asm_in, build_exe, shellcode_out))
     run_process_checkret([
         config.get("path_ml64"),
-        asm_file,
+        asm_in,
         "/link",
-        "/OUT:{}".format(exe_file),
+        "/OUT:{}".format(build_exe),
         "/entry:AlignRSP"
     ])
-    if not os.path.isfile(exe_file):
+    if not os.path.isfile(build_exe):
         logger.error("Error")
         return
-
-    logger.info("---[ EXE to SHC: {} -> {} ".format(exe_file, shc_file))
-    code = get_code_section_data(exe_file)
-    with open(shc_file, 'wb') as f:
+    code = extract_code_from_exe(build_exe)
+    with open(shellcode_out, 'wb') as f:
         f.write(code)
-
     return code
-    #logger.info("---[ Shellcode from {} written to: {}  (size: {}) ".format(exe_file, shc_file, len(code)))
 
 
-def merge_loader_payload(main_shc_file):
+def merge_loader_payload(shellcode_in: FilePath, shellcode_out: FilePath, payload: FilePath, decoder_style: DecoderStyle):
     logger.info("--[ Merge stager: {} + {} -> {}".format(
-        main_shc_file, project.payload, main_shc_file))
-    with open(main_shc_file, 'rb') as input1:
+        shellcode_in, project.payload, shellcode_out))
+    with open(shellcode_in, 'rb') as input1:
         data_stager = input1.read()
     with open(project.payload, 'rb') as input2:
         data_payload = input2.read()
@@ -53,7 +50,7 @@ def merge_loader_payload(main_shc_file):
     logger.info("---[ Size: Stager: {} and Payload: {}  Sum: {} ".format(
         len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
 
-    with open(main_shc_file, 'wb') as output:
+    with open(shellcode_out, 'wb') as output:
         data = data_stager + data_payload
         output.write(data)
         observer.add_code("final_shellcode", data) 

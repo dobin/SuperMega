@@ -1,14 +1,15 @@
 import shutil
 from enum import Enum
-from helper import *
 import argparse
 from typing import Dict
-import pickle
+import os
 import logging
+import time
 
+from defs import *
 from model import *
+from helper import *
 from config import config
-from pehelper import *
 import phases.templater
 import phases.compiler
 import phases.assembler
@@ -16,10 +17,10 @@ import phases.injector
 from observer import observer
 from project import project
 
-main_c_file = os.path.join(build_dir, "main.c")
-main_asm_file = os.path.join(build_dir, "main.asm")
-main_exe_file = os.path.join(build_dir, "main.exe")
-main_shc_file = os.path.join(build_dir, "main.bin")
+main_c_file = os.path.join(project.build_dir, "main.c")
+main_asm_file = os.path.join(project.build_dir, "main.asm")
+main_exe_file = os.path.join(project.build_dir, "main.exe")
+main_shc_file = os.path.join(project.build_dir, "main.bin")
 
 
 # ANSI escape sequences for colors
@@ -178,7 +179,10 @@ def start():
 
     # Convert: ASM -> Shellcode
     if project.generate_shc_from_asm:
-        code = phases.assembler.make_shc_from_asm(main_asm_file, main_exe_file, main_shc_file)
+        code = phases.assembler.asm_to_shellcode(
+            asm_in = main_asm_file, 
+            build_exe = main_exe_file, 
+            shellcode_out = main_shc_file)
         observer.add_code("generate_shc_from_asm", code) 
     
     # Try: Starting the shellcode (rarely useful)
@@ -187,7 +191,11 @@ def start():
 
     # Merge shellcode/loader with payload
     if project.dataref_style == DataRefStyle.APPEND:
-        phases.assembler.merge_loader_payload(main_shc_file)
+        phases.assembler.merge_loader_payload(
+            shellcode_in = main_shc_file,
+            shellcode_out = main_shc_file,
+            payload = project.payload, 
+            decoder_style = project.decoder_style)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:
             logger.info("--[ Verify final shellcode")
@@ -275,21 +283,21 @@ def verify_shellcode(shc_name):
     logger.info("---[ Verify shellcode: {}".format(shc_name))
 
     # check if directory exists
-    if not os.path.exists(os.path.dirname(verify_filename)):
-        logger.info("Error, directory does not exist for: {}".format(verify_filename))
+    if not os.path.exists(os.path.dirname(project.verify_filename)):
+        logger.info("Error, directory does not exist for: {}".format(project.verify_filename))
         return
     
     # remove indicator file
-    pathlib.Path(verify_filename).unlink(missing_ok=True)
+    pathlib.Path(project.verify_filename).unlink(missing_ok=True)
 
     run_process_checkret([
         config.get("path_runshc"),
         "{}".format(shc_name),
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
-    if os.path.isfile(verify_filename):
+    if os.path.isfile(project.verify_filename):
         logger.info("---> Verify OK. Shellcode works (file was created)")
-        os.remove(verify_filename)
+        os.remove(project.verify_filename)
         return True
     else:
         logger.info("---> Verify FAIL. Shellcode doesnt work (file was not created)")

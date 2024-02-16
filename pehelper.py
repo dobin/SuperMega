@@ -5,38 +5,50 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_64
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 import logging
 
+from model import *
+from helper import *
+
 logger = logging.getLogger("PEHelper")
 
 
-def get_code_section(pe):
+def extract_code_from_exe(exe_file: FilePath) -> bytes:
+    pe = pefile.PE(exe_file)
+    section = get_code_section(pe)
+    logger.info("--[ Code section: {}".format(section.Name.decode().rstrip('\x00')))
+    data: bytes = section.get_data()
+    data = remove_trailing_null_bytes(data)
+    logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+        section.VirtualAddress,
+        len(data), section.SizeOfRawData))
+    return data
+
+
+def write_code_section(exe_file: FilePath, new_data: bytes):
+    pe = pefile.PE(exe_file)
+    section = get_code_section(pe)
+    file_offset = section.PointerToRawData
+    with open(exe_file, 'r+b') as f:
+        f.seek(file_offset)
+        f.write(new_data)
+
+
+def get_code_section(pe) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-
     for sect in pe.sections:
-        name = sect.Name.decode()
-        #logger.info("Checking: {} and 0x{:x}".format(name, sect.Characteristics))
-
         if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
             if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
                 return sect
-            #else:
-            #    logger.info("NOOO: 0x{:x} 0x{:x} 0x{:x}".format(
-            #        entrypoint,
-            #        sect.VirtualAddress,
-            #        sect.VirtualAddress + sect.SizeOfRawData,
-            #    ))
-
-    return None
+    raise Exception("Code section not found")
 
 
 # RWX
-def get_rwx_section(pe):
+def get_rwx_section(pe: pefile.PE) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
     for section in pe.sections:
         if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
             section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
             section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
         ):
-            #name = section.Name.decode().rstrip('\x00')
             if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.SizeOfRawData:
                 return section
     return None
@@ -44,7 +56,7 @@ def get_rwx_section(pe):
 
 # keystone/capstone stuff
 
-def assemble_and_disassemble_jump(current_address, destination_address):
+def assemble_and_disassemble_jump(current_address: int, destination_address: int) -> bytes:
     #logger.info("    Make jmp from 0x{:X} to 0x{:X}".format(
     #    current_address, destination_address
     #))
@@ -67,7 +79,7 @@ def assemble_and_disassemble_jump(current_address, destination_address):
 
 # IAT Stuff
 
-def extract_iat(pe):
+def extract_iat(pe: pefile.PE):
     iat = {}
 
     # If the PE file was loaded using the fast_load=True argument, we will need to parse the data directories:
@@ -109,10 +121,10 @@ def resolve_iat_capabilities(needed_capabilities, inject_exe):
         cap.addr = get_addr_for(iat, cap.name)
 
 
-def main():
-        pe = pefile.PE(sys.argv[1])
-        iat = extract_iat(pe)
+## Utils
 
-
-if __name__ == "__main__":
-    main()
+def remove_trailing_null_bytes(data: bytes) -> bytes:
+    for i in range(len(data) - 1, -1, -1):
+        if data[i] != b'\x00'[0]:  # Check for a non-null byte
+            return data[:i + 1]
+    return b''  # If the entire sequence is null bytes

