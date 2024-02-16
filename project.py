@@ -5,7 +5,8 @@ from defs import *
 class Project():
     def __init__(self):
         # User, generating normally
-        self.payload: FilePath = ""
+        self.payload_path: FilePath = ""
+        self.payload_data: bytes = b""
 
         self.source_style: SourceStyle = SourceStyle.peb_walk
         self.alloc_style: AllocStyle = AllocStyle.RWX
@@ -34,6 +35,11 @@ class Project():
         self.generate_shc_from_asm: bool = True
 
         self.verify_filename: FilePath = r'C:\Temp\a'
+
+
+    def load_payload(self):
+        with open(self.payload_path, 'rb') as input2:
+            self.payload_data = input2.read()
         
 
 project = Project()

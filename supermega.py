@@ -74,7 +74,7 @@ def main():
         project.show_command_output = True
 
     if args.verify:
-        project.payload = "shellcodes/createfile.bin"
+        project.payload_path = "shellcodes/createfile.bin"
         project.verify = True
 
         project.try_start_final_infected_exe = False
@@ -119,7 +119,7 @@ def main():
             if not os.path.isfile(args.shellcode):
                 logger.info("Could not find: {}".format(args.shellcode))
                 return
-            project.payload = args.shellcode
+            project.payload_path = args.shellcode
         if args.inject:
             if not os.path.isfile(args.inject):
                 logger.info("Could not find: {}".format(args.inject))
@@ -136,6 +136,9 @@ def start():
     if project.cleanup_files_on_start:
         clean_files()
         delete_all_files_in_directory("logs/")
+
+    # Load our payload
+    project.load_payload()
 
     # Check: Destination EXE capabilities
     project.exe_capabilities = ExeCapabilities([
@@ -163,14 +166,10 @@ def start():
 
     # Compile: C -> ASM
     if project.generate_asm_from_c:
-        # Find payload size
-        with open(project.payload, 'rb') as input2:
-            data_payload = input2.read()
-            payload_length = len(data_payload)
         phases.compiler.compile(
             c_in = main_c_file, 
             asm_out = main_asm_file, 
-            payload_len = payload_length, 
+            payload_len = project.payload_length, 
             exe_capabilities = project.exe_capabilities)
 
     # Assemble: ASM -> Shellcode
@@ -189,7 +188,7 @@ def start():
         phases.assembler.merge_loader_payload(
             shellcode_in = main_shc_file,
             shellcode_out = main_shc_file,
-            payload = project.payload, 
+            payload_data = project.payload_data, 
             decoder_style = project.decoder_style)
 
         if project.verify and project.source_style == SourceStyle.peb_walk:

@@ -26,26 +26,31 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FileP
         f.write(code)
 
 
-def merge_loader_payload(shellcode_in: FilePath, shellcode_out: FilePath, payload: FilePath, decoder_style: DecoderStyle):
-    logger.info("--[ Merge stager: {} + {} -> {}".format(
-        shellcode_in, project.payload, shellcode_out))
+def merge_loader_payload(
+        shellcode_in: FilePath, 
+        shellcode_out: FilePath, 
+        payload_data: bytes, 
+        decoder_style: DecoderStyle
+):
+    logger.info("--[ Merge stager with payload -> {}".format(
+        shellcode_out))
+    
     with open(shellcode_in, 'rb') as input1:
         data_stager = input1.read()
-    with open(project.payload, 'rb') as input2:
-        data_payload = input2.read()
 
-    if project.decoder_style == DecoderStyle.PLAIN_1:
+    if decoder_style == DecoderStyle.PLAIN_1:
         # Nothing to do
         pass
-    elif project.decoder_style == DecoderStyle.XOR_1:
+    elif decoder_style == DecoderStyle.XOR_1:
         xor_key = 0x42
         logger.info("---[ XOR payload with key 0x{:x}".format(xor_key))
-        data_payload = bytes([byte ^ xor_key for byte in data_payload])
+        payload_data = bytes([byte ^ xor_key for byte in payload_data])
 
     logger.info("---[ Size: Stager: {} and Payload: {}  Sum: {} ".format(
-        len(data_stager), len(data_payload), len(data_stager)+len(data_payload)))
+        len(data_stager), len(payload_data), len(data_stager)+len(payload_data)))
 
     with open(shellcode_out, 'wb') as output:
-        data = data_stager + data_payload
+        # append them
+        data = data_stager + payload_data
         output.write(data)
         observer.add_code("final_shellcode", data) 
