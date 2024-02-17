@@ -3,3 +3,4 @@ pefile
 capstone
 keystone-engine
 jinja2
+Pygments

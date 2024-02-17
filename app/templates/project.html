@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'header.html' %}
+  </head>
+  <body>
+      
+{% include 'navigation.html' %}
+
+<div class="container-fluid">
+  <div class="row">
+
+    <div class="col-md-2">
+      <ul class="nav nav-tabs flex-column" id="myTab" role="tablist">
+        {% for log_file in log_files %}
+        <li class="nav-item" role="presentation">
+          <button 
+            class="nav-link" 
+            id="project-{{log_file['id']}}-tab" 
+            data-bs-toggle="tab" 
+            data-bs-target="#project-{{log_file['id']}}" 
+            type="button" 
+            role="tab"
+            aria-controls="project-{{log_file['id']}}"
+            aria-selected="true"
+          >{{log_file['name']}}</button>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  
+    <div class="col-md-10">
+      <div class="tab-content" id="myTabContent">
+        {% for log_file in log_files %}
+        <div 
+            class="tab-pane fade" 
+            id="project-{{log_file['id']}}" 
+            role="tabpanel" 
+            aria-labelledby="project-{{log_file['id']}}-tab"
+        >
+        {{log_file['content']|safe}}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  </body>
+</html>

@@ -1,0 +1,66 @@
+.tablevert td {
+    border-left: 1px solid rgb(209, 208, 208);
+    border-right: 1px solid rgb(209, 208, 208);
+    text-align: center;
+  }
+  
+  table.table th {
+    white-space: nowrap;
+  }
+  table.table td {
+    white-space: nowrap;
+  }
+  
+  .fgrey {
+    color: #b6b6b6;
+  }
+  
+  .container {
+    margin-left: 1em;
+    margin-right: 1em;
+  }
+  
+  
+  .mycode {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  
+  .mycodeline {
+    display: block;
+    margin-top: 0;
+    margin-bottom: 0;
+    overflow: visible;
+    font-family: var(--bs-font-monospace);
+    font-size: 1em;
+    direction: ltr;
+    unicode-bidi: bidi-override;
+    font-family: monospace;
+    white-space: pre;
+  }
+  
+  .indent {
+    margin-top: 1em;
+    margin-left: 1em; 
+  }
+  
+  .matchesview {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
+  }
+  
+  
+  /* button to the left 
+     https://stackoverflow.com/questions/69833687/how-to-left-align-default-bootstrap-5-accordion-icon
+  */
+  .accordion-button:after {
+    order: -1; 
+    margin-left: 0; 
+    margin-right:0.5em;
+  }
+  
+  .tooltip-inner {
+    max-width: 40em;
+    width: 40em;
+    text-align: left;
+  }

