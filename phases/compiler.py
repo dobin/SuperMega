@@ -15,7 +15,8 @@ use_templates = True
 def compile(
     c_in: FilePath, 
     asm_out: FilePath,
-    payload_len: int
+    payload_len: int,
+    short_call_patching: bool = False
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
@@ -35,7 +36,7 @@ def compile(
 
     # Assembly text fixup (SuperMega)
     logger.info("---[ Fixup  : {} ".format(asm_out))
-    if not fixup_asm_file(asm_out, payload_len):
+    if not fixup_asm_file(asm_out, payload_len, short_call_patching=short_call_patching):
         raise Exception("Error: Fixup failed")
     observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
 
@@ -63,14 +64,15 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
     return "\tDB " + formatted_string
 
 
-def fixup_asm_file(filename: FilePath, payload_len: int):
+def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bool = False):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
     # When it breaks, enable this
-    #for idx, line in enumerate(lines):
-    #    if "jmp\tSHORT" in lines[idx]:
-    #        lines[idx] = lines[idx].replace("SHORT", "")
+    if short_call_patching:
+        for idx, line in enumerate(lines):
+            if "jmp\tSHORT" in lines[idx]:
+                lines[idx] = lines[idx].replace("SHORT", "")
         
     for idx, line in enumerate(lines):     
         # Remove EXTRN, we dont need it

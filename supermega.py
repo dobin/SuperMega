@@ -32,6 +32,7 @@ def main():
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
+    parser.add_argument('--short-call-patching', action='store_true', help='Make short calls long. You will know when you need it.')
     parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
     parser.add_argument('--no-clean-at-exit', action='store_true', help='Debug: Dont remove any temporary files at exit')
     parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
@@ -74,6 +75,9 @@ def main():
 
         project.cleanup_files_on_start = not args.no_clean_at_start
         project.cleanup_files_on_exit =not args.no_clean_at_exit
+
+        if args.short_call_patching:
+            project.short_call_patching = True
 
         if args.rbrunmode:
             if args.rbrunmode == "1" or args.rbrunmode == "2" or args.rbrunmode == "3":
@@ -127,7 +131,8 @@ def start():
         phases.compiler.compile(
             c_in = main_c_file, 
             asm_out = main_asm_file, 
-            payload_len = len(project.payload_data))
+            payload_len = len(project.payload_data),
+            short_call_patching = project.short_call_patching)
         
     # Decide if we can use IAT_REUSE (all function calls available as import)
     required_functions = phases.compiler.get_function_stubs(main_asm_file)

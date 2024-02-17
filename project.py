@@ -13,6 +13,7 @@ class Project():
         self.exec_style: ExecStyle = ExecStyle.CALL
         self.decoder_style: DecoderStyle = DecoderStyle.PLAIN_1
         self.dataref_style: DataRefStyle = DataRefStyle.APPEND
+        self.short_call_patching: bool = False
 
         # Injectable
         self.inject: bool = False
