@@ -24,13 +24,14 @@ def index():
 
 @views.route("/project")
 def project():
-    # read the content of all files in logs
     log_files = []
 
     id = 0
     asm_a = ""  # for diff
     asm_b = ""
     for file in os.listdir("logs"):
+        if file.startswith("."):
+            continue
         print("Handle: ", file)
 
         with open(os.path.join("logs", file), "r") as f:
@@ -38,7 +39,7 @@ def project():
 
             if 'main_c' in file:
                 data = highlight(data, CLexer(), HtmlFormatter(full=False))
-            elif 'payload_asm' in file:
+            elif '_asm_' in file:
                 # handle special cases
                 if '_orig' in file:
                     asm_a = data
@@ -46,7 +47,7 @@ def project():
                     asm_b = data
 
                 data = highlight(data, NasmLexer(), HtmlFormatter(full=False))
-            elif 'shc_from_asm' in file:
+            elif '_shc' in file:
                 if '.txt' in file:
                     # skip it
                     continue
@@ -58,7 +59,11 @@ def project():
                     #data = highlight(data, HexdumpLexer(), HtmlFormatter(full=False))
                     #data = data.replace("\n", "<br>")
                     #data = data.replace(" ", "&nbsp;")
-                    data = data
+                    data = data.replace("<", "&lt;")
+                    data = data.replace(">", "&gt;")
+            elif '.log' in file:
+                data = data.replace("<", "&lt;")
+                data = data.replace(">", "&gt;")
 
             entry = {
                 "name": file,
@@ -77,7 +82,7 @@ def project():
                 diff_string = '\n'.join(diff_generator)
                 diff_l = highlight(diff_string, DiffLexer(), HtmlFormatter(full=False))
                 entry = {
-                    "name": "_asm_diff".format(),
+                    "name": "Summary: ASM Diff".format(),
                     "id": str(id),
                     "content": diff_l,
                 }

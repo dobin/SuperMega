@@ -38,7 +38,8 @@
             role="tabpanel" 
             aria-labelledby="project-{{log_file['id']}}-tab"
         >
-<div style="white-space: pre-wrap; font-family: 'Consolas', monospace;">{{log_file['content']|safe}}</div>
+<div style="white-space: pre-wrap; font-family: 'Consolas', monospace;">{{log_file['content']|safe}}
+</div>
         </div>
         {% endfor %}
       </div>

@@ -39,9 +39,9 @@ def run_process_checkret(args, check=True):
     ret = subprocess.run(args, 
         capture_output=True)
     
-    with open("logs/log.txt", "ab") as f:
+    with open("logs/cmdoutput.log", "ab") as f:
         cmd = "------------------------------------\n"
-        cmd += "--- " + " ".join(args)
+        cmd += "--- " + " ".join(args) + "\n"
         f.write(cmd.encode('utf-8'))
         if ret.stdout != None:
             f.write(ret.stdout)

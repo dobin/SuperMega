@@ -31,13 +31,13 @@ def compile(
     ])
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
-    observer.add_text("payload_asm_orig", file_readall_text(asm_out))
+    observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
 
     # Assembly text fixup (SuperMega)
     logger.info("---[ Fixup  : {} ".format(asm_out))
     if not fixup_asm_file(asm_out, payload_len):
         raise Exception("Error: Fixup failed")
-    observer.add_text("payload_asm_fixup", file_readall_text(asm_out))
+    observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
 
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
@@ -52,7 +52,7 @@ def compile(
 
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
-    observer.add_text("payload_asm_cleanup", file_readall_text(asm_out))
+    observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
 
 
 def bytes_to_asm_db(byte_data: bytes) -> bytes:
