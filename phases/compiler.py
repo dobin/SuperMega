@@ -71,6 +71,12 @@ def fixup_asm_file(filename: FilePath, payload_len: int):
     #for idx, line in enumerate(lines):
     #    if "jmp\tSHORT" in lines[idx]:
     #        lines[idx] = lines[idx].replace("SHORT", "")
+        
+    for idx, line in enumerate(lines):     
+        # Remove EXTRN, we dont need it
+        # Even tho it is part of IAT_REUSE process (see fixup_iat_reuse())
+        if "EXTRN	__imp_" in lines[idx]:
+            lines[idx] = "; " + lines[idx]
 
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
@@ -137,11 +143,6 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
 
     # do IAT reuse
     for idx, line in enumerate(lines):
-        # Remove EXTRN, we dont need it
-        if "EXTRN	__imp_" in lines[idx]:
-            lines[idx] = "; " + lines[idx]
-            continue
-
         # Fix call
         # call	QWORD PTR __imp_GetEnvironmentVariableW
         if "call" in lines[idx] and "__imp_" in lines[idx]:
