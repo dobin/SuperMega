@@ -10,7 +10,7 @@
 <div class="container-fluid">
   <div class="row">
 
-    <div class="col-md-2">
+    <div class="col-md-3">
       <ul class="nav nav-tabs flex-column" id="myTab" role="tablist">
         {% for log_file in log_files %}
         <li class="nav-item" role="presentation">
@@ -29,7 +29,7 @@
       </ul>
     </div>
   
-    <div class="col-md-10">
+    <div class="col-md-9">
       <div class="tab-content" id="myTabContent">
         {% for log_file in log_files %}
         <div 
@@ -38,7 +38,7 @@
             role="tabpanel" 
             aria-labelledby="project-{{log_file['id']}}-tab"
         >
-        {{log_file['content']|safe}}
+<div style="white-space: pre-wrap; font-family: 'Consolas', monospace;">{{log_file['content']|safe}}</div>
         </div>
         {% endfor %}
       </div>

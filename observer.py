@@ -3,6 +3,7 @@ import pprint
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 from model import *
+from r2helper import r2_disas
 
 
 class Observer():
@@ -11,24 +12,23 @@ class Observer():
         self.idx = 0
 
     def add_text(self, name, data):
-        self.write_to_file(name, data)
+        self.write_to_file(name + ".txt", data)
+        self.idx += 1
 
-    def add_code(self, name, data):
-        md = Cs(CS_ARCH_X86, CS_MODE_64)
-
-        # Disassemble the shellcode
-        ret = ""
-        for i in md.disasm(data, 0x0):
-            ret += "0x%x:\t%s\t%s\n" % (i.address, i.mnemonic, i.op_str)
-        self.write_to_file(name, ret)
+    def add_code(self, name, data: bytes):
+        ret = r2_disas(data)
+        self.write_to_file(name + ".disas.txt", ret['text'])
+        self.write_to_file(name + ".disas.ascii", ret['color'])
+        self.write_to_file(name + ".hex", ret['hexdump'])
+        self.idx += 1
 
     def add_json(self, name, data):
         self.write_to_file(name, pprint.pformat(data, indent=4))
+        self.idx += 1
 
     def write_to_file(self, filename, data):
-        with open("logs/{}-{}.txt".format(self.idx, filename), "w") as f:
+        with open("logs/{}-{}".format(self.idx, filename), "w") as f:
             f.write(data)
-        self.idx += 1
 
     def __str__(self):
         s = "<todo>"
