@@ -13,7 +13,6 @@ logger = logging.getLogger("PEHelper")
 def extract_code_from_exe(exe_file: FilePath) -> bytes:
     pe = pefile.PE(exe_file)
     section = get_code_section(pe)
-    logger.info("--[ Code section: {}".format(section.Name.decode().rstrip('\x00')))
     data: bytes = section.get_data()
     data = remove_trailing_null_bytes(data)
     logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(

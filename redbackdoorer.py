@@ -1285,6 +1285,7 @@ def main(argv):
     peinj = PeBackdoor(options, Logger)
     result = peinj.backdoor(saveMode, runMode, args.shellcode, args.infile, outfile)
 
+    ret = 0
     if result :
         if len(args.outfile) > 0:
             Logger.ok(f'Backdoored PE file saved to: {args.outfile}')
@@ -1292,12 +1293,15 @@ def main(argv):
             shutil.copy(outfile, args.infile)
             Logger.ok(f'Backdoored PE file in place.')
     else:
+        ret = 1
         Logger.fatal('Could not backdoor input PE file!')
 
     if temp:
         Logger.dbg('Removing temporary file...')
         temp.close()
         os.unlink(temp.name)
+    
+    exit(ret)
 
 if __name__ == '__main__':
     main(sys.argv)

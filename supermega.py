@@ -200,6 +200,13 @@ def start():
     # inject merged loader into an exe
     exit_code = 0
     if project.inject:
+        l = len(file_readall_binary(main_shc_file))
+        if l + 128 > project.exe_info.code_size:
+            logger.error("Error: Shellcode {}+128 too small for target code section {}".format(
+                l, project.exe_info.code_size
+            ))
+            return
+
         phases.injector.inject_exe(
             shellcode_in = main_shc_file,
             exe_in = project.inject_exe_in,
