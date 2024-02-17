@@ -19,7 +19,7 @@ def r2_disas(data: bytes):
         f.write(data)
     code_len = len(data)
 
-    r2 = r2pipe.open(filename)
+    r2 = r2pipe.open(filename, flags=['-e', 'scr.prompt=false', '-e'])
     r2.cmd('aaa')
 
     r2.cmd('e scr.color=0')
