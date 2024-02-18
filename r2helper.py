@@ -19,6 +19,11 @@ def r2_disas(data: bytes):
         f.write(data)
     code_len = len(data)
 
+    if code_len > 0x2000:
+        ret['text'] = "Code too long for r2: {}".format(code_len)
+        ret['color'] = "Code too long for r2: {}".format(code_len)
+        return ret
+
     r2 = r2pipe.open(filename, flags=['-2'])
     r2.cmd('aaa')
 

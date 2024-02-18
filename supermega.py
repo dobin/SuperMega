@@ -125,6 +125,7 @@ def start():
         alloc_style  = project.alloc_style,
         exec_style   = project.exec_style,
         decoder_style= project.decoder_style,
+        payload_len  = len(project.payload_data),
     )
     # Compile: IAT_REUSE loader C -> ASM
     if project.generate_asm_from_c:
@@ -153,6 +154,7 @@ def start():
             alloc_style  = project.alloc_style,
             exec_style   = project.exec_style,
             decoder_style= project.decoder_style,
+            payload_len  = len(project.payload_data),
         )
         # Compile: PEB_WALK C -> ASM
         if project.generate_asm_from_c:

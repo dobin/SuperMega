@@ -23,6 +23,7 @@ def create_c_from_template(
     alloc_style: AllocStyle, 
     exec_style: ExecStyle,
     decoder_style: DecoderStyle,
+    payload_len: int,
 ):
     plugin_allocator = ""
     plugin_decoder = ""
@@ -31,6 +32,9 @@ def create_c_from_template(
     filepath = "plugins/allocator/{}.c".format(alloc_style.value)
     with open(filepath, "r", encoding='utf-8') as file:
         plugin_allocator = file.read()
+        plugin_allocator = Template(plugin_allocator).render({
+                'PAYLOAD_LEN': payload_len,
+        })
 
     filepath = "plugins/decoder/{}.c".format(decoder_style.value)
     with open(filepath, "r", encoding='utf-8') as file:
