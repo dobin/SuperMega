@@ -46,6 +46,9 @@ def create_c_from_template(
     filepath = "plugins/executor/{}.c".format(exec_style.value)
     with open("plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
         plugin_executor = file.read()
+        plugin_executor = Template(plugin_executor).render({
+            'PAYLOAD_LEN': payload_len,
+        })
     
     if source_style == SourceStyle.peb_walk:
         if use_templates:

