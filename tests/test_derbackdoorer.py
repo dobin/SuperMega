@@ -23,11 +23,11 @@ from derbackdoorer.derbackdoorer import PeBackdoor
 class DerBackdoorerTest(unittest.TestCase):
     def test_backdoor_ep(self):
         # Write example shellcode
+        shellcode_path = "exes/shellcode.test"
         shellcode = b"\x90" * 200
-        with open("exes/shellcode.test", "wb") as f:
+        with open(shellcode_path, "wb") as f:
             f.write(shellcode)
 
-        shellcode_path = "exes/shellcode.test"
         exe_path = "exes/iattest-full.exe"
         exe_out_path = "exes/iattest-full-test.exe"
 
@@ -48,6 +48,7 @@ class DerBackdoorerTest(unittest.TestCase):
         self.assertEqual(shellcode, extracted_code)
 
         os.remove(exe_out_path)
+        os.remove(shellcode_path)
 
 
     def test_backdoor_hijack(self):
