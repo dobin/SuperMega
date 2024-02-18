@@ -18,6 +18,7 @@ def extract_code_from_exe(exe_file: FilePath) -> bytes:
     logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
         section.VirtualAddress,
         len(data), section.SizeOfRawData))
+    pe.close()
     return data
 
 
@@ -28,7 +29,7 @@ def write_code_section(exe_file: FilePath, new_data: bytes):
     with open(exe_file, 'r+b') as f:
         f.seek(file_offset)
         f.write(new_data)
-
+    pe.close()
 
 def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
