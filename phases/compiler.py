@@ -98,13 +98,6 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
                 "[shcstart]"
             )
 
-    # replace payload length
-    for idx, line in enumerate(lines): 
-        if "11223344" in lines[idx]:
-            logger.info("    > Replace payload length at line: {}".format(idx))
-            lines[idx] = lines[idx].replace("11223344", str(payload_len))
-            break
-            
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):

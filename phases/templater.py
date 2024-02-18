@@ -33,12 +33,15 @@ def create_c_from_template(
     with open(filepath, "r", encoding='utf-8') as file:
         plugin_allocator = file.read()
         plugin_allocator = Template(plugin_allocator).render({
-                'PAYLOAD_LEN': payload_len,
+            'PAYLOAD_LEN': payload_len,
         })
 
     filepath = "plugins/decoder/{}.c".format(decoder_style.value)
     with open(filepath, "r", encoding='utf-8') as file:
-            plugin_decoder = file.read()
+        plugin_decoder = file.read()
+        plugin_decoder = Template(plugin_decoder).render({
+            'PAYLOAD_LEN': payload_len,
+        })
 
     filepath = "plugins/executor/{}.c".format(exec_style.value)
     with open("plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
@@ -55,6 +58,7 @@ def create_c_from_template(
                 'plugin_allocator': plugin_allocator,
                 'plugin_decoder': plugin_decoder,
                 'plugin_executor': plugin_executor,
+                'PAYLOAD_LEN': payload_len,
             })
             with open(main_c_file, "w", encoding='utf-8') as file:
                 file.write(rendered_template)
@@ -78,6 +82,7 @@ def create_c_from_template(
                 'plugin_allocator': plugin_allocator,
                 'plugin_decoder': plugin_decoder,
                 'plugin_executor': plugin_executor,
+                'PAYLOAD_LEN': payload_len,
             })
             with open(main_c_file, "w", encoding='utf-8') as file:
                 file.write(rendered_template)

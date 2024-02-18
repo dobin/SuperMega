@@ -1,3 +1,3 @@
-    for (int n=0; n<11223344; n++) {
+    for (int n=0; n<{{PAYLOAD_LEN}}; n++) {
         dest[n] = supermega_payload[n];
     }
