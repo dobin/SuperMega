@@ -51,17 +51,17 @@ def main():
 
         if args.verify == "peb":
             project.inject = True
-            project.inject_mode = "1,2"
+            project.inject_mode = 2
             project.inject_exe_in = "exes/7z.exe"
             project.inject_exe_out = "out/7z-verify.exe"
         elif args.verify == "iat":
             project.inject = True
-            project.inject_mode = "1,2"
+            project.inject_mode = 2
             project.inject_exe_in = "exes/procexp64.exe"
             project.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
             project.inject = True
-            project.inject_mode = "1,1"  # ,2 is broken atm
+            project.inject_mode = 1  # ,2 is broken atm
             project.inject_exe_in = "exes/wifiinfoview.exe"
             project.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
         else:
@@ -81,7 +81,7 @@ def main():
 
         if args.rbrunmode:
             if args.rbrunmode == "1" or args.rbrunmode == "2" or args.rbrunmode == "3":
-                project.inject_mode = "1," + args.rbrunmode
+                project.inject_mode = int(args.rbrunmode)
             else:
                 logging.error("Invalid mode, use one of:")
                 for i in ["1", "2", "3"]:
@@ -215,7 +215,8 @@ def start():
         phases.injector.inject_exe(
             shellcode_in = main_shc_file,
             exe_in = project.inject_exe_in,
-            exe_out = project.inject_exe_out
+            exe_out = project.inject_exe_out,
+            inject_mode = project.inject_mode,
         )
         if project.source_style == SourceStyle.iat_reuse:
             phases.injector.injected_fix_iat(project.inject_exe_out, project.exe_info)

