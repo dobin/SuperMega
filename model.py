@@ -59,12 +59,13 @@ class ExeInfo():
 
         # .text virtual address
         self.code_section = pehelper.get_code_section(pe)
+        self.code_virtaddr = self.code_section.VirtualAddress
+        self.code_size = self.code_section.Misc_VirtualSize
         logger.info("--[ Injectable: Chosen code section: {} at 0x{:x} size: {}".format(
             self.code_section.Name.decode().rstrip('\x00'),
-            self.code_section.VirtualAddress,
-            self.code_section.SizeOfRawData))
-        self.code_virtaddr = self.code_section.VirtualAddress
-        self.code_size = self.code_section.SizeOfRawData
+            self.code_virtaddr,
+            self.code_size))
+
 
         # iat
         self.iat = pehelper.extract_iat(pe)

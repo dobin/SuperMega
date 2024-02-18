@@ -162,7 +162,7 @@ class PeBackdoor:
         entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         for sect in self.pe.sections:
             if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
-                if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
+                if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
                     return sect
         return None
     

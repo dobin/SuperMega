@@ -15,9 +15,9 @@ def extract_code_from_exe(exe_file: FilePath) -> bytes:
     section = get_code_section(pe)
     data: bytes = section.get_data()
     data = remove_trailing_null_bytes(data)
-    logger.info("    > 0x{:X} Code Size: {}  (raw code section size: {})".format(
+    logger.info("    > 0x{:X} Code Size: {}  (code section size: {})".format(
         section.VirtualAddress,
-        len(data), section.SizeOfRawData))
+        len(data), section.Misc_VirtualSize))
     pe.close()
     return data
 
@@ -35,7 +35,7 @@ def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
     for sect in pe.sections:
         if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
-            if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.SizeOfRawData:
+            if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
                 return sect
     raise Exception("Code section not found")
 
@@ -48,7 +48,7 @@ def get_rwx_section(pe: pefile.PE) -> pefile.SectionStructure:
             section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
             section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
         ):
-            if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.SizeOfRawData:
+            if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.Misc_VirtualSize:
                 return section
     return None
 
