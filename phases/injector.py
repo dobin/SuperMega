@@ -48,8 +48,8 @@ def inject_exe(
     code = extract_code_from_exe(exe_out)
     in_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+shellcode_len]
     jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
-    observer.add_code("backdoored_code", in_code)
-    observer.add_code("backdoored_jmp", jmp_code)
+    observer.add_code("exe_extracted_loader", in_code)
+    observer.add_code("exe_extracted_jmp", jmp_code)
     if in_code != shellcode:
         raise Exception("Shellcode injection error")
 

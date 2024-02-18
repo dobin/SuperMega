@@ -4,6 +4,7 @@ from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 from model import *
 from r2helper import r2_disas
+from helper import delete_all_files_in_directory
 
 
 class Observer():
@@ -29,6 +30,12 @@ class Observer():
     def write_to_file(self, filename, data):
         with open("logs/{}-{}".format(self.idx, filename), "w") as f:
             f.write(data)
+
+    def clean_files(self):
+        delete_all_files_in_directory("logs/")
+        self.idx = 0
+        self.logs = []
+
 
     def __str__(self):
         s = "<todo>"

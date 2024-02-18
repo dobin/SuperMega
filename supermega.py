@@ -146,7 +146,7 @@ def start():
         # Not good, Fall back to PEB_WALK
         project.source_style = SourceStyle.peb_walk
         logger.warning("--[ SourceStyle: Fall back to PEB_WALK".format())
-
+        observer.clean_files()
         clean_files()
         # Copy: PEB_WALK loader C files into working directory: build/
         phases.templater.create_c_from_template(
