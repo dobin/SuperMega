@@ -28,7 +28,7 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
-    parser.add_argument('--rbrunmode', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack, 3 tls)')
+    parser.add_argument('--rbrunmode', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
@@ -80,11 +80,11 @@ def main():
             project.short_call_patching = True
 
         if args.rbrunmode:
-            if args.rbrunmode == "1" or args.rbrunmode == "2" or args.rbrunmode == "3":
+            if args.rbrunmode == "1" or args.rbrunmode == "2":
                 project.inject_mode = int(args.rbrunmode)
             else:
                 logging.error("Invalid mode, use one of:")
-                for i in ["1", "2", "3"]:
+                for i in ["1", "2"]:
                     logging.error("  {}  {}".format(i, rbrunmode_str(i)))
                 return
 

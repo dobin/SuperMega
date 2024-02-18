@@ -97,8 +97,6 @@ def rbrunmode_str(rbrunmode):
         return "change AddressOfEntryPoint"
     elif rbrunmode == "2":
         return "hijack branching instruction at Original Entry Point (jmp, call, ...)"
-    elif rbrunmode == "3":
-        return "setup TLS callback"
     else:
         return "Invalid"
 
