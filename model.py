@@ -66,7 +66,6 @@ class ExeInfo():
             self.code_virtaddr,
             self.code_size))
 
-
         # iat
         self.iat = pehelper.extract_iat(pe)
 

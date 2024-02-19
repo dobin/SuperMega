@@ -81,16 +81,16 @@ def injected_fix_iat(exe_out: FilePath, exe_info: ExeInfo):
 def verify_injected_exe(exefile: FilePath) -> int:
     logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
-    pathlib.Path(project.verify_filename).unlink(missing_ok=True)
+    pathlib.Path(VerifyFilename).unlink(missing_ok=True)
 
     run_process_checkret([
         exefile,
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
-    if os.path.isfile(project.verify_filename):
+    if os.path.isfile(VerifyFilename):
         logger.info("---> Verify OK. Infected exe works (file was created)")
         # better to remove it immediately
-        os.remove(project.verify_filename)
+        os.remove(VerifyFilename)
         return 0
     else:
         logger.warning("---> Verify FAIL. Infected exe does not work (no file created)")

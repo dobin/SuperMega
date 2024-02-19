@@ -29,7 +29,7 @@ def clean_files():
         os.path.join(build_dir, "peb_lookup.h"),
         #os.path.join(build_dir, "main.exe"),
         
-        project.verify_filename,
+        VerifyFilename,
     ]
     for file in files_to_clean:
         pathlib.Path(file).unlink(missing_ok=True)

@@ -4,6 +4,9 @@ import os
 class FilePath(str):
     pass
 
+# with shellcodes/createfile.bin
+VerifyFilename: FilePath = r'C:\Temp\a'
+
 
 # Correlated with real template files
 # in plugins/

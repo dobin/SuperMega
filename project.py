@@ -36,8 +36,6 @@ class Project():
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
 
-        self.verify_filename: FilePath = r'C:\Temp\a'
-
 
     def load_payload(self):
         logging.info("Load payload: {}".format(self.payload_path))

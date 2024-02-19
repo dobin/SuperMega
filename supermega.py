@@ -275,21 +275,21 @@ def verify_shellcode(shc_name):
     logger.info("---[ Verify shellcode: {}".format(shc_name))
 
     # check if directory exists
-    if not os.path.exists(os.path.dirname(project.verify_filename)):
-        logger.info("Error, directory does not exist for: {}".format(project.verify_filename))
+    if not os.path.exists(os.path.dirname(VerifyFilename)):
+        logger.info("Error, directory does not exist for: {}".format(VerifyFilename))
         return
     
     # remove indicator file
-    pathlib.Path(project.verify_filename).unlink(missing_ok=True)
+    pathlib.Path(VerifyFilename).unlink(missing_ok=True)
 
     run_process_checkret([
         config.get("path_runshc"),
         "{}".format(shc_name),
     ], check=False)
     time.sleep(SHC_VERIFY_SLEEP)
-    if os.path.isfile(project.verify_filename):
+    if os.path.isfile(VerifyFilename):
         logger.info("---> Verify OK. Shellcode works (file was created)")
-        os.remove(project.verify_filename)
+        os.remove(VerifyFilename)
         return True
     else:
         logger.warning("---> Verify FAIL. Shellcode doesnt work (file was not created)")
