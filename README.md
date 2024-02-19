@@ -5,8 +5,6 @@
 > camponoti-balzani infects ants, and eventually kills the hosts after 
 > they move to an ideal location for the fungus to spread its spores.
 
-Ophiocordyceps camponoti-balzani
-
 
 ## What
 
@@ -72,19 +70,6 @@ PS C:\repos\supermega> python.exe .\supermega.py --shellcode .\shellcodes\msf-me
 (supermega.py) --[ Start infected exe ]
 ```
 
-
-## rbmode
-```
-    save,run
-      |   |
-      |   +---------- 1 - change AddressOfEntryPoint
-      |               2 - hijack branching instruction at Original Entry Point (jmp, call, ...)
-      |               3 - setup TLS callback
-      |               4 - hijack branching instruction at DLL Exported function (use -e to specify export to hook)
-      |               
-      +-------------- 1 - store shellcode in the middle of a code section
-                      2 - append shellcode to the PE file in a new PE section
-```
 
 ## Directories
 
