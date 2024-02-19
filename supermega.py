@@ -135,7 +135,7 @@ def start(project: Project):
             asm_out = main_asm_file, 
             payload_len = len(project.payload_data),
             short_call_patching = project.short_call_patching)
-        
+
     # Decide if we can use IAT_REUSE (all function calls available as import)
     required_functions = phases.compiler.get_function_stubs(main_asm_file)
     if project.exe_info.has_all_functions(required_functions):
@@ -143,6 +143,7 @@ def start(project: Project):
         logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
         # all good, patch ASM
         phases.compiler.fixup_iat_reuse(main_asm_file, project.exe_info)
+        observer.add_text("carrier_asm_updated", file_readall_text(main_asm_file))
     else:
         # Not good, Fall back to PEB_WALK
         project.source_style = SourceStyle.peb_walk
@@ -163,6 +164,7 @@ def start(project: Project):
                 c_in = main_c_file, 
                 asm_out = main_asm_file, 
                 payload_len = len(project.payload_data))
+        observer.add_text("carrier_asm_updated", file_readall_text(main_asm_file))
 
     # Assemble: ASM -> Shellcode
     if project.generate_shc_from_asm:

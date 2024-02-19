@@ -43,9 +43,8 @@ def project():
                 # handle special cases
                 if '_orig' in file:
                     asm_a = data
-                if '_cleanup' in file:
+                if '_updated' in file:
                     asm_b = data
-
                 data = highlight(data, NasmLexer(), HtmlFormatter(full=False))
             elif '_shc' in file:
                 if '.txt' in file:
@@ -88,7 +87,7 @@ def project():
                 }
                 log_files.append(entry)
                 id += 1
-                asm_a = ""
+                #asm_a = ""
                 asm_b = ""
 
 

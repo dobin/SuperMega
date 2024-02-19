@@ -43,6 +43,7 @@ class ExeInfo():
 
 
     def parse_from_exe(self, filepath):
+        logger.info("--[ Analyzing: {}".format(filepath))
         pe = pefile.PE(filepath)
 
         if pe.FILE_HEADER.Machine != 0x8664:
@@ -61,7 +62,7 @@ class ExeInfo():
         self.code_section = pehelper.get_code_section(pe)
         self.code_virtaddr = self.code_section.VirtualAddress
         self.code_size = self.code_section.Misc_VirtualSize
-        logger.info("--[ Injectable: Chosen code section: {} at 0x{:x} size: {}".format(
+        logger.info("---[ Injectable: Chosen code section: {} at 0x{:x} size: {}".format(
             self.code_section.Name.decode().rstrip('\x00'),
             self.code_virtaddr,
             self.code_size))
@@ -93,7 +94,7 @@ class ExeInfo():
         for func_name in needs:
             addr = pehelper.get_addr_for(self.iat, func_name)
             if addr == 0:
-                logging.info("Not available as import: {}".format(func_name))
+                logging.info("---( Function not available as import: {}".format(func_name))
                 is_ok = False
         return is_ok
     

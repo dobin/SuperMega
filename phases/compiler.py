@@ -21,7 +21,6 @@ def compile(
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
-    logger.info("---[ Make ASM from C: {} ".format(c_in))
     run_process_checkret([
             config.get("path_cl"),
             "/c",
@@ -35,14 +34,14 @@ def compile(
     observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
 
     # Assembly text fixup (SuperMega)
-    logger.info("---[ Fixup  : {} ".format(asm_out))
+    logger.info("---[ ASM Fixup  : {} ".format(asm_out))
     if not fixup_asm_file(asm_out, payload_len, short_call_patching=short_call_patching):
         raise Exception("Error: Fixup failed")
-    observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
+    #observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
 
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
-    logger.info("---[ Cleanup: {} ".format(asm_out))
+    logger.info("---[ ASM masm_shc: {} ".format(asm_out))
     run_process_checkret([
         config.get("path_masmshc"),
         asm_out,
@@ -53,7 +52,7 @@ def compile(
 
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
-    observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
+    #observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
 
 
 def bytes_to_asm_db(byte_data: bytes) -> bytes:
@@ -148,7 +147,8 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
             exe_info.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
-                func_name, randbytes))
+                func_name, randbytes.hex()))
     
     with open(filename, 'w') as asmfile:
         asmfile.writelines(lines)
+    #observer.add_text("carrier_asm_iat_patch", file_readall_text(filename))

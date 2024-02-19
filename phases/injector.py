@@ -20,12 +20,10 @@ def inject_exe(
     exe_out: FilePath,
     inject_mode: int,
 ):
-    logger.info("--[ Injecting: {} into: {} -> {} mode {}".format(
+    logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
         shellcode_in, exe_in, exe_out, inject_mode
     ))
-    logger.warn("--[ Inject mode: {}".format(rbrunmode_str(inject_mode)))
-
-
+    logger.warn("---[ Inject mode: {}".format(rbrunmode_str(inject_mode)))
 
     # create copy of file exe_in to exe_out
     shutil.copyfile(exe_in, exe_out)

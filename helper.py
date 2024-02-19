@@ -13,7 +13,7 @@ SHC_VERIFY_SLEEP = 0.1
 
 
 def clean_files():
-    logger.info("--[ Remove old files")
+    logger.info("--( Remove old files")
     
     files_to_clean = [
         # compile artefacts in current dir
