@@ -6,9 +6,14 @@ import logging
 from phases.compiler import fixup_asm_file, fixup_iat_reuse
 from model import ExeInfo
 from defs import *
+from observer import observer
 
 
 class AsmTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        observer.active = False
+        
     def test_asm_fixup(self):
         path_in: FilePath = "tests/data/peb_walk_pre_fixup.asm"
         path_working: FilePath = "tests/data/peb_walk_pre_fixup.asm.test"

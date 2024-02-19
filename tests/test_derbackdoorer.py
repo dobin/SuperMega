@@ -7,6 +7,7 @@ from model import ExeInfo
 from defs import *
 from pehelper import extract_code_from_exe
 from helper import hexdump
+from observer import observer
 
 from derbackdoorer.derbackdoorer import PeBackdoor
 
@@ -21,6 +22,10 @@ from derbackdoorer.derbackdoorer import PeBackdoor
 #   * The call has been patched
 
 class DerBackdoorerTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        observer.active = False
+
     def test_backdoor_ep(self):
         # Write example shellcode
         shellcode_path = "exes/shellcode.test"

@@ -11,6 +11,7 @@ class Observer():
     def __init__(self):
         self.logs = []
         self.idx = 0
+        self.active = True
 
     def add_text(self, name, data):
         self.write_to_file(name + ".txt", data)
@@ -28,6 +29,8 @@ class Observer():
         self.idx += 1
 
     def write_to_file(self, filename, data):
+        if not self.active:
+            return
         with open("logs/{}-{}".format(self.idx, filename), "w") as f:
             f.write(data)
 
