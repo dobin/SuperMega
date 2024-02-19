@@ -37,7 +37,9 @@ def compile(
     logger.info("---[ ASM Fixup  : {} ".format(asm_out))
     if not fixup_asm_file(asm_out, payload_len, short_call_patching=short_call_patching):
         raise Exception("Error: Fixup failed")
-    #observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
+    
+    if config.debug:
+        observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
 
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
@@ -52,7 +54,8 @@ def compile(
 
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
-    #observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
+    if config.debug:
+        observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
 
 
 def bytes_to_asm_db(byte_data: bytes) -> bytes:
@@ -151,4 +154,6 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
     
     with open(filename, 'w') as asmfile:
         asmfile.writelines(lines)
-    #observer.add_text("carrier_asm_iat_patch", file_readall_text(filename))
+
+    if config.debug:
+        observer.add_text("carrier_asm_iat_patch", file_readall_text(filename))

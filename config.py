@@ -8,6 +8,7 @@ class Config(object):
     def __init__(self):
         self.data = {}
         self.ShowCommandOutput: bool = False
+        self.debug: bool = False
 
     def getConfigPath(self):
         return CONFIG_FILE
