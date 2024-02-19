@@ -7,6 +7,7 @@ CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 class Config(object):
     def __init__(self):
         self.data = {}
+        self.ShowCommandOutput: bool = False
 
     def getConfigPath(self):
         return CONFIG_FILE

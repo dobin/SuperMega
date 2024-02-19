@@ -15,7 +15,7 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from project import project
+from project import Project
 
 
 log_messages = []
@@ -24,6 +24,7 @@ log_messages = []
 def main():
     logger.info("Super Mega")
     config.load()
+    project = Project()
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
@@ -40,7 +41,7 @@ def main():
     args = parser.parse_args()
 
     if args.show:
-        ShowCommandOutput = True
+        config.ShowCommandOutput = True
 
     if args.verify:
         project.payload_path = "shellcodes/createfile.bin"
@@ -106,10 +107,10 @@ def main():
             project.inject_exe_in = args.inject
             project.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
 
-    start()
+    start(project)
 
 
-def start():
+def start(project: Project):
     # Delete: all old files
     if project.cleanup_files_on_start:
         clean_files()

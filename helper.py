@@ -5,7 +5,6 @@ import glob
 import logging
 
 from config import config
-from project import project
 from defs import *
 
 logger = logging.getLogger("Helper")
@@ -54,7 +53,7 @@ def run_process_checkret(args, check=True):
         if ret.stderr != None:
             logger.info(ret.stderr.decode('utf-8'))
         raise Exception("Command failed: " + " ".join(args))
-    if ShowCommandOutput:
+    if config.ShowCommandOutput:
         logger.info("> " + " ".join(args))
         if ret.stdout != None:
             logger.info(ret.stdout.decode('utf-8'))

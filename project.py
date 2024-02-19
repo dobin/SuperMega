@@ -48,5 +48,3 @@ class Project():
         self.exe_info = ExeInfo()
         self.exe_info.parse_from_exe(self.inject_exe_in)
 
-
-project = Project()

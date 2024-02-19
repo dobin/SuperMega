@@ -7,8 +7,6 @@ class FilePath(str):
 # with shellcodes/createfile.bin
 VerifyFilename: FilePath = r'C:\Temp\a'
 
-ShowCommandOutput: bool = False
-
 # Correlated with real template files
 # in plugins/
 
