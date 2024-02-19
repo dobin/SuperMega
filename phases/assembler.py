@@ -35,6 +35,7 @@ def merge_loader_payload(
 ):
     logger.info("--[ Merge stager with payload -> {}".format(
         shellcode_out))
+    observer.add_code("payload_shc", payload_data)
     
     with open(shellcode_in, 'rb') as input1:
         data_stager = input1.read()
@@ -55,3 +56,4 @@ def merge_loader_payload(
         data = data_stager + payload_data
         output.write(data)
         observer.add_code("loader_shc", data) 
+        
