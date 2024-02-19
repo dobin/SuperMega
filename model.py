@@ -93,7 +93,7 @@ class ExeInfo():
         for func_name in needs:
             addr = pehelper.get_addr_for(self.iat, func_name)
             if addr == 0:
-                logging.warn("Not available as import: {}".format(func_name))
+                logging.info("Not available as import: {}".format(func_name))
                 is_ok = False
         return is_ok
     

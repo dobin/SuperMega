@@ -29,6 +29,10 @@ def create_c_from_template(
     plugin_decoder = ""
     plugin_executor = ""
 
+    logger.info("--[ Create C from template: {} {} {} {} {}".format(
+        source_style, alloc_style, exec_style, decoder_style, payload_len
+    ))
+
     filepath = "plugins/allocator/{}.c".format(alloc_style.value)
     with open(filepath, "r", encoding='utf-8') as file:
         plugin_allocator = file.read()
