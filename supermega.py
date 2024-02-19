@@ -229,7 +229,7 @@ def start(project: Project):
             exit_code = phases.injector.verify_injected_exe(project.inject_exe_out)
 
         elif project.try_start_final_infected_exe:
-            logger.info("--[ Start infected exe")
+            logger.info("--[ Start infected exe: {}".format(project.inject_exe_out))
             run_process_checkret([
                 project.inject_exe_out,
             ], check=False)
@@ -339,10 +339,10 @@ class ListHandler(logging.Handler):
 
 def setup_logging():
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
+    root_logger.setLevel(logging.INFO)
 
     ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
+    ch.setLevel(logging.INFO)
     ch.setFormatter(CustomFormatter())
 
     list_handler = ListHandler(log_messages)

@@ -8,7 +8,7 @@ import tempfile
 from pehelper import *
 from model import *
 from observer import observer
-
+from helper import rbrunmode_str
 from derbackdoorer.derbackdoorer import PeBackdoor
 
 logger = logging.getLogger("Injector")
@@ -23,6 +23,7 @@ def inject_exe(
     logger.info("--[ Injecting: {} into: {} -> {} mode {}".format(
         shellcode_in, exe_in, exe_out, inject_mode
     ))
+    logger.warn("--[ Inject mode: {}".format(rbrunmode_str(inject_mode)))
 
 
 

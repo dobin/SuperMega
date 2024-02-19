@@ -35,8 +35,17 @@ def clean_files():
 
 
 def run_process_checkret(args, check=True):
-    ret = subprocess.run(args, 
-        capture_output=True)
+    ret = subprocess.CompletedProcess("", 666)
+    try:
+        ret = subprocess.run(args, capture_output=True)
+    except KeyboardInterrupt:
+        logger.warn("Caught KeyboardInterrupt, exiting gracefully...")
+    except subprocess.CalledProcessError as e:
+        logger.warn(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
+        # Handle the error case
+    except Exception as e:
+        logger.warn(f"An error occurred: {e}")
+        # Handle other exceptions
     
     with open("logs/cmdoutput.log", "ab") as f:
         cmd = "------------------------------------\n"
@@ -92,12 +101,13 @@ def delete_all_files_in_directory(directory_path):
 
 
 def rbrunmode_str(rbrunmode):
+    rbrunmode = str(rbrunmode)
     if rbrunmode == "1":
         return "change AddressOfEntryPoint"
     elif rbrunmode == "2":
         return "hijack branching instruction at Original Entry Point (jmp, call, ...)"
     else:
-        return "Invalid"
+        return "Invalid: {}".format(rbrunmode)
 
 
 def hexdump(data, addr = 0, num = 0):
