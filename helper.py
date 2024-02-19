@@ -54,7 +54,7 @@ def run_process_checkret(args, check=True):
         if ret.stderr != None:
             logger.info(ret.stderr.decode('utf-8'))
         raise Exception("Command failed: " + " ".join(args))
-    if project.show_command_output:
+    if ShowCommandOutput:
         logger.info("> " + " ".join(args))
         if ret.stdout != None:
             logger.info(ret.stdout.decode('utf-8'))

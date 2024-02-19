@@ -40,7 +40,7 @@ def main():
     args = parser.parse_args()
 
     if args.show:
-        project.show_command_output = True
+        ShowCommandOutput = True
 
     if args.verify:
         project.payload_path = "shellcodes/createfile.bin"
