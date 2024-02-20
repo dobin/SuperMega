@@ -11,7 +11,7 @@ class Project():
         self.source_style: SourceStyle = SourceStyle.peb_walk
         self.alloc_style: AllocStyle = AllocStyle.RWX
         self.exec_style: ExecStyle = ExecStyle.CALL
-        self.decoder_style: DecoderStyle = DecoderStyle.PLAIN_1
+        self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
         self.dataref_style: DataRefStyle = DataRefStyle.APPEND
         self.short_call_patching: bool = False
 

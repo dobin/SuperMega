@@ -45,6 +45,7 @@ def create_c_from_template(
         plugin_decoder = file.read()
         plugin_decoder = Template(plugin_decoder).render({
             'PAYLOAD_LEN': payload_len,
+            'XOR_KEY': config.xor_key,
         })
 
     filepath = "plugins/executor/{}.c".format(exec_style.value)

@@ -9,6 +9,7 @@ class Config(object):
         self.data = {}
         self.ShowCommandOutput: bool = False
         self.debug: bool = False
+        self.xor_key: int = 0x31
 
     def getConfigPath(self):
         return CONFIG_FILE
