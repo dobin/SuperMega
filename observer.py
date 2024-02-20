@@ -22,6 +22,7 @@ class Observer():
         self.write_to_file(name + ".disas.txt", ret['text'])
         self.write_to_file(name + ".disas.ascii", ret['color'])
         self.write_to_file(name + ".hex", ret['hexdump'])
+        self.write_to_file_bin(name + ".bin", data)
         self.idx += 1
 
     def add_json(self, name, data):
@@ -32,6 +33,11 @@ class Observer():
         if not self.active:
             return
         with open("logs/{}-{}".format(self.idx, filename), "w") as f:
+            f.write(data)
+    def write_to_file_bin(self, filename, data):
+        if not self.active:
+            return
+        with open("logs/{}-{}".format(self.idx, filename), "wb") as f:
             f.write(data)
 
     def clean_files(self):

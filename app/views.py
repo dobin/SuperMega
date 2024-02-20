@@ -35,6 +35,8 @@ def project():
         print("Handle: ", file)
 
         with open(os.path.join("logs", file), "r") as f:
+            if file.endswith(".bin"):
+                continue
             data = f.read()
 
             if 'main_c' in file:
