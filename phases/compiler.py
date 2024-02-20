@@ -67,7 +67,7 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
 
 
 def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bool = False):
-    with open(filename, 'r', encoding='utf-8') as asmfile:
+    with open(filename, 'r', newline=None) as asmfile:  # None = translate to \n
         lines = asmfile.readlines()
 
     # When it breaks, enable this
@@ -97,17 +97,17 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
             )
             lines[idx] = lines[idx].replace(
                 "QWORD PTR supermega_payload",
-                "[shcstart]"
+                "[shcstart]  ; get payload shellcode address"
             )
 
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):
             logger.info("    > Add end of code label at line: {}".format(idx))
-            lines.insert(idx-1, "shcstart:\r\n")
+            lines.insert(idx-1, "shcstart:  ; start of payload shellcode")
             break
-    
-    with open(filename, 'w') as asmfile:
+
+    with open(filename, 'w', newline='\r\n') as asmfile:  # write back with CRLF
         asmfile.writelines(lines)
 
     return True
@@ -135,7 +135,7 @@ def get_function_stubs(asm_in: FilePath):
 
 
 def fixup_iat_reuse(filename: FilePath, exe_info):
-    with open(filename, 'r', encoding='utf-8') as asmfile:
+    with open(filename, 'r', encoding='utf-8', newline=None) as asmfile:
         lines = asmfile.readlines()
 
     # do IAT reuse
@@ -146,13 +146,13 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
             func_name = lines[idx][lines[idx].find("__imp_")+6:].rstrip()
 
             randbytes: bytes = os.urandom(6)
-            lines[idx] = bytes_to_asm_db(randbytes) + "\r\n"
+            lines[idx] = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
             exe_info.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
                 func_name, randbytes.hex()))
     
-    with open(filename, 'w') as asmfile:
+    with open(filename, 'w', newline='\r\n') as asmfile:
         asmfile.writelines(lines)
 
     if config.debug:
