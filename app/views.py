@@ -1,4 +1,4 @@
-from flask import Blueprint, current_app, flash, request, redirect, url_for, render_template, send_file, make_response, session
+from flask import Blueprint, current_app, flash, request, redirect, url_for, render_template, send_file, make_response, session, escape
 from werkzeug.utils import secure_filename
 import os
 import logging
@@ -53,18 +53,14 @@ def project():
                     # skip it
                     continue
                 if '.ascii' in file:
-                    #data = data.replace(" ", "&nbsp;")
                     data = conv.convert(data, full=False)
-                    #data = data.replace("\n", "<br>")
                 if '.hex' in file:
+                    data = escape(data)
                     #data = highlight(data, HexdumpLexer(), HtmlFormatter(full=False))
-                    #data = data.replace("\n", "<br>")
-                    #data = data.replace(" ", "&nbsp;")
-                    data = data.replace("<", "&lt;")
-                    data = data.replace(">", "&gt;")
             elif '.log' in file:
-                data = data.replace("<", "&lt;")
-                data = data.replace(">", "&gt;")
+                data = escape(data)
+            else:
+                data = escape(data)
 
             entry = {
                 "name": file,
