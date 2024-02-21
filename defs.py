@@ -15,14 +15,14 @@ class AllocStyle(Enum):
     #RW_X = "rw_x"
     #REUSE = "reuse"
 
-class ExecStyle(Enum):
-    CALL = "direct_1",
-    #JMP = 2,
-    #FIBER = 3,
-
 class DecoderStyle(Enum):
     PLAIN_1 = "plain_1"
     XOR_1 = "xor_1"
+
+class ExecStyle(Enum):
+    CALL = "direct_1"
+    #JMP = 2,
+    #FIBER = 3,
 
 class DataRefStyle(Enum):
     APPEND = 1
