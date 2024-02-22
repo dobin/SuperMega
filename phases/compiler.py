@@ -45,7 +45,7 @@ def compile(
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
     logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    if False:
+    if True:
         params = Params(asm_out, asm_clean_file, True, True, True)
         process_file(params)
     else:
@@ -87,7 +87,7 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
         # Remove EXTRN, we dont need it
         # Even tho it is part of IAT_REUSE process (see fixup_iat_reuse())
         if "EXTRN	__imp_" in lines[idx]:
-            lines[idx] = "; " + lines[idx]
+            lines[idx] = "; " + lines[idx] +"\r\n"
 
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
@@ -104,14 +104,14 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
             )
             lines[idx] = lines[idx].replace(
                 "QWORD PTR supermega_payload",
-                "[shcstart]  ; get payload shellcode address"
+                "[shcstart]  ; get payload shellcode address\r\n"
             )
 
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):
             logger.info("    > Add end of code label at line: {}".format(idx))
-            lines.insert(idx-1, "shcstart:  ; start of payload shellcode")
+            lines.insert(idx-1, "shcstart:  ; start of payload shellcode"+"\r\n")
             break
 
     with open(filename, 'w', newline='\r\n') as asmfile:  # write back with CRLF
@@ -128,15 +128,24 @@ def get_function_stubs(asm_in: FilePath):
 
     # EXTRN	__imp_GetEnvironmentVariableW:PROC
     for line in lines:
-        if "EXTRN	__imp_" in line:
+        if "QWORD PTR __imp_" in line:
             a = line
             a = a.split("__imp_")[1]
-            a = a.split(":PROC")[0]
-            func_name = a
-            #func_name = line.strip("\r\n ")
-            #func_name = line.replace("EXTRN\t__imp_", "")
-            #func_name = line.replace(":PROC", "")
+            func_name = a.strip("\r\n")
+            print("-----> {}".format(func_name))
             functions.append(func_name)
+
+        if False:
+            if "EXTRN	__imp_" in line:
+                a = line
+                a = a.split("__imp_")[1]
+                a = a.split(":PROC")[0]
+                func_name = a
+                #func_name = line.strip("\r\n ")
+                #func_name = line.replace("EXTRN\t__imp_", "")
+                #func_name = line.replace(":PROC", "")
+                print("-----> {}".format(func_name))
+                functions.append(func_name)
 
     return functions
 
