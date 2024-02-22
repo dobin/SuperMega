@@ -20,7 +20,9 @@ def clean_files():
         "main-clean.obj",
         "main.obj",
         "mllink$.lnk",
-
+        #"out/7z-verify.exe",
+        #"out/wifiinfoview-verify.exe",
+        #"out/procexp64-verify.exe",
         # out/ stuff
         os.path.join(build_dir, "main.asm"),
         os.path.join(build_dir, "main.bin"),

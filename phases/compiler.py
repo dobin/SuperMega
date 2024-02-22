@@ -7,6 +7,7 @@ from helper import *
 from config import config
 from observer import observer
 from model import *
+from phases.masmshc import process_file, Params
 
 logger = logging.getLogger("Compiler")
 use_templates = True
@@ -44,13 +45,19 @@ def compile(
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
     logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    run_process_checkret([
-        config.get("path_masmshc"),
-        asm_out,
-        asm_clean_file,
-    ])
+    if False:
+        params = Params(asm_out, asm_clean_file, True, True, True)
+        process_file(params)
+    else:
+        run_process_checkret([
+            config.get("path_masmshc"),
+            asm_out,
+            asm_clean_file,
+        ])
     if not os.path.isfile(asm_clean_file):
-        raise Exception("Error: Cleanup filed")
+        raise Exception("Error: Cleaned up ASM file {} was not created".format(
+            asm_clean_file
+        ))
 
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
@@ -147,6 +154,7 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
 
             randbytes: bytes = os.urandom(6)
             lines[idx] = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
+            lines[idx] += "\r\n"  # FIX FUCK
             exe_info.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
