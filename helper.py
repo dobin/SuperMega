@@ -139,3 +139,12 @@ def hexdump(data, addr = 0, num = 0):
 
         lines.append(line)
     return '\n'.join(lines)
+
+
+def file_to_lf(filename):
+    with open(filename, 'rb') as f:
+        data = f.read()
+    
+    data = data.replace(b'\r\n', b'\n')
+    with open(filename, 'wb') as f:
+        f.write(data)

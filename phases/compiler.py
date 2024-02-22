@@ -32,6 +32,7 @@ def compile(
     ])
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
+    file_to_lf(asm_out)
     observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
 
     # Assembly text fixup (SuperMega)
@@ -74,7 +75,7 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
 
 
 def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bool = False):
-    with open(filename, 'r', newline=None) as asmfile:  # None = translate to \n
+    with open(filename, 'r') as asmfile:  # None = translate to \n
         lines = asmfile.readlines()
 
     # When it breaks, enable this
@@ -87,7 +88,7 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
         # Remove EXTRN, we dont need it
         # Even tho it is part of IAT_REUSE process (see fixup_iat_reuse())
         if "EXTRN	__imp_" in lines[idx]:
-            lines[idx] = "; " + lines[idx] +"\r\n"
+            lines[idx] = "; " + lines[idx]
 
     # replace external reference with shellcode reference
     for idx, line in enumerate(lines): 
@@ -104,17 +105,19 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
             )
             lines[idx] = lines[idx].replace(
                 "QWORD PTR supermega_payload",
-                "[shcstart]  ; get payload shellcode address\r\n"
+                "[shcstart]  ; get payload shellcode address"
             )
 
     # add label at end of code
     for idx, line in enumerate(lines): 
         if lines[idx].startswith("END"):
             logger.info("    > Add end of code label at line: {}".format(idx))
-            lines.insert(idx-1, "shcstart:  ; start of payload shellcode"+"\r\n")
+            lines.insert(idx-1, "shcstart:  ; start of payload shellcode\n")
             break
 
-    with open(filename, 'w', newline='\r\n') as asmfile:  # write back with CRLF
+    with open(filename, 'w',) as asmfile:  # write back with CRLF
+        #for line in lines:
+        #    asmfile.write(line + "\n")
         asmfile.writelines(lines)
 
     return True
@@ -132,7 +135,7 @@ def get_function_stubs(asm_in: FilePath):
             a = line
             a = a.split("__imp_")[1]
             func_name = a.strip("\r\n")
-            print("-----> {}".format(func_name))
+            print("    > loader shellcode IAT requirement: {}".format(func_name))
             functions.append(func_name)
 
         if False:
@@ -151,7 +154,7 @@ def get_function_stubs(asm_in: FilePath):
 
 
 def fixup_iat_reuse(filename: FilePath, exe_info):
-    with open(filename, 'r', encoding='utf-8', newline=None) as asmfile:
+    with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
     # do IAT reuse
@@ -163,13 +166,13 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
 
             randbytes: bytes = os.urandom(6)
             lines[idx] = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
-            lines[idx] += "\r\n"  # FIX FUCK
+            lines[idx] += "\n"
             exe_info.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
                 func_name, randbytes.hex()))
     
-    with open(filename, 'w', newline='\r\n') as asmfile:
+    with open(filename, 'w') as asmfile:
         asmfile.writelines(lines)
 
     if config.debug:
