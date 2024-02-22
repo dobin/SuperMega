@@ -265,22 +265,12 @@ def start(project: Project):
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
     logger.info("--[ Obfuscate shellcode with SGN")
-    if True:
-        path_sgn = r'C:\tools\sgn2.0\sgn.exe'
-        run_process_checkret([
-            path_sgn,
-            "-a", "64",
-            "{}".format(file_shc_in),
-        ], check=True)
-        #shutil.copy(file_shc_in + ".sgn", file_shc_out)
-    else:
-        path_sgn = r'C:\training\tools\sgn\sgn.exe'
-        run_process_checkret([
-            path_sgn,
-            "--arch=64",
-            "-i", "{}".format(file_shc_in),
-            "-o", "{}".format(file_shc_out),
-        ], check=True)
+    run_process_checkret([
+        config.get("path_sgn"),
+        "--arch=64",
+        "-i", "{}".format(file_shc_in),
+        "-o", "{}".format(file_shc_out),
+    ], check=True)
     if not os.path.isfile(file_shc_out):
         logger.info("Error")
         return
