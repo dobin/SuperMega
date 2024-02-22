@@ -310,7 +310,7 @@ def verify_shellcode(shc_name):
         os.remove(VerifyFilename)
         return True
     else:
-        logger.warning("---> Verify FAIL. Shellcode doesnt work (file was not created)")
+        logger.error("---> Verify FAIL. Shellcode doesnt work (file was not created)")
         return False
 
 

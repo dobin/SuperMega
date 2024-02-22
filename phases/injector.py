@@ -93,6 +93,6 @@ def verify_injected_exe(exefile: FilePath) -> int:
         os.remove(VerifyFilename)
         return 0
     else:
-        logger.warning("---> Verify FAIL. Infected exe does not work (no file created)")
+        logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
         return 1
 
