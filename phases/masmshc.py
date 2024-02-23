@@ -32,6 +32,16 @@ def append_align_rsp(ofile):
     stub = """
 PUBLIC  AlignRSP
 _TEXT SEGMENT
+AlignRSP PROC
+and  rsp, 0FFFFFFFFFFFFFFF0h ; Align RSP to 16 bytes
+call main ; Call the entry point of the payload
+AlignRSP ENDP
+_TEXT ENDS
+"""
+
+    stub2 = """
+PUBLIC  AlignRSP
+_TEXT SEGMENT
 ; AlignRSP - by @mattifestation (http://www.exploit-monday.com/2013/08/writing-optimized-windows-shellcode-in-c.html)
 ; AlignRSP is a simple call stub that ensures that the stack is 16-byte aligned prior
 ; to calling the entry point of the payload.This is necessary because 64-bit functions
@@ -88,12 +98,22 @@ def process_file(params):
                 in_const = False
 
                 if len(tokens) >= 2:
+                    # TMP better stack alignment
+                    #if tokens[0] == "sub" and tokens[1] == "rsp,":
+                    #    ofile.write(line)
+                    #    #ofile.write("\tand\trsp, 0FFFFFFFFFFFFFFF0h; Align RSP to 16 bytes\n")
+                    #    #ofile.write("\tsub\trsp, 8")
+                    #    continue
+
                     if tokens[1] == "SEGMENT":
                         seg_name = tokens[0]
                         if not code_start and seg_name == "_TEXT":
                             code_start = True
                             if g_is32bit:
                                 ofile.write("assume fs:nothing\n")
+                            # TMP better stack alignment alternative
+                            #else:
+                            #    ofile.write("\tjmp\tmain\n")
                             elif params.append_rsp_stub:
                                 append_align_rsp(ofile)
                                 print("[INFO] Entry Point: AlignRSP")
