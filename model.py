@@ -74,10 +74,12 @@ class ExeInfo():
         if hasattr(pe, 'DIRECTORY_ENTRY_BASERELOC'):
             for base_reloc in pe.DIRECTORY_ENTRY_BASERELOC:
                 for entry in base_reloc.entries:
-                    entry_rva = entry.rva
+                    rva = entry.rva
+                    base_rva = entry.base_rva
                     reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
                     self.base_relocs.append({
-                        'rva': entry_rva,
+                        'rva': rva,
+                        'base_rva': base_rva,
                         'type': reloc_type,
                     })
         
