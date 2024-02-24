@@ -2,6 +2,7 @@ import sys
 import pefile
 from intervaltree import Interval, IntervalTree
 from typing import List
+import os
 
 
 class PeSection():
@@ -22,6 +23,93 @@ class PeRelocation():
         self.type: str = pefile.RELOCATION_TYPE[reloc.type][0]
 
 
+def bytes_to_asm_db(byte_data: bytes) -> bytes:
+    # Convert each byte to a string in hexadecimal format 
+    # prefixed with '0' and suffixed with 'h'
+    hex_values = [f"0{byte:02x}H" for byte in byte_data]
+    formatted_string = ', '.join(hex_values)
+    return "\tDB " + formatted_string
+
+
+class AsmFileParser():
+    def __init__(self, filepath):
+        self.filepath = filepath
+        self.lines = []
+
+
+    def init(self):
+        with open(self.filepath, "r") as f:
+            self.lines = f.readlines()
+        self.lines = [line.rstrip() for line in self.lines]
+
+
+    def fixup_data_reuse(self):
+        fixups = []
+        # lea	rcx, OFFSET FLAT:$SG72513
+        for idx, line in enumerate(self.lines):
+            if "OFFSET FLAT:$SG" in line:
+                string_ref = line.split("OFFSET FLAT:")[1]
+                register = line.split("lea\t")[1].split(",")[0]
+                randbytes: bytes = os.urandom(7) # lea is 7 bytes
+                fixups.append({
+                    "string_ref": string_ref,
+                    "register": register,
+                    "randbytes": randbytes,
+                })
+                self.lines[idx] = bytes_to_asm_db(randbytes) + " ; .rdata Reuse for {} ({})".format(
+                    string_ref, register)
+        return fixups
+
+
+    def get_data_reuse_entries(self) -> List[str]:
+        entries = {}
+        current_entry_name = ""
+
+        for line in self.lines:
+            # $SG72513 DB	'U', 00H, 'S', 00H, 'E', 00H, 'R', 00H, 'P', 00H, 'R', 00H
+            #          DB	'O', 00H, 'F', 00H, 'I', 00H, 'L', 00H, 'E', 00H, 00H, 00H
+            if line.startswith("$SG"):
+                parts = line.split()            
+                name = parts[0]
+                current_entry_name = name
+                value = b''
+                for part in parts:
+                    if part.startswith('\''):
+                        value += str.encode(part.split('\'')[1])
+                    elif part.endswith('H') or part.endswith('H,'):
+                        hex = part.split('H')[0]
+                        value += bytes.fromhex(hex)
+                entries[name] = value
+
+            elif line.startswith("\tDB"):
+                if current_entry_name == "":
+                    continue
+                value = b''
+                parts = line.split()            
+                for part in parts:
+                    if part.startswith('\''):
+                        value += str.encode(part.split('\'')[1])
+                    elif part.endswith('H') or part.endswith('H,'):
+                        hex = part.split('H')[0]
+                        if len(hex) == 3:
+                            hex = hex.lstrip('0')
+                        #print("--> {}".format(line))
+                        #print("---> {}".format(hex))
+                        value += bytes.fromhex(hex)
+
+                entries[current_entry_name] += value
+            else:
+                current_entry_name = ""
+                
+        return entries
+
+
+    def write_lines_to(self, filename):
+        with open(filename, 'w',) as asmfile:
+            for line in self.lines:
+                asmfile.write(line + "\n")
+
+
 class DataReuser():
     def __init__(self, filepath):
         self.pe = pefile.PE(filepath)
@@ -39,6 +127,8 @@ class DataReuser():
             for base_reloc in self.pe.DIRECTORY_ENTRY_BASERELOC:
                 for entry in base_reloc.entries:
                     self.base_relocs.append(PeRelocation(entry))
+
+        #self.pe.close()
 
 
     def get_section_by_name(self, name: str) -> PeSection:
@@ -59,13 +149,21 @@ class DataReuser():
             return []
         return [reloc for reloc in self.base_relocs if reloc.base_rva == section.virt_addr]
     
-    
+
     def get_reloc_largest_gap(self, section_name=".rdata"):
         tree = IntervalTree()
         section = self.get_section_by_name(section_name)
 
+        #print("MOTHERFUCKER: {}".format(section))
+        #print("MOTHERFUCKER: {}".format(self.base_relocs))
+        print("-- Relocations: {}".format(len(self.base_relocs)))
+        print("-- section: 0x{:x}".format(section.virt_addr))
+
         for reloc in self.base_relocs:
+            #print("FUCK: 0x{:x} 0x{:x}".format(reloc.base_rva, section.virt_addr))
+
             if reloc.base_rva == section.virt_addr:
+                print("Adding reloc: {} {}".format(reloc.offset, reloc.offset + 8))
                 tree.add(Interval(reloc.offset, reloc.offset + 8))
         tree.add(Interval(section.virt_size, section.virt_size + 1))
 

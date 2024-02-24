@@ -54,6 +54,15 @@ def get_rwx_section(pe: pefile.PE) -> pefile.SectionStructure:
 
 # keystone/capstone stuff
 
+def assemble_lea(current_address: int, destination_address: int, reg: str) -> bytes:
+    print("LEAH: 0x{:X} - 0x{:X} = 0x{:X}".format(
+        current_address, destination_address, destination_address - current_address))
+    offset = destination_address - current_address
+    ks = Ks(KS_ARCH_X86, KS_MODE_64)
+    encoding, _ = ks.asm(f"lea {reg}, qword ptr ds:[{offset}]")
+    machine_code = bytes(encoding)
+    return machine_code
+
 def assemble_and_disassemble_jump(current_address: int, destination_address: int) -> bytes:
     #logger.info("    Make jmp from 0x{:X} to 0x{:X}".format(
     #    current_address, destination_address

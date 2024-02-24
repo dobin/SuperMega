@@ -8,8 +8,12 @@ class Config(object):
     def __init__(self):
         self.data = {}
         self.ShowCommandOutput: bool = False
-        self.debug: bool = False
+        self.debug: bool = True
+
         self.xor_key: int = 0x31
+        self.data_fixups = None
+        self.data_fixup_entries = None
+
 
     def getConfigPath(self):
         return CONFIG_FILE

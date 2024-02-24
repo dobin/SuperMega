@@ -16,7 +16,7 @@ import phases.assembler
 import phases.injector
 from observer import observer
 from project import Project
-
+from pehelper import extract_code_from_exe
 
 log_messages = []
 
@@ -60,7 +60,7 @@ def main():
             project.inject_exe_out = "out/7z-verify.exe"
         elif args.verify == "iat":
             project.inject = True
-            project.inject_mode = 2
+            project.inject_mode = 1 # 2
             project.inject_exe_in = "exes/procexp64.exe"
             project.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
@@ -124,6 +124,18 @@ def main():
 
     start(project)
 
+def get_physical_address(pe, virtual_address):
+    # Iterate through the section headers to find which section contains the VA
+    for section in pe.sections:
+        # Check if the VA is within the range of this section
+        if section.VirtualAddress <= virtual_address < section.VirtualAddress + section.Misc_VirtualSize:
+            # Calculate the difference between the VA and the section's virtual address
+            virtual_offset = virtual_address - section.VirtualAddress
+            # Add the difference to the section's pointer to raw data
+            return virtual_offset
+            #physical_address = section.PointerToRawData + virtual_offset
+            #return physical_address
+    return None
 
 def start(project: Project):
     # Delete: all old files
@@ -239,7 +251,27 @@ def start(project: Project):
             inject_mode = project.inject_mode,
         )
         if project.source_style == SourceStyle.iat_reuse:
-            phases.injector.injected_fix_iat(project.inject_exe_out, project.exe_info)
+            phases.injector.injected_fix_iat(
+                project.inject_exe_out, project.exe_info)
+
+            # TODO IF?
+            phases.injector.injected_fix_data(
+                project.inject_exe_out, 
+                config.data_fixups,
+                config.data_fixup_entries,
+                project.exe_info)
+            
+            code = extract_code_from_exe(project.inject_exe_out)
+            pe = pefile.PE(project.inject_exe_out)
+            ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+            ep_raw = get_physical_address(pe, ep)
+            pe.close()
+
+            print("Raw: {} / 0x{:x}".format(
+                ep_raw, ep_raw))
+            observer.add_code("exe_fucking_final", 
+                code[ep_raw:ep_raw+300])
+            
 
         if project.verify:
             logger.info("--[ Verify infected exe")

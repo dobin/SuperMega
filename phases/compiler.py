@@ -8,6 +8,7 @@ from config import config
 from observer import observer
 from model import *
 from phases.masmshc import process_file, Params
+from phases.datareuse import *
 
 logger = logging.getLogger("Compiler")
 use_templates = True
@@ -35,6 +36,15 @@ def compile(
     file_to_lf(asm_out)
     observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
 
+    # DataReuse first
+    asmFileParser = AsmFileParser(asm_out)
+    asmFileParser.init()
+    data_fixups = asmFileParser.fixup_data_reuse()
+    data_fixup_entries = asmFileParser.get_data_reuse_entries()
+    config.data_fixups = data_fixups
+    config.data_fixup_entries = data_fixup_entries
+    asmFileParser.write_lines_to(asm_out)
+
     # Assembly text fixup (SuperMega)
     logger.info("---[ ASM Fixup  : {} ".format(asm_out))
     if not fixup_asm_file(asm_out, payload_len, short_call_patching=short_call_patching):
@@ -47,7 +57,10 @@ def compile(
     asm_clean_file = asm_out + ".clean"
     logger.info("---[ ASM masm_shc: {} ".format(asm_out))
     if True:
-        params = Params(asm_out, asm_clean_file, True, True, True)
+        params = Params(asm_out, asm_clean_file, 
+            inline_strings=False,  # not for DATA_REUSE
+            remove_crt=True, 
+            append_rsp_stub=True)  # required atm
         process_file(params)
     else:
         run_process_checkret([
