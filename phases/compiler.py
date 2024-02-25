@@ -166,7 +166,7 @@ def get_function_stubs(asm_in: FilePath):
     return functions
 
 
-def fixup_iat_reuse(filename: FilePath, exe_info):
+def fixup_iat_reuse(filename: FilePath, exe_host):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
@@ -180,7 +180,7 @@ def fixup_iat_reuse(filename: FilePath, exe_info):
             randbytes: bytes = os.urandom(6)
             lines[idx] = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
             lines[idx] += "\n"
-            exe_info.add_iat_resolve(func_name, randbytes)
+            exe_host.add_iat_resolve(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
                 func_name, randbytes.hex()))

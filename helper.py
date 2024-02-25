@@ -5,7 +5,7 @@ import glob
 import logging
 
 from config import config
-from defs import *
+from model.defs import *
 
 logger = logging.getLogger("Helper")
 

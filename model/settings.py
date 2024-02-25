@@ -1,13 +1,11 @@
 from model import *
-from defs import *
+from model.defs import *
 
-
-class Project():
+class Settings():
     def __init__(self):
-        # User, generating normally
         self.payload_path: FilePath = ""
-        self.payload_data: bytes = b""
 
+        # Settings
         self.source_style: SourceStyle = SourceStyle.peb_walk
         self.alloc_style: AllocStyle = AllocStyle.RWX
         self.exec_style: ExecStyle = ExecStyle.CALL
@@ -20,31 +18,15 @@ class Project():
         self.inject_mode: int = 2
         self.inject_exe_in: FilePath = ""
         self.inject_exe_out: FilePath = ""
-        self.exe_info: ExeInfo = None
 
-        # debug
+        # Debug
         self.show_command_output = False
         self.verify: bool = False
-
         self.try_start_loader_shellcode: bool = False
         self.try_start_final_shellcode: bool = False
         self.try_start_final_infected_exe: bool = False
-
         self.cleanup_files_on_start: bool = True
         self.cleanup_files_on_exit: bool = True
-
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
-
-
-    def load_payload(self):
-        logging.info("--( Load payload: {}".format(self.payload_path))
-        with open(self.payload_path, 'rb') as input2:
-            self.payload_data = input2.read()
-
-
-    def load_injectable(self):
-        logging.info("--( Load injectable: {}".format(self.inject_exe_in))
-        self.exe_info = ExeInfo()
-        self.exe_info.parse_from_exe(self.inject_exe_in)
 

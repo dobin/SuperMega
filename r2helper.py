@@ -1,7 +1,7 @@
 import r2pipe
 import os
 
-from defs import *
+from model.defs import *
 from helper import hexdump
 
 def r2_disas(data: bytes):

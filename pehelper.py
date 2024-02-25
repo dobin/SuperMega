@@ -5,7 +5,7 @@ from keystone import Ks, KS_ARCH_X86, KS_MODE_64
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 import logging
 
-from defs import *
+from model.defs import *
 
 logger = logging.getLogger("PEHelper")
 

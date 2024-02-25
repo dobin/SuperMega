@@ -4,8 +4,8 @@ import unittest
 import logging
 
 from phases.compiler import fixup_asm_file, fixup_iat_reuse
-from model import ExeInfo
-from defs import *
+from model.exehost import ExeHost
+from model.defs import *
 from observer import observer
 
 
@@ -44,15 +44,15 @@ class AsmTest(unittest.TestCase):
         path_working: FilePath = "tests/data/iat_reuse_pre_fixup.asm.test"
         shutil.copy(path_in, path_working)
 
-        exe_info = ExeInfo()
+        exe_host = ExeHost()
 
-        fixup_iat_reuse(path_working, exe_info)
-        self.assertTrue(len(exe_info.iat_resolves), 2)
+        fixup_iat_reuse(path_working, exe_host)
+        self.assertTrue(len(exe_host.iat_resolves), 2)
 
-        self.assertTrue("GetEnvironmentVariableW" in exe_info.iat_resolves)
-        self.assertEqual(exe_info.iat_resolves["GetEnvironmentVariableW"].name, "GetEnvironmentVariableW")
-        self.assertEqual(exe_info.iat_resolves["GetEnvironmentVariableW"].addr, 0)
-        self.assertTrue(len(exe_info.iat_resolves["GetEnvironmentVariableW"].id), 6) # 6 random bytes
+        self.assertTrue("GetEnvironmentVariableW" in exe_host.iat_resolves)
+        self.assertEqual(exe_host.iat_resolves["GetEnvironmentVariableW"].name, "GetEnvironmentVariableW")
+        self.assertEqual(exe_host.iat_resolves["GetEnvironmentVariableW"].addr, 0)
+        self.assertTrue(len(exe_host.iat_resolves["GetEnvironmentVariableW"].id), 6) # 6 random bytes
 
         with open(path_working, "r") as f:
             lines = f.readlines()

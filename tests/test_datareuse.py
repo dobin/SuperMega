@@ -3,11 +3,6 @@ from typing import List
 import unittest
 import logging
 
-from model import ExeInfo
-from defs import *
-from helper import hexdump
-from observer import observer
-
 from phases.datareuse import *
 
 
@@ -69,7 +64,7 @@ class DataReuseTest(unittest.TestCase):
         fixup = data_fixups[0]
         self.assertTrue(fixup["string_ref"], "rcx")
         self.assertTrue(fixup["register"], "$SG72513")
-        self.assertEqual(5, len(fixup["randbytes"]))
+        self.assertEqual(7, len(fixup["randbytes"]))  # needs to be 7!
 
         asmFileParser.write_lines_to(asm_out)
 

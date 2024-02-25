@@ -104,6 +104,8 @@ your own shellcode loader.
 
 ### Environment Variables
 
+$Env:PATH += ";C:\Tools\radare2-5.8.8-w64\bin"
+
 Use
 ```
 "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat"

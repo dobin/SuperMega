@@ -17,7 +17,7 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FileP
         asm_in,
         "/link",
         "/OUT:{}".format(build_exe),
-        "/entry:AlignRSP"
+        "/entry:AlignRSP"  # "/entry:main",
     ])
     if not os.path.isfile(build_exe):
         raise Exception("Compiling failed")

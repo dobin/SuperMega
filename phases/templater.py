@@ -5,7 +5,7 @@ import logging
 
 from helper import *
 from observer import observer
-from defs import *
+from model.defs import *
 
 use_templates = True
 logger = logging.getLogger("Assembler")

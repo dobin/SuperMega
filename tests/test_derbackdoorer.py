@@ -3,8 +3,8 @@ from typing import List
 import unittest
 import logging
 
-from model import ExeInfo
-from defs import *
+from model.exehost import ExeHost
+from model.defs import *
 from pehelper import extract_code_from_exe
 from helper import hexdump
 from observer import observer

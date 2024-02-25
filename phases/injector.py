@@ -4,9 +4,10 @@ import pprint
 import logging
 import time
 import tempfile
+import logging
 
 from pehelper import *
-from model import *
+from model.exehost import *
 from observer import observer
 from helper import rbrunmode_str
 from derbackdoorer.derbackdoorer import PeBackdoor
@@ -56,17 +57,17 @@ def inject_exe(
         raise Exception("Shellcode injection error")
 
 
-def injected_fix_iat(exe_out: FilePath, exe_info: ExeInfo):
+def injected_fix_iat(exe_out: FilePath, exe_host: ExeHost):
     """replace IAT in shellcode in code and re-implant it"""
 
     # get code section of exe_out
     code = extract_code_from_exe(exe_out)
-    for cap in exe_info.get_all_iat_resolvs().values():
+    for cap in exe_host.get_all_iat_resolvs().values():
         if not cap.id in code:
             raise Exception("IatResolve ID {} not found, abort".format(cap.id))
         
         off = code.index(cap.id)
-        current_address = off + exe_info.image_base + exe_info.code_virtaddr
+        current_address = off + exe_host.image_base + exe_host.code_virtaddr
         #current_address += 2
         destination_address = cap.addr
         logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
@@ -81,7 +82,7 @@ def injected_fix_iat(exe_out: FilePath, exe_info: ExeInfo):
     write_code_section(exe_file=exe_out, new_data=code)
 
 
-def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_info):
+def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_host):
     data_reuser = DataReuser(exe_path)
     data_reuser.init()
     #ret = data_reuser.get_reloc_largest_gap(".rdata")
@@ -111,8 +112,8 @@ def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_info):
             f.seek(addr)
             f.write(var_data)
             #f.write(b"AAAAAAAAAAAAAAAAAAAAAAAAAAA")
-            print("ADD: 0x{:X} 0x{:X} 0x{:X}".format(addr, sect.virt_addr, exe_info.image_base))
-            fixup["addr"] = addr + sect.virt_addr + exe_info.image_base - sect.raw_addr
+            print("ADD: 0x{:X} 0x{:X} 0x{:X}".format(addr, sect.virt_addr, exe_host.image_base))
+            fixup["addr"] = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
             addr += len(var_data) + 8
     #data_reuser.pe.write(exe_path + ".tmp")
     #data_reuser.pe.close()
@@ -125,7 +126,7 @@ def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_info):
             raise Exception("DataResuse: ID {} not found, abort".format(fixup["randbytes"]))
         
         off = code.index(fixup["randbytes"])
-        current_address = off + exe_info.image_base + exe_info.code_virtaddr
+        current_address = off + exe_host.image_base + exe_host.code_virtaddr
         destination_address = fixup["addr"]
         logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
             current_address, destination_address
