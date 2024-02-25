@@ -167,6 +167,7 @@ def start(settings: Settings):
             c_in = main_c_file, 
             asm_out = main_asm_file, 
             payload_len = project.payload.len,
+            carrier = project.carrier,
             short_call_patching = project.settings.short_call_patching)
 
     # Decide if we can use IAT_REUSE (all function calls available as import)
@@ -262,8 +263,7 @@ def start(settings: Settings):
             # TODO IF?
             phases.injector.injected_fix_data(
                 settings.inject_exe_out, 
-                config.data_fixups,
-                config.data_fixup_entries,
+                project.carrier,
                 project.exe_host)
             
             code = extract_code_from_exe(settings.inject_exe_out)

@@ -19,6 +19,7 @@ def compile(
     c_in: FilePath, 
     asm_out: FilePath,
     payload_len: int,
+    carrier: Carrier,
     short_call_patching: bool = False
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
@@ -38,12 +39,10 @@ def compile(
     observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
 
     # DataReuse first
-    asmFileParser = AsmFileParser(asm_out)
+    asmFileParser = ReusedataAsmFileParser(asm_out)
     asmFileParser.init()
-    data_fixups = asmFileParser.fixup_data_reuse()
-    data_fixup_entries = asmFileParser.get_data_reuse_entries()
-    config.data_fixups = data_fixups
-    config.data_fixup_entries = data_fixup_entries
+    asmFileParser.process()
+    carrier.set_datareuse_fixups(asmFileParser.get_reusedata_fixups())
     asmFileParser.write_lines_to(asm_out)
 
     # Assembly text fixup (SuperMega)

@@ -64,14 +64,14 @@ def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
     # get code section of exe_out
     code = extract_code_from_exe(exe_out)
 
-    for iatEntry in carrier.get_all_iat_requests():
-        if not iatEntry.placeholder in code:
-            raise Exception("IatResolve ID {} not found, abort".format(iatEntry.placeholder))
-        addr = exe_host.get_addr_of_iat_function(iatEntry.name)
+    for IatRequest in carrier.get_all_iat_requests():
+        if not IatRequest.placeholder in code:
+            raise Exception("IatResolve ID {} not found, abort".format(IatRequest.placeholder))
+        addr = exe_host.get_addr_of_iat_function(IatRequest.name)
         if addr == None:
-            raise Exception("IatResolve: Function {} not found".format(iatEntry.name))
+            raise Exception("IatResolve: Function {} not found".format(IatRequest.name))
         
-        off = code.index(iatEntry.placeholder)
+        off = code.index(IatRequest.placeholder)
         current_address = off + exe_host.image_base + exe_host.code_virtaddr
         #current_address += 2
         destination_address = addr
@@ -81,13 +81,13 @@ def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
         jmp = assemble_and_disassemble_jump(
             current_address, destination_address
         )
-        code = code.replace(iatEntry.placeholder, jmp)
+        code = code.replace(IatRequest.placeholder, jmp)
 
     # write back our patched code into the exe
     write_code_section(exe_file=exe_out, new_data=code)
 
 
-def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_host):
+def injected_fix_data(exe_path, carrier: Carrier, exe_host: ExeHost):
     data_reuser = DataReuser(exe_path)
     data_reuser.init()
     #ret = data_reuser.get_reloc_largest_gap(".rdata")
@@ -105,9 +105,11 @@ def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_host):
     print("Write into .data:".format())
     data_reuser.pe.close()
 
+    reusedata_fixups: List[DataReuseEntry] = carrier.get_all_reusedata_fixups()
+
     with open(exe_path, "r+b") as f:
-        for fixup in data_fixups:
-            var_data = data_fixup_entries[fixup["string_ref"]]
+        for datareuse_fixup in reusedata_fixups:
+            var_data = datareuse_fixup.data
 
             print("    Addr: {} / 0x{:X}  Data: {}".format(
                 addr, addr, len(var_data)))
@@ -118,7 +120,7 @@ def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_host):
             f.write(var_data)
             #f.write(b"AAAAAAAAAAAAAAAAAAAAAAAAAAA")
             print("ADD: 0x{:X} 0x{:X} 0x{:X}".format(addr, sect.virt_addr, exe_host.image_base))
-            fixup["addr"] = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
+            datareuse_fixup.addr = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
             addr += len(var_data) + 8
     #data_reuser.pe.write(exe_path + ".tmp")
     #data_reuser.pe.close()
@@ -126,20 +128,21 @@ def injected_fix_data(exe_path, data_fixups, data_fixup_entries, exe_host):
 
     # patch code section
     code = extract_code_from_exe(exe_path)
-    for fixup in data_fixups:
-        if not fixup["randbytes"] in code:
-            raise Exception("DataResuse: ID {} not found, abort".format(fixup["randbytes"]))
+    for datareuse_fixup in reusedata_fixups:
+        if not datareuse_fixup.randbytes in code:
+            raise Exception("DataResuse: ID {} not found, abort".format(
+                datareuse_fixup.randbytes))
         
-        off = code.index(fixup["randbytes"])
+        off = code.index(datareuse_fixup.randbytes)
         current_address = off + exe_host.image_base + exe_host.code_virtaddr
-        destination_address = fixup["addr"]
+        destination_address = datareuse_fixup.addr
         logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
             current_address, destination_address
         ))
         lea = assemble_lea(
-            current_address, destination_address, fixup["register"]
+            current_address, destination_address, datareuse_fixup.register
         )
-        code = code.replace(fixup["randbytes"], lea)
+        code = code.replace(datareuse_fixup.randbytes, lea)
 
     # write back our patched code into the exe
     write_code_section(exe_file=exe_path, new_data=code)

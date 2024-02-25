@@ -1,9 +1,10 @@
 import sys
 import pefile
 from intervaltree import Interval, IntervalTree
-from typing import List
+from typing import List, Dict
 import os
 
+from model.exehost import DataReuseEntry
 
 class PeSection():
     def __init__(self, pefile_section):
@@ -31,10 +32,15 @@ def bytes_to_asm_db(byte_data: bytes) -> bytes:
     return "\tDB " + formatted_string
 
 
-class AsmFileParser():
+class ReusedataAsmFileParser():
     def __init__(self, filepath):
         self.filepath = filepath
         self.lines = []
+        self.fixups: Dict[str, DataReuseEntry] = {}
+
+
+    def get_reusedata_fixups(self) -> List[DataReuseEntry]:
+        return list(self.fixups.values())
 
 
     def init(self):
@@ -43,7 +49,12 @@ class AsmFileParser():
         self.lines = [line.rstrip() for line in self.lines]
 
 
-    def fixup_data_reuse(self):
+    def process(self):
+        self.fixup_data_reuse_code()
+        self.fixup_data_reuse_data()
+
+
+    def fixup_data_reuse_code(self):
         fixups = []
         # lea	rcx, OFFSET FLAT:$SG72513
         for idx, line in enumerate(self.lines):
@@ -51,18 +62,13 @@ class AsmFileParser():
                 string_ref = line.split("OFFSET FLAT:")[1]
                 register = line.split("lea\t")[1].split(",")[0]
                 randbytes: bytes = os.urandom(7) # lea is 7 bytes
-                fixups.append({
-                    "string_ref": string_ref,
-                    "register": register,
-                    "randbytes": randbytes,
-                })
+                self.fixups[string_ref] = DataReuseEntry(string_ref, register, randbytes)
                 self.lines[idx] = bytes_to_asm_db(randbytes) + " ; .rdata Reuse for {} ({})".format(
                     string_ref, register)
         return fixups
 
 
-    def get_data_reuse_entries(self) -> List[str]:
-        entries = {}
+    def fixup_data_reuse_data(self) -> List[str]:
         current_entry_name = ""
 
         for line in self.lines:
@@ -79,7 +85,11 @@ class AsmFileParser():
                     elif part.endswith('H') or part.endswith('H,'):
                         hex = part.split('H')[0]
                         value += bytes.fromhex(hex)
-                entries[name] = value
+
+                if not name in self.fixups:
+                    raise Exception("DataReuse: Entry {} not found in fixups".format(name))
+                self.fixups[name].data = value
+                
 
             elif line.startswith("\tDB"):
                 if current_entry_name == "":
@@ -97,12 +107,13 @@ class AsmFileParser():
                         #print("---> {}".format(hex))
                         value += bytes.fromhex(hex)
 
-                entries[current_entry_name] += value
+                if not name in self.fixups:
+                    raise Exception("DataReuse: Entry {} not found in fixups".format(name))
+                self.fixups[name].data += value
+
             else:
                 current_entry_name = ""
                 
-        return entries
-
 
     def write_lines_to(self, filename):
         with open(filename, 'w',) as asmfile:

@@ -10,6 +10,28 @@ from peparser.misc import get_physical_address
 logger = logging.getLogger("ExeHost")
 
 
+class RelocEntry():
+    def __init__(self, rva: int, base_rva: int, type: str):
+        self.rva: int = rva
+        self.base_rva: int = base_rva
+        self.type: str = type
+
+
+class IatEntry():
+    def __init__(self, dll_name, func_name, func_addr):
+        self.dll_name = dll_name
+        self.func_name = func_name
+        self.func_addr = func_addr
+
+
+class DataReuseEntry():
+    def __init__(self, string_ref: str, register: str, randbytes: bytes):
+        self.string_ref = string_ref
+        self.register = register
+        self.randbytes = randbytes
+        self.data = b''
+        self.addr = 0
+
 
 class ExeHost():
     def __init__(self, filepath: FilePath):
@@ -21,7 +43,7 @@ class ExeHost():
         self.superpe: SuperPe = None
 
         self.iat = {}  # Dict[str, List[Dict[str, str]]]
-        
+        self.base_relocs = []
 
         self.image_base: int = 0
         self.dynamic_base: bool = False
@@ -30,7 +52,6 @@ class ExeHost():
         self.code_size: int = 0
         self.code_section = None
         
-        self.base_relocs = []
         self.rwx_section = None
 
         self.ep = None
