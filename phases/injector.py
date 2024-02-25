@@ -6,7 +6,7 @@ import time
 import tempfile
 import logging
 
-from pehelper import *
+from peparser.pehelper import *
 from model.exehost import *
 from observer import observer
 from helper import rbrunmode_str

@@ -5,7 +5,7 @@ import logging
 
 from model.exehost import ExeHost
 from model.defs import *
-from pehelper import extract_code_from_exe
+from peparser.pehelper import extract_code_from_exe
 from helper import hexdump
 from observer import observer
 

@@ -136,7 +136,7 @@ def fixup_asm_file(filename: FilePath, payload_len: int, short_call_patching: bo
     return True
 
 
-def get_function_stubs(asm_in: FilePath):
+def get_function_stubs(asm_in: FilePath) -> List[str]:
     functions = []
 
     with open(asm_in, 'r', encoding='utf-8') as asmfile:

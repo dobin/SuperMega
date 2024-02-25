@@ -84,43 +84,6 @@ def assemble_and_disassemble_jump(current_address: int, destination_address: int
     return machine_code
 
 
-# IAT Stuff
-
-def extract_iat(pe: pefile.PE):
-    iat = {}
-
-    # If the PE file was loaded using the fast_load=True argument, we will need to parse the data directories:
-    #pe.parse_data_directories()
-
-    # Retrieve the IAT entries from the PE file
-    for entry in pe.DIRECTORY_ENTRY_IMPORT:
-        for imp in entry.imports:
-            dll_name = entry.dll.decode('utf-8')
-            if imp.name == None:
-                continue
-            imp_name = imp.name.decode('utf-8')
-            imp_addr = imp.address
-
-            if not dll_name in iat:
-                 iat[dll_name] = []
-
-            iat[dll_name].append({
-                 "dll_name": dll_name,
-                 "func_name": imp_name,
-                 "func_addr": imp_addr
-            })
-    
-    return iat
-
-
-def get_addr_for(iat, func_name: str) -> int:
-    for dll_name in iat:
-        for entry in iat[dll_name]:
-            if entry["func_name"] == func_name:
-                return entry["func_addr"]
-    return 0
-
-
 ## Utils
 
 def remove_trailing_null_bytes(data: bytes) -> bytes:

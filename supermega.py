@@ -16,7 +16,7 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from pehelper import extract_code_from_exe
+from peparser.pehelper import extract_code_from_exe
 
 from model.project import Project
 from model.settings import Settings
@@ -168,7 +168,7 @@ def start(settings: Settings):
 
     # Decide if we can use IAT_REUSE (all function calls available as import)
     required_functions = phases.compiler.get_function_stubs(main_asm_file)
-    if project.exe_host.has_all_functions(required_functions):
+    if project.exe_host.has_all_iat_functions(required_functions):
         settings.source_style = SourceStyle.iat_reuse
         logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
         # all good, patch ASM
