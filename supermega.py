@@ -303,7 +303,7 @@ def start(settings: Settings):
 def exehost_has_all_carrier_functions(carrier: Carrier, exe_host: ExeHost):
         is_ok = True
         for iat_entry in carrier.iat_requests:
-            addr = exe_host.get_addr_of_iat_function(iat_entry.name)
+            addr = exe_host.get_vaddr_of_iatentry(iat_entry.name)
             if addr == 0:
                 logging.info("---( Function not available as import: {}".format(iat_entry.name))
                 is_ok = False

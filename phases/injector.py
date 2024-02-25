@@ -66,7 +66,7 @@ def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
     for iatRequest in carrier.get_all_iat_requests():
         if not iatRequest.placeholder in code:
             raise Exception("IatResolve ID {} not found, abort".format(iatRequest.placeholder))
-        destination_virtual_address = exe_host.get_addr_of_iat_function(iatRequest.name)
+        destination_virtual_address = exe_host.get_vaddr_of_iatentry(iatRequest.name)
         if destination_virtual_address == None:
             raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
         

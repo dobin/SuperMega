@@ -124,15 +124,15 @@ class ExeHost():
                 self.iat[dll_name].append({
                     "dll_name": dll_name,
                     "func_name": imp_name,
-                    "func_addr": imp_addr
+                    "iat_vaddr": imp_addr
                 })
         
 
-    def get_addr_of_iat_function(self, func_name: str) -> int:
+    def get_vaddr_of_iatentry(self, func_name: str) -> int:
         for dll_name in self.iat:
             for entry in self.iat[dll_name]:
                 if entry["func_name"] == func_name:
-                    return entry["func_addr"]
+                    return entry["iat_vaddr"]
         return None
     
     ## Other
