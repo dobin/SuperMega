@@ -1,5 +1,5 @@
-from model import *
 from model.defs import *
+
 
 class Settings():
     def __init__(self):

@@ -7,8 +7,8 @@ import logging
 import time
 import pefile
 
-from model.defs import *
-from model import *
+
+
 from helper import *
 from config import config
 import phases.templater
@@ -20,6 +20,9 @@ from peparser.pehelper import extract_code_from_exe
 
 from model.project import Project
 from model.settings import Settings
+from model.defs import *
+from model.carrier import Carrier
+from model.exehost import ExeHost
 
 log_messages = []
 
@@ -167,12 +170,11 @@ def start(settings: Settings):
             short_call_patching = project.settings.short_call_patching)
 
     # Decide if we can use IAT_REUSE (all function calls available as import)
-    required_functions = phases.compiler.get_function_stubs(main_asm_file)
-    if project.exe_host.has_all_iat_functions(required_functions):
+    if exehost_has_all_carrier_functions(project.carrier, project.exe_host):
         settings.source_style = SourceStyle.iat_reuse
         logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
         # all good, patch ASM
-        phases.compiler.fixup_iat_reuse(main_asm_file, project.exe_host)
+        phases.compiler.fixup_iat_reuse(main_asm_file, project.carrier)
         observer.add_text("carrier_asm_updated", file_readall_text(main_asm_file))
     else:
         # Not good, Fall back to PEB_WALK
@@ -255,7 +257,7 @@ def start(settings: Settings):
         )
         if settings.source_style == SourceStyle.iat_reuse:
             phases.injector.injected_fix_iat(
-                settings.inject_exe_out, project.exe_host)
+                settings.inject_exe_out, project.carrier, project.exe_host)
 
             # TODO IF?
             phases.injector.injected_fix_data(
@@ -296,6 +298,16 @@ def start(settings: Settings):
             f.write(line + "\n")
 
     exit(exit_code)
+
+
+def exehost_has_all_carrier_functions(carrier: Carrier, exe_host: ExeHost):
+        is_ok = True
+        for iat_entry in carrier.iat_requests:
+            addr = exe_host.get_addr_of_iat_function(iat_entry.name)
+            if addr == 0:
+                logging.info("---( Function not available as import: {}".format(iat_entry.name))
+                is_ok = False
+        return is_ok
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):

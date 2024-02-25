@@ -6,6 +6,7 @@ import logging
 from phases.compiler import fixup_asm_file, fixup_iat_reuse
 from model.exehost import ExeHost
 from model.defs import *
+from model.carrier import Carrier
 from observer import observer
 
 
@@ -39,20 +40,23 @@ class AsmTest(unittest.TestCase):
         os.remove(path_working)
 
 
-    def test_asm_iat_fixup(self):
+    def test_asm_iat_request(self):
         path_in: FilePath = "tests/data/iat_reuse_pre_fixup.asm"
         path_working: FilePath = "tests/data/iat_reuse_pre_fixup.asm.test"
         shutil.copy(path_in, path_working)
 
-        exe_host = ExeHost()
+        carrier = Carrier()
+        fixup_iat_reuse(path_working, carrier)
 
-        fixup_iat_reuse(path_working, exe_host)
-        self.assertTrue(len(exe_host.iat_resolves), 2)
+        self.assertEqual(len(carrier.iat_requests), 2)
 
-        self.assertTrue("GetEnvironmentVariableW" in exe_host.iat_resolves)
-        self.assertEqual(exe_host.iat_resolves["GetEnvironmentVariableW"].name, "GetEnvironmentVariableW")
-        self.assertEqual(exe_host.iat_resolves["GetEnvironmentVariableW"].addr, 0)
-        self.assertTrue(len(exe_host.iat_resolves["GetEnvironmentVariableW"].id), 6) # 6 random bytes
+        req1 = carrier.iat_requests[0]
+        self.assertEqual(req1.name, "GetEnvironmentVariableW")
+        self.assertTrue(len(req1.placeholder), 6) # 6 random bytes
+        
+        req2 = carrier.iat_requests[1]
+        self.assertEqual(req2.name, "VirtualAlloc")
+        self.assertTrue(len(req2.placeholder), 6) # 6 random bytes
 
         with open(path_working, "r") as f:
             lines = f.readlines()
@@ -63,10 +67,10 @@ class AsmTest(unittest.TestCase):
 
         # 	call	QWORD PTR __imp_GetEnvironmentVariableW
         # 	DB 044H, 0aeH, 06cH, 0b6H, 072H, 07cH
-        self.assertTrue(lines[158-1].startswith("	DB "))
+        self.assertTrue(lines[124-1].startswith("	DB "))
 
         # 	call	QWORD PTR __imp_VirtualAlloc
         # 	DB 0c7H, 0b6H, 0feH, 0dcH, 0b2H, 0c6H
-        self.assertTrue(lines[182-1].startswith("	DB "))
+        self.assertTrue(lines[148-1].startswith("	DB "))
 
         os.remove(path_working)

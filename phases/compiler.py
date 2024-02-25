@@ -9,6 +9,7 @@ from observer import observer
 from model import *
 from phases.masmshc import process_file, Params
 from phases.datareuse import *
+from model.carrier import Carrier
 
 logger = logging.getLogger("Compiler")
 use_templates = True
@@ -166,7 +167,7 @@ def get_function_stubs(asm_in: FilePath) -> List[str]:
     return functions
 
 
-def fixup_iat_reuse(filename: FilePath, exe_host):
+def fixup_iat_reuse(filename: FilePath, carrier: Carrier):
     with open(filename, 'r', encoding='utf-8') as asmfile:
         lines = asmfile.readlines()
 
@@ -180,7 +181,7 @@ def fixup_iat_reuse(filename: FilePath, exe_host):
             randbytes: bytes = os.urandom(6)
             lines[idx] = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
             lines[idx] += "\n"
-            exe_host.add_iat_resolve(func_name, randbytes)
+            carrier.add_iat_request(func_name, randbytes)
 
             logger.info("    > Replace func name: {} with {}".format(
                 func_name, randbytes.hex()))

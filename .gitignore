@@ -4,7 +4,6 @@ exes_more/
 *.obj
 *.lnk
 /*.bin
-*.asm
 __pycache__
 bak/
 build/

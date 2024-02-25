@@ -6,6 +6,7 @@ import time
 import tempfile
 import logging
 
+from model.carrier import Carrier
 from peparser.pehelper import *
 from model.exehost import *
 from observer import observer
@@ -57,26 +58,30 @@ def inject_exe(
         raise Exception("Shellcode injection error")
 
 
-def injected_fix_iat(exe_out: FilePath, exe_host: ExeHost):
+def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
     """replace IAT in shellcode in code and re-implant it"""
 
     # get code section of exe_out
     code = extract_code_from_exe(exe_out)
-    for cap in exe_host.get_all_iat_resolvs().values():
-        if not cap.id in code:
-            raise Exception("IatResolve ID {} not found, abort".format(cap.id))
+
+    for iatEntry in carrier.get_all_iat_requests():
+        if not iatEntry.placeholder in code:
+            raise Exception("IatResolve ID {} not found, abort".format(iatEntry.placeholder))
+        addr = exe_host.get_addr_of_iat_function(iatEntry.name)
+        if addr == None:
+            raise Exception("IatResolve: Function {} not found".format(iatEntry.name))
         
-        off = code.index(cap.id)
+        off = code.index(iatEntry.placeholder)
         current_address = off + exe_host.image_base + exe_host.code_virtaddr
         #current_address += 2
-        destination_address = cap.addr
+        destination_address = addr
         logger.info("    Replace at 0x{:x} with call to 0x{:x}".format(
             current_address, destination_address
         ))
         jmp = assemble_and_disassemble_jump(
             current_address, destination_address
         )
-        code = code.replace(cap.id, jmp)
+        code = code.replace(iatEntry.placeholder, jmp)
 
     # write back our patched code into the exe
     write_code_section(exe_file=exe_out, new_data=code)
