@@ -64,6 +64,7 @@ class ExeHost():
         pe = pefile.PE(self.filepath)
         self.pe = pe
         self.superpe = SuperPe(pe)
+        self.superpe.init()
 
         if pe.FILE_HEADER.Machine != 0x8664:
             raise Exception("Binary is not 64bit: {}".format(self.filepath))

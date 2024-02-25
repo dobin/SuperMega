@@ -27,7 +27,6 @@ class SuperPe():
 
     def get_section_by_name(self, name: str) -> PeSection:
         for section in self.pe_sections:
-            #print("{} {}".format(section.name, name))
             if section.name == name:
                 return section
         return None
