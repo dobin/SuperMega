@@ -1,6 +1,7 @@
 from typing import Dict, List
 import logging
 import pefile
+from intervaltree import Interval, IntervalTree
 
 from model.defs import *
 import peparser.pehelper as pehelper
@@ -10,10 +11,11 @@ from peparser.misc import get_physical_address
 logger = logging.getLogger("ExeHost")
 
 
-class RelocEntry():
+class PeRelocEntry():
     def __init__(self, rva: int, base_rva: int, type: str):
         self.rva: int = rva
         self.base_rva: int = base_rva
+        self.offset: int = rva - base_rva
         self.type: str = type
 
 
@@ -34,7 +36,7 @@ class ExeHost():
         self.superpe: SuperPe = None
 
         self.iat: Dict[str, IatEntry] = {}
-        self.base_relocs = []
+        self.base_relocs: List[PeRelocEntry] = []
 
         self.image_base: int = 0
         self.dynamic_base: bool = False
@@ -88,11 +90,7 @@ class ExeHost():
                     rva = entry.rva
                     base_rva = entry.base_rva
                     reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
-                    self.base_relocs.append({
-                        'rva': rva,
-                        'base_rva': base_rva,
-                        'type': reloc_type,
-                    })
+                    self.base_relocs.append(PeRelocEntry(rva, base_rva, reloc_type))
         
         # rwx section
         entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
@@ -129,3 +127,45 @@ class ExeHost():
                     return entry.iat_vaddr
         return None
     
+    
+    def get_relocations_for_section(self, section_name: str) -> List[PeRelocEntry]:
+        section = self.get_section_by_name(section_name)
+        if section is None:
+            return []
+        return [reloc for reloc in self.base_relocs if reloc.base_rva == section.virt_addr]
+    
+
+    def get_reloc_largest_gap(self, section_name: str = ".rdata"):
+        tree = IntervalTree()
+        section = self.get_section_by_name(section_name)
+
+        print("-- Relocations: {}".format(len(self.base_relocs)))
+        print("-- section: 0x{:x}".format(section.virt_addr))
+
+        for reloc in self.base_relocs:
+            if reloc.base_rva == section.virt_addr:
+                print("--- Adding reloc: {} {}".format(reloc.offset, reloc.offset + 8))
+                tree.add(Interval(reloc.offset, reloc.offset + 8))
+        tree.add(Interval(section.virt_size, section.virt_size + 1))
+
+        # Initialize variables to track the largest gap and its bounds
+        max_gap = 0
+        gap_start = None
+        gap_end = None
+
+        # Sort intervals for sequential comparison
+        sorted_intervals = sorted(tree)
+        for i in range(len(sorted_intervals) - 1):
+            current_end = sorted_intervals[i].end
+            next_start = sorted_intervals[i + 1].begin
+            gap = next_start - current_end
+            if gap > max_gap:
+                max_gap = gap
+                gap_start = current_end  # Adjusted for the actual start of the gap
+                gap_end = next_start - 1  # Adjusted for the actual end of the gap
+
+        # Adjust for the artificial +1 in interval ends
+        if gap_start is not None and gap_end is not None:
+            gap_start -= 1
+
+        return max_gap - 1, gap_start, gap_end
