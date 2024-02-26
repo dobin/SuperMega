@@ -103,8 +103,15 @@ class ExeHost():
                         'type': reloc_type,
                     })
         
-        # rwx
-        self.rwx_section = pehelper.get_rwx_section(pe)
+        # rwx section
+        entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for section in pe.sections:
+            if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
+                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
+                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
+            ):
+                if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.Misc_VirtualSize:
+                    self.rwx_section = section
 
         # If the PE file was loaded using the fast_load=True argument, we will need to parse the data directories:
         #pe.parse_data_directories()

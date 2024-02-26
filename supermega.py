@@ -16,7 +16,7 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from peparser.pehelper import extract_code_from_exe
+from peparser.pehelper import extract_code_from_exe_file
 
 from model.project import Project
 from model.settings import Settings
@@ -266,14 +266,14 @@ def start(settings: Settings):
                 project.carrier,
                 project.exe_host)
             
-            code = extract_code_from_exe(settings.inject_exe_out)
+            code = extract_code_from_exe_file(settings.inject_exe_out)
             pe = pefile.PE(settings.inject_exe_out)
             ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
             ep_raw = get_physical_address(pe, ep)
             pe.close()
 
-            print("Raw: {} / 0x{:x}".format(
-                ep_raw, ep_raw))
+            #print("Raw: {} / 0x{:x}".format(
+            #    ep_raw, ep_raw))
             observer.add_code("exe_fucking_final", 
                 code[ep_raw:ep_raw+300])
             

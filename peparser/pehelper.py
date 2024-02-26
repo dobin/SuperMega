@@ -10,7 +10,7 @@ from model.defs import *
 logger = logging.getLogger("PEHelper")
 
 
-def extract_code_from_exe(exe_file: FilePath) -> bytes:
+def extract_code_from_exe_file(exe_file: FilePath) -> bytes:
     pe = pefile.PE(exe_file)
     section = get_code_section(pe)
     data: bytes = section.get_data()
@@ -39,24 +39,11 @@ def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
     raise Exception("Code section not found")
 
 
-# RWX
-def get_rwx_section(pe: pefile.PE) -> pefile.SectionStructure:
-    entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-    for section in pe.sections:
-        if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
-            section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
-            section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
-        ):
-            if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.Misc_VirtualSize:
-                return section
-    return None
-
-
 # keystone/capstone stuff
 
 def assemble_lea(current_address: int, destination_address: int, reg: str) -> bytes:
-    print("LEAH: 0x{:X} - 0x{:X} = 0x{:X}".format(
-        current_address, destination_address, destination_address - current_address))
+    #print("LEAH: 0x{:X} - 0x{:X} = 0x{:X}".format(
+    #    current_address, destination_address, destination_address - current_address))
     offset = destination_address - current_address
     ks = Ks(KS_ARCH_X86, KS_MODE_64)
     encoding, _ = ks.asm(f"lea {reg}, qword ptr ds:[{offset}]")

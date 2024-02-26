@@ -21,7 +21,7 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FileP
     ])
     if not os.path.isfile(build_exe):
         raise Exception("Compiling failed")
-    code = extract_code_from_exe(build_exe)
+    code = extract_code_from_exe_file(build_exe)
     observer.add_code("carrier_shc", code) 
     with open(shellcode_out, 'wb') as f:
         f.write(code)

@@ -5,7 +5,7 @@ import logging
 
 from model.exehost import ExeHost
 from model.defs import *
-from peparser.pehelper import extract_code_from_exe
+from peparser.pehelper import extract_code_from_exe_file
 from helper import hexdump
 from observer import observer
 
@@ -48,7 +48,7 @@ class DerBackdoorerTest(unittest.TestCase):
         )
 
         self.assertTrue(result)
-        code = extract_code_from_exe(exe_out_path)
+        code = extract_code_from_exe_file(exe_out_path)
         extracted_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+len(shellcode)]
         self.assertEqual(shellcode, extracted_code)
 
@@ -80,7 +80,7 @@ class DerBackdoorerTest(unittest.TestCase):
         self.assertTrue(result)
 
         # code
-        code = extract_code_from_exe(exe_out_path)
+        code = extract_code_from_exe_file(exe_out_path)
         extracted_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+len(shellcode)]
         self.assertEqual(shellcode, extracted_code)
 
