@@ -1,7 +1,6 @@
 from typing import Dict, List
 import logging
 
-from model.exehost import DataReuseEntry
 
 logger = logging.getLogger("Carrier")
 
@@ -11,6 +10,14 @@ class IatRequest():
         self.name: str = name           # Function Name, like "VirtualAlloc"
         self.placeholder: bytes = placeholder    # Random bytes as placeholder
 
+
+class DataReuseEntry():
+    def __init__(self, string_ref: str, register: str, randbytes: bytes):
+        self.string_ref = string_ref
+        self.register = register
+        self.randbytes = randbytes
+        self.data = b''
+        self.addr = 0
 
 
 class Carrier():

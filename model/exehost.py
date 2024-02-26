@@ -18,19 +18,10 @@ class RelocEntry():
 
 
 class IatEntry():
-    def __init__(self, dll_name, func_name, func_addr):
-        self.dll_name = dll_name
-        self.func_name = func_name
-        self.func_addr = func_addr
-
-
-class DataReuseEntry():
-    def __init__(self, string_ref: str, register: str, randbytes: bytes):
-        self.string_ref = string_ref
-        self.register = register
-        self.randbytes = randbytes
-        self.data = b''
-        self.addr = 0
+    def __init__(self, dll_name: str, func_name: str, iat_vaddr: int):
+        self.dll_name: str = dll_name
+        self.func_name: str = func_name
+        self.iat_vaddr: int = iat_vaddr
 
 
 class ExeHost():
@@ -42,7 +33,7 @@ class ExeHost():
         self.pe: pefile.PE = None
         self.superpe: SuperPe = None
 
-        self.iat = {}  # Dict[str, List[Dict[str, str]]]
+        self.iat: Dict[str, IatEntry] = {}
         self.base_relocs = []
 
         self.image_base: int = 0
@@ -128,26 +119,13 @@ class ExeHost():
                 if not dll_name in self.iat:
                     self.iat[dll_name] = []
 
-                self.iat[dll_name].append({
-                    "dll_name": dll_name,
-                    "func_name": imp_name,
-                    "iat_vaddr": imp_addr
-                })
+                self.iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
         
 
     def get_vaddr_of_iatentry(self, func_name: str) -> int:
         for dll_name in self.iat:
             for entry in self.iat[dll_name]:
-                if entry["func_name"] == func_name:
-                    return entry["iat_vaddr"]
+                if entry.func_name == func_name:
+                    return entry.iat_vaddr
         return None
     
-    ## Other
-
-    def print(self):
-        logger.info("--( Required IAT Resolves: ")
-        for _, cap in self.iat_requests.items():
-            if cap.addr == 0:
-                logger.info("   {:28} {}".format(cap.name, "N/A"))
-            else:
-                logger.info("   {:28} 0x{:x}".format(cap.name, cap.addr))

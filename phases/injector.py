@@ -6,7 +6,7 @@ import time
 import tempfile
 import logging
 
-from model.carrier import Carrier
+from model.carrier import Carrier, DataReuseEntry
 from peparser.pehelper import *
 from model.exehost import *
 from observer import observer

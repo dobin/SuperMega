@@ -4,7 +4,7 @@ from intervaltree import Interval, IntervalTree
 from typing import List, Dict
 import os
 
-from model.exehost import DataReuseEntry
+from model.carrier import DataReuseEntry
 
 
 def bytes_to_asm_db(byte_data: bytes) -> bytes:
