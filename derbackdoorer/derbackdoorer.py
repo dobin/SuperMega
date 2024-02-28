@@ -223,7 +223,7 @@ Trailing {sect_name} bytes:
         cs = None
         ks = None
 
-        if self.arch == 'x86':
+        if self.mype.arch == 'x86':
             cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_32 + capstone.CS_MODE_LITTLE_ENDIAN)
             ks = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_32 + keystone.KS_MODE_LITTLE_ENDIAN)
         else:    
@@ -247,7 +247,7 @@ Trailing {sect_name} bytes:
         output = self.mype.disasmBytes(cs, ks, disasmData, ep, 128, self.backdoorInstruction)
 
         # store offset... by calculating it first FUCK
-        section = self._get_code_section()
+        section = self.mype.get_code_section()
         self.backdoorOffsetRel = output - section.VirtualAddress
 
         if output != 0:
@@ -274,7 +274,7 @@ Trailing {sect_name} bytes:
 
         registers = ['rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi']
 
-        if self.arch == 'x86':
+        if self.mype.arch == 'x86':
             registers = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi'] 
 
         reg = random.choice(registers).upper()

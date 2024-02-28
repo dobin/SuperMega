@@ -30,8 +30,8 @@ def create_c_from_template(
     plugin_executor = ""
 
     logger.info("--[ Create C from template")
-    logger.warn("---[ Loader modules = Alloc: {}  Decoder: {}  Exec: {}".format(
-        alloc_style.value, decoder_style.value, exec_style.value
+    logger.warn("---[ {} Loader modules = Alloc: {}  Decoder: {}  Exec: {}".format(
+        source_style.value, alloc_style.value, decoder_style.value, exec_style.value
     ))
 
     filepath = "plugins/allocator/{}.c".format(alloc_style.value)

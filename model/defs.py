@@ -30,8 +30,8 @@ class DataRefStyle(Enum):
 #class InjectStyle(Enum):
     
 class SourceStyle(Enum):
-    peb_walk = 1
-    iat_reuse = 2
+    peb_walk = "peb_walk"
+    iat_reuse = "iat_reuse"
 
 
 build_dir = "build"

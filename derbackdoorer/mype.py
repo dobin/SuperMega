@@ -84,23 +84,13 @@ class MyPe():
     
     
     def addImageBaseRelocations(self, pageRva, relocs):
-        relocType = MyPe.IMAGE_REL_BASED_HIGHLOW
-
-        if self.arch == 'x64': 
-            relocType = MyPe.IMAGE_REL_BASED_DIR64
+        assert pageRva > 0
 
         if not self.pe.has_relocs():
             logger.error("No .reloc section")
             raise(Exception("No .reloc section"))
-        else:
-            self.addRelocs(pageRva, relocs)
-
-
-    def addRelocs(self, pageRva, relocs):
-        assert pageRva > 0
 
         imageBaseRelocType = MyPe.IMAGE_REL_BASED_HIGHLOW
-
         if self.arch == 'x64':
             imageBaseRelocType = MyPe.IMAGE_REL_BASED_DIR64
 
@@ -128,7 +118,7 @@ class MyPe():
         # SizeOfBlock
         self.pe.set_dword_at_rva(addr + relocsSize + 4, sizeOfReloc)
 
-        logger.debug(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:x} - size of block: 0x{sizeOfReloc:x}')
+        logger.info(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:x} - size of block: 0x{sizeOfReloc:x}')
 
         i = 0
         for reloc in relocs:
@@ -137,7 +127,7 @@ class MyPe():
 
             relocWord = (reloc_type | reloc_offset)
             self.pe.set_word_at_rva(relocDirRva + relocsSize + 8 + i * 2, relocWord)
-            logger.debug(f'\tReloc{i} for addr 0x{reloc:x}: 0x{relocWord:x} - 0x{reloc_offset:x} - type: {imageBaseRelocType}')
+            logger.info(f'\tReloc{i} for addr 0x{reloc:x}: 0x{relocWord:x} - 0x{reloc_offset:x} - type: {imageBaseRelocType}')
             i += 1
 
 
@@ -174,7 +164,7 @@ class MyPe():
         data = disasmData[startOffset:startOffset + length]
 
         for instr in cs.disasm(data, startOffset):
-            self._printInstr(instr, depth)
+            self.printInstr(instr, depth)
 
             if len(instr.operands) == 1:
                 operand = instr.operands[0]
