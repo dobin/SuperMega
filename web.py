@@ -5,9 +5,10 @@ import argparse
 from flask import Flask
 
 from app.views import views
-
+from log import setup_logging, writelog
 
 if __name__ == "__main__":
+	setup_logging()
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--listenip', type=str, help='IP to listen on', default="0.0.0.0")
 	parser.add_argument('--listenport', type=int, help='Port to listen on', default=5001)

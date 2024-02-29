@@ -11,6 +11,10 @@ from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
 
+from config import config
+from model.settings import Settings
+from model.defs import *
+from supermega import start
 
 views = Blueprint('views', __name__)
 
@@ -20,6 +24,68 @@ conv = Ansi2HTMLConverter()
 @views.route("/")
 def index():
     return render_template('index.html')
+
+
+@views.route("/inject", methods=['GET', 'POST'])
+def inject():
+    config.load()
+    settings = Settings()
+
+    settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
+    settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
+    settings.inject_exe_out = "app/upload/infected/" + request.form['exe'] + ".injected"
+
+    source_style = request.form['source_style']
+    settings.source_style = SourceStyle[source_style]
+
+    alloc_style = request.form['alloc_style']
+    settings.alloc_style = AllocStyle[alloc_style]
+
+    decoder_style = request.form['decoder_style']
+    settings.decoder_style = DecoderStyle[decoder_style]
+
+    exec_style = request.form['exec_style']
+    settings.exec_style = ExecStyle[exec_style]
+
+    inject_style = request.form['inject_style']
+    inject_style = InjectStyle[inject_style]
+    settings.inject = True
+    if inject_style == InjectStyle.ENTRY:
+        settings.inject_mode = 1
+    elif inject_style == InjectStyle.HIJACK:
+        settings.inject_mode = 2
+        
+    print(str(settings))
+    start(settings)
+
+    return render_template('inject.html')
+
+
+@views.route("/build")
+def build():
+    exes = []
+    for file in os.listdir("app/upload/exe"):
+        exes.append(file)
+
+    shellcodes = []
+    for file in os.listdir("app/upload/shellcode"):
+        shellcodes.append(file)
+
+    sourcestyles = [(color.name, color.value) for color in SourceStyle]
+    allocstyles = [(color.name, color.value) for color in AllocStyle]
+    decoderstyles = [(color.name, color.value) for color in DecoderStyle]
+    execstyles = [(color.name, color.value) for color in ExecStyle]
+    injectstyles = [(color.name, color.value) for color in InjectStyle]
+
+    return render_template('build.html', 
+        exes=exes,
+        shellcodes=shellcodes,
+        sourcestyles=sourcestyles,
+        allocstyles=allocstyles,
+        decoderstyles=decoderstyles,
+        execstyles=execstyles,
+        injectstyles=injectstyles,
+    )
 
 
 @views.route("/project")

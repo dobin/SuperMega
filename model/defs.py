@@ -21,13 +21,15 @@ class DecoderStyle(Enum):
 
 class ExecStyle(Enum):
     CALL = "direct_1"
-    #JMP = 2,
-    #FIBER = 3,
+    #JMP = "jump",
+    #FIBER = "fiber",
 
 class DataRefStyle(Enum):
     APPEND = 1
 
-#class InjectStyle(Enum):
+class InjectStyle(Enum):
+    ENTRY = "change AddressOfEntryPoint"
+    HIJACK = "hijack branching instruction at Original Entry Point (jmp, call, ...)"
     
 class SourceStyle(Enum):
     peb_walk = "peb_walk"
