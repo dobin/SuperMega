@@ -144,6 +144,14 @@ def start(settings: Settings):
     project = Project(settings)
     project.init()
 
+    logger.warning("--I SourceStyle: {}  Inject Mode: {}  ".format(
+        project.settings.source_style.value, project.settings.inject_mode.value))
+    logger.warning("--I   Loader modules:  Alloc: {}  Decoder: {}  Exec: {}".format(
+        project.settings.alloc_style.value, 
+        project.settings.decoder_style.value,
+        project.settings.exec_style.value
+    ))
+
     # Create: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(
         source_style = settings.source_style,

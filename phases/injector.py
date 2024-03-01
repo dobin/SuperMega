@@ -26,8 +26,8 @@ def inject_exe(
     inject_mode: InjectStyle = settings.inject_mode
     source_style: SourceStyle = settings.source_style
 
-    logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
-        shellcode_in, exe_in, exe_out, inject_mode
+    logger.info("--[ Injecting: {} into: {} -> {}".format(
+        shellcode_in, exe_in, exe_out
     ))
 
     # Read prepared loader shellcode

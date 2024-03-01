@@ -72,7 +72,6 @@ def compile(
         ))
 
     if source_style == SourceStyle.iat_reuse:
-        logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
         fixup_iat_reuse(asm_clean_file, carrier)
         observer.add_text("carrier_asm_updated", file_readall_text(asm_clean_file))
 
