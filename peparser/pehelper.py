@@ -10,6 +10,41 @@ from model.defs import *
 logger = logging.getLogger("PEHelper")
 
 
+# PEHelper
+# Work directly on PE files. Not using mype or other abstractions.
+# Its mostly used for verification of what we were doing. 
+
+
+def extract_code_from_exe_file_ep(exe_file: FilePath, len: int) -> bytes:
+    pe = pefile.PE(exe_file)
+    section = get_code_section(pe)
+    data: bytes = section.get_data()
+    data = remove_trailing_null_bytes(data)
+
+    ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+    ep_raw = get_physical_address(pe, ep)
+
+    data = data[ep_raw:ep_raw+len]
+
+    pe.close()
+
+    return data
+
+
+def get_physical_address(pe, virtual_address):
+    # Iterate through the section headers to find which section contains the VA
+    for section in pe.sections:
+        # Check if the VA is within the range of this section
+        if section.VirtualAddress <= virtual_address < section.VirtualAddress + section.Misc_VirtualSize:
+            # Calculate the difference between the VA and the section's virtual address
+            virtual_offset = virtual_address - section.VirtualAddress
+            # Add the difference to the section's pointer to raw data
+            return virtual_offset
+            #physical_address = section.PointerToRawData + virtual_offset
+            #return physical_address
+    return None
+
+
 def extract_code_from_exe_file(exe_file: FilePath) -> bytes:
     pe = pefile.PE(exe_file)
     section = get_code_section(pe)
@@ -29,6 +64,7 @@ def write_code_section(exe_file: FilePath, new_data: bytes):
         f.seek(file_offset)
         f.write(new_data)
     pe.close()
+
 
 def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
     entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint

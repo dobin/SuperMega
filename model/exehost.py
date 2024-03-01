@@ -7,6 +7,7 @@ from model.defs import *
 import peparser.pehelper as pehelper
 from peparser.superpe import SuperPe
 from peparser.misc import get_physical_address
+from model.carrier import Carrier
 
 logger = logging.getLogger("ExeHost")
 
@@ -169,3 +170,12 @@ class ExeHost():
             gap_start -= 1
 
         return max_gap - 1, gap_start, gap_end
+    
+    def has_all_carrier_functions(self, carrier: Carrier):
+            is_ok = True
+            for iat_entry in carrier.iat_requests:
+                addr = self.get_vaddr_of_iatentry(iat_entry.name)
+                if addr == 0:
+                    logging.info("---( Function not available as import: {}".format(iat_entry.name))
+                    is_ok = False
+            return is_ok

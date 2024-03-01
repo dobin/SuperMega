@@ -11,6 +11,7 @@ from model import *
 from phases.masmshc import process_file, Params
 from phases.datareuse import *
 from model.carrier import Carrier
+from model.exehost import ExeHost
 
 logger = logging.getLogger("Compiler")
 use_templates = True
@@ -21,7 +22,9 @@ def compile(
     asm_out: FilePath,
     payload_len: int,
     carrier: Carrier,
-    short_call_patching: bool = False
+    source_style: SourceStyle,
+    exe_host: ExeHost,
+    short_call_patching: bool = False,
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
@@ -57,22 +60,25 @@ def compile(
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
     logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    if True:
-        params = Params(asm_out, asm_clean_file, 
-            inline_strings=False,  # not for DATA_REUSE
-            remove_crt=True, 
-            append_rsp_stub=True)  # required atm
-        process_file(params)
-    else:
-        run_process_checkret([
-            config.get("path_masmshc"),
-            asm_out,
-            asm_clean_file,
-        ])
+    params = Params(asm_out, asm_clean_file, 
+        inline_strings=False,  # not for DATA_REUSE
+        remove_crt=True, 
+        append_rsp_stub=True)  # required atm
+    process_file(params)
+
     if not os.path.isfile(asm_clean_file):
         raise Exception("Error: Cleaned up ASM file {} was not created".format(
             asm_clean_file
         ))
+
+    if source_style == SourceStyle.iat_reuse:
+        logger.warning("--[ SourceStyle: Using IAT_REUSE".format())
+        fixup_iat_reuse(asm_clean_file, carrier)
+        observer.add_text("carrier_asm_updated", file_readall_text(asm_clean_file))
+
+        if not exe_host.has_all_carrier_functions(carrier):
+            logger.error("Error: Not all carrier functions are available in the target exe")
+            return
 
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)

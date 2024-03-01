@@ -26,7 +26,7 @@ def inject_exe(
 #    inject_mode: int,
 #    source_style: SourceStyle
         
-    main_shc: FilePath,
+    main_shc_file: FilePath,
     settings: Settings,
     project: Project,
 ):
@@ -35,6 +35,14 @@ def inject_exe(
     exe_out = settings.inject_exe_out
     inject_mode = settings.inject_mode
     source_style = settings.source_style
+
+    main_shc = file_readall_binary(main_shc_file)
+    l = len(main_shc)
+    if l + 128 > project.exe_host.code_size:
+        logger.error("Error: Shellcode {}+128 too small for target code section {}".format(
+            l, project.exe_host.code_size
+        ))
+        return False
 
     logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
         shellcode_in, exe_in, exe_out, inject_mode
@@ -94,7 +102,6 @@ def inject_exe(
 
 def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
     """replace IAT-placeholders in shellcode with call's to the IAT"""
-    #code = extract_code_from_exe_file(exe_out)
     code = mype.get_code_section_data()  # BUG WITHOUT PLACEHOLDR
     observer.add_code("exe_extracted_iat", code)
 
@@ -115,8 +122,6 @@ def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
         )
         code = code.replace(iatRequest.placeholder, jmp)
 
-    # write back our patched code into the exe
-    #write_code_section(exe_file=exe_out, new_data=code)
     mype.write_code_section_data(code)
 
 
@@ -141,7 +146,6 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above
-    #code = extract_code_from_exe_file(exe_path)
     code = mype.get_code_section_data()
     print("Type of code: ", type(code)) 
     for datareuse_fixup in reusedata_fixups:
@@ -159,9 +163,6 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
             instruction_virtual_address, destination_virtual_address, datareuse_fixup.register
         )
         code = code.replace(datareuse_fixup.randbytes, lea)
-
-    # write back our patched code into the exe
-    #write_code_section(exe_file=exe_path, new_data=code)
     mype.write_code_section_data(code)
 
 
