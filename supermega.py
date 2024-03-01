@@ -1,11 +1,9 @@
 import shutil
-from enum import Enum
 import argparse
 from typing import Dict
 import os
 import logging
 import time
-import pefile
 
 from helper import *
 from config import config
@@ -25,6 +23,7 @@ from log import setup_logging, writelog
 
 
 def main():
+    """Argument parsing for when called from command line"""
     logger.info("Super Mega")
     config.load()
     settings = Settings()
@@ -51,7 +50,7 @@ def main():
         config.ShowCommandOutput = True
 
     if args.verify:
-        settings.payload_path = "shellcodes/createfile.bin"
+        settings.payload_path = "data/shellcodes/createfile.bin"
         settings.verify = True
 
         settings.try_start_final_infected_exe = False
@@ -59,18 +58,18 @@ def main():
         if args.verify == "peb":
             settings.source_style = SourceStyle.peb_walk
             settings.inject_mode = InjectStyle.BackdoorCallInstr
-            settings.inject_exe_in = "exes/7z.exe"
-            settings.inject_exe_out = "out/7z-verify.exe"
+            settings.inject_exe_in = "data/exes/7z.exe"
+            settings.inject_exe_out = "data/exes/7z-verify.exe"
         elif args.verify == "iat":
             settings.source_style = SourceStyle.iat_reuse
             settings.inject_mode = InjectStyle.BackdoorCallInstr
-            settings.inject_exe_in = "exes/procexp64.exe"
-            settings.inject_exe_out = "out/procexp64-verify.exe"
+            settings.inject_exe_in = "data/exes/procexp64.exe"
+            settings.inject_exe_out = "data/exes/procexp64-verify.exe"
         elif args.verify == "rwx":
             settings.source_style = SourceStyle.peb_walk
             settings.inject_mode = InjectStyle.ChangeEntryPoint  # ,2 is broken atm
-            settings.inject_exe_in = "exes/wifiinfoview.exe"
-            settings.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
+            settings.inject_exe_in = "data/exes/wifiinfoview.exe"
+            settings.inject_exe_out = "data/exes/wifiinfoview.exe-verify.exe"
         else:
             logger.info("Unknown verify option {}, use std/iat".format(args.verify))
             return
@@ -114,7 +113,7 @@ def main():
 
         if not args.shellcode or not args.inject:
             logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
-            logger.info(r"Example: .\supermega.py --shellcode .\shellcodes\calc64.bin --inject .\exes\7z.exe")
+            logger.info(r"Example: .\supermega.py --shellcode .\data\shellcodes\calc64.bin --inject .\data\exes\7z.exe")
             return 1
 
         if args.shellcode:
@@ -133,6 +132,8 @@ def main():
 
 
 def start(settings: Settings):
+    """Main entry point for the application. This is where the magic happens, based on settings"""
+
     # Delete: all old files
     if settings.cleanup_files_on_start:
         clean_files()

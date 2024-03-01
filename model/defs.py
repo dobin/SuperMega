@@ -4,11 +4,11 @@ import os
 class FilePath(str):
     pass
 
-# with shellcodes/createfile.bin
+# with data/shellcodes/createfile.bin
 VerifyFilename: FilePath = r'C:\Temp\a'
 
 # Correlated with real template files
-# in plugins/
+# in data/plugins/
 
 class AllocStyle(Enum):
     RWX = "rwx_1"

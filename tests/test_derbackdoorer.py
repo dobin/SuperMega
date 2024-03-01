@@ -28,13 +28,13 @@ class DerBackdoorerTest(unittest.TestCase):
 
     def test_backdoor_ep(self):
         # Write example shellcode
-        shellcode_path = "exes/shellcode.test"
+        shellcode_path = "data/exes/shellcode.test"
         shellcode = b"\x90" * 200
         with open(shellcode_path, "wb") as f:
             f.write(shellcode)
 
-        exe_path = "exes/iattest-full.exe"
-        exe_out_path = "exes/iattest-full-test.exe"
+        exe_path = "data/exes/iattest-full.exe"
+        exe_out_path = "data/exes/iattest-full-test.exe"
 
         shutil.copyfile(exe_path, exe_out_path)
 
@@ -59,12 +59,12 @@ class DerBackdoorerTest(unittest.TestCase):
     def test_backdoor_hijack(self):
         # Write example shellcode
         shellcode = b"\x90" * 200
-        with open("exes/shellcode.test", "wb") as f:
+        with open("data/exes/shellcode.test", "wb") as f:
             f.write(shellcode)
 
-        shellcode_path = "exes/shellcode.test"
-        exe_path = "exes/7z.exe"
-        exe_out_path = "exes/7z-test.exe"
+        shellcode_path = "data/exes/shellcode.test"
+        exe_path = "data/exes/7z.exe"
+        exe_out_path = "data/exes/7z-test.exe"
 
         shutil.copyfile(exe_path, exe_out_path)
 

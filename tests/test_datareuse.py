@@ -8,7 +8,7 @@ from phases.datareuse import *
 
 class DataReuseTest(unittest.TestCase):
     def test_relocation_list(self):
-        data_reuser = DataReuser("exes/7z.exe")
+        data_reuser = DataReuser("data/exes/7z.exe")
         data_reuser.init()
 
         relocs = data_reuser.get_relocations_for_section(".rdata")
@@ -21,7 +21,7 @@ class DataReuseTest(unittest.TestCase):
 
 
     def test_largestgap(self):
-        data_reuser = DataReuser("exes/7z.exe")
+        data_reuser = DataReuser("data/exes/7z.exe")
         data_reuser.init()
 
         size, start, stop = data_reuser.get_reloc_largest_gap(".rdata")
