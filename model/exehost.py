@@ -4,9 +4,8 @@ import pefile
 from intervaltree import Interval, IntervalTree
 
 from model.defs import *
-import peparser.pehelper as pehelper
-from peparser.superpe import SuperPe
-from peparser.misc import get_physical_address
+import pe.pehelper as pehelper
+from pe.superpe import SuperPe
 from model.carrier import Carrier
 
 logger = logging.getLogger("ExeHost")
@@ -64,7 +63,7 @@ class ExeHost():
             raise Exception("Binary is not 64bit: {}".format(self.filepath))
 
         self.ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-        self.ep_raw = get_physical_address(pe, self.ep)
+        self.ep_raw = self.superpe.get_physical_address(self.ep)
 
         # image base
         self.image_base = pe.OPTIONAL_HEADER.ImageBase

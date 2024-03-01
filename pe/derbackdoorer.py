@@ -12,7 +12,7 @@ from enum import IntEnum
 import logging
 
 from helper import hexdump
-from derbackdoorer.mype import MyPe
+from pe.mype import MyPe
 from model.defs import *
 
 logger = logging.getLogger("DerBackdoorer")

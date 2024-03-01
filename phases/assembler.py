@@ -3,7 +3,7 @@ import logging
 from model import *
 from config import config
 from observer import observer
-from peparser.pehelper import *
+from pe.pehelper import *
 from helper import *
 
 logger = logging.getLogger("Assembler")

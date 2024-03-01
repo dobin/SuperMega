@@ -3,7 +3,7 @@ import pprint
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
 from model import *
-from peparser.r2helper import r2_disas
+from pe.r2helper import r2_disas
 from helper import delete_all_files_in_directory
 from model.defs import *
 

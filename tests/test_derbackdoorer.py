@@ -5,11 +5,11 @@ import logging
 
 from model.exehost import ExeHost
 from model.defs import *
-from peparser.pehelper import extract_code_from_exe_file
+from pe.pehelper import extract_code_from_exe_file
 from helper import hexdump
 from observer import observer
 
-from derbackdoorer.derbackdoorer import PeBackdoor
+from pe.derbackdoorer import PeBackdoor
 
 
 # What to make sure of: 

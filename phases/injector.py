@@ -4,11 +4,11 @@ import time
 import logging
 
 from model.carrier import Carrier, DataReuseEntry
-from peparser.pehelper import *
+from pe.pehelper import *
 from model.exehost import *
 from observer import observer
-from derbackdoorer.derbackdoorer import PeBackdoor
-from derbackdoorer.mype import MyPe
+from pe.derbackdoorer import PeBackdoor
+from pe.mype import MyPe
 from model.project import Project
 from model.settings import Settings
 
@@ -76,8 +76,7 @@ def inject_exe(
 
 def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
     """replace IAT-placeholders in shellcode with call's to the IAT"""
-    code = mype.get_code_section_data()  # BUG WITHOUT PLACEHOLDR
-    observer.add_code("exe_extracted_iat", code)
+    code = mype.get_code_section_data()
 
     for iatRequest in carrier.get_all_iat_requests():
         if not iatRequest.placeholder in code:
@@ -104,6 +103,10 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
     # Insert my data into the .rdata section.
     # Chose and save each datareuse_fixup's addres.
     reusedata_fixups: List[DataReuseEntry] = carrier.get_all_reusedata_fixups()
+    if len(reusedata_fixups) == 0:
+        # nothing todo
+        return
+
     sect = exe_host.superpe.get_section_by_name(".rdata")
     addr = sect.raw_addr + 0x1AB0 # NEEDED, > 1A00!
 
@@ -130,7 +133,7 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
         instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_virtaddr
         destination_virtual_address = datareuse_fixup.addr
         logger.info("    Replace {} at VA 0x{:x} with .rdata LEA at VA 0x{:x}".format(
-            datareuse_fixup.randbytes, instruction_virtual_address, destination_virtual_address
+            datareuse_fixup.randbytes.hex(), instruction_virtual_address, destination_virtual_address
         ))
         lea = assemble_lea(
             instruction_virtual_address, destination_virtual_address, datareuse_fixup.register

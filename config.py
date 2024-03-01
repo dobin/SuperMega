@@ -8,7 +8,7 @@ class Config(object):
     def __init__(self):
         self.data = {}
         self.ShowCommandOutput: bool = False
-        self.debug: bool = True
+        self.debug: bool = False
 
         self.xor_key: int = 0x31
         self.data_fixups = None

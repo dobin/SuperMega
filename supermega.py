@@ -12,7 +12,7 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from peparser.pehelper import extract_code_from_exe_file_ep
+from pe.pehelper import extract_code_from_exe_file_ep
 
 from model.project import Project
 from model.settings import Settings
