@@ -14,7 +14,7 @@ class Settings():
         self.short_call_patching: bool = False
 
         # Injectable
-        self.inject_mode: int = 2
+        self.inject_mode: InjectStyle = InjectStyle.BackdoorCallInstr
         self.inject_exe_in: FilePath = ""
         self.inject_exe_out: FilePath = ""
 

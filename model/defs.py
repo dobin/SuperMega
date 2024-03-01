@@ -27,9 +27,10 @@ class ExecStyle(Enum):
 class DataRefStyle(Enum):
     APPEND = 1
 
+
 class InjectStyle(Enum):
-    ENTRY = "change AddressOfEntryPoint"
-    HIJACK = "hijack branching instruction at Original Entry Point (jmp, call, ...)"
+    ChangeEntryPoint = "change AddressOfEntryPoint"
+    BackdoorCallInstr = "hijack branching instruction at Original Entry Point (jmp, call, ...)"
     
 class SourceStyle(Enum):
     peb_walk = "peb_walk"

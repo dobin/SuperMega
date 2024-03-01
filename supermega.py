@@ -58,17 +58,17 @@ def main():
 
         if args.verify == "peb":
             settings.source_style = SourceStyle.peb_walk
-            settings.inject_mode = 2
+            settings.inject_mode = InjectStyle.BackdoorCallInstr
             settings.inject_exe_in = "exes/7z.exe"
             settings.inject_exe_out = "out/7z-verify.exe"
         elif args.verify == "iat":
             settings.source_style = SourceStyle.iat_reuse
-            settings.inject_mode = 2
+            settings.inject_mode = InjectStyle.BackdoorCallInstr
             settings.inject_exe_in = "exes/procexp64.exe"
             settings.inject_exe_out = "out/procexp64-verify.exe"
         elif args.verify == "rwx":
             settings.source_style = SourceStyle.peb_walk
-            settings.inject_mode = 1  # ,2 is broken atm
+            settings.inject_mode = InjectStyle.ChangeEntryPoint  # ,2 is broken atm
             settings.inject_exe_in = "exes/wifiinfoview.exe"
             settings.inject_exe_out = "out/wifiinfoview.exe-verify.exe"
         else:
@@ -101,12 +101,14 @@ def main():
             if args.exec == "direct_1":
                 settings.exec_style = ExecStyle.CALL
 
-        if args.rbrunmode:
-            if args.rbrunmode == "1" or args.rbrunmode == "2":
-                settings.inject_mode = int(args.rbrunmode)
+        if args.inject:
+            if args.rbrunmode == "eop":
+                settings.inject_mode = InjectStyle.ChangeEntryPoint
+            elif args.rbrunmode == "backdoor":
+                settings.inject_mode = InjectStyle.BackdoorCallInstr
             else:
                 logging.error("Invalid mode, use one of:")
-                for i in ["1", "2"]:
+                for i in ["eop", "backdoor"]:
                     logging.error("  {}  {}".format(i, rbrunmode_str(i)))
                 return
 

@@ -56,13 +56,11 @@ class MyPe():
 
     def get_code_section_data(self) -> bytes:
         sect = self.get_code_section()
-        print("CODE GET: {}".format(len(sect.get_data())))
         return bytes(sect.get_data())
 
 
     def write_code_section_data(self, data: bytes):
         sect = self.get_code_section()
-        print("CODE SET {} {}".format(len(data), sect.PointerToRawData))
         self.pe.set_bytes_at_offset(sect.PointerToRawData, data)
 
 

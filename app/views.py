@@ -48,11 +48,7 @@ def inject():
     settings.exec_style = ExecStyle[exec_style]
 
     inject_style = request.form['inject_style']
-    inject_style = InjectStyle[inject_style]
-    if inject_style == InjectStyle.ENTRY:
-        settings.inject_mode = 1
-    elif inject_style == InjectStyle.HIJACK:
-        settings.inject_mode = 2
+    settings.inject_style = InjectStyle[inject_style]
         
     print(str(settings))
     start(settings)

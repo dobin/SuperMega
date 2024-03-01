@@ -26,8 +26,8 @@ def inject_exe(
     shellcode_in = project.payload.payload_path
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
-    inject_mode = settings.inject_mode
-    source_style = settings.source_style
+    inject_mode: InjectStyle = settings.inject_mode
+    source_style: SourceStyle = settings.source_style
 
     logger.info("--[ Injecting: {} into: {} -> {} (mode: {})".format(
         shellcode_in, exe_in, exe_out, inject_mode
@@ -92,7 +92,7 @@ def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
         offset_from_code = code.index(iatRequest.placeholder)
         instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_virtaddr
         logger.info("    Replace {} at VA 0x{:x} with call to IAT at VA 0x{:x}".format(
-            iatRequest.placeholder, instruction_virtual_address, destination_virtual_address
+            iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
         jmp = assemble_and_disassemble_jump(
             instruction_virtual_address, destination_virtual_address
@@ -124,7 +124,6 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above
     code = mype.get_code_section_data()
-    print("Type of code: ", type(code)) 
     for datareuse_fixup in reusedata_fixups:
         if not datareuse_fixup.randbytes in code:
             raise Exception("DataResuse: ID {} not found, abort".format(

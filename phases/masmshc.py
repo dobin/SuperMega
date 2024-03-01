@@ -1,8 +1,11 @@
 import re
 import os
+import logging
 
-VERSION = "0.3"
+logger = logging.getLogger("masmshc")
+
 g_is32bit = False
+
 
 class Params:
     def __init__(self, infile, outfile, inline_strings, remove_crt, append_rsp_stub):
@@ -116,10 +119,10 @@ def process_file(params):
                             #    ofile.write("\tjmp\tmain\n")
                             elif params.append_rsp_stub:
                                 append_align_rsp(ofile)
-                                print("[INFO] Entry Point: AlignRSP")
+                                logger.debug("[INFO] Entry Point: AlignRSP")
 
                         if seg_name == "_BSS":
-                            print(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
+                            logger.error(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
 
                     if seg_name in ("pdata", "xdata", "voltbl"):
                         in_skipped = True
