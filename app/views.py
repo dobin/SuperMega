@@ -90,12 +90,12 @@ def project():
     id = 0
     asm_a = ""  # for diff
     asm_b = ""
-    for file in os.listdir("logs"):
+    for file in os.listdir(f"{logs_dir}/"):
         if file.startswith("."):
             continue
         print("Handle: ", file)
 
-        with open(os.path.join("logs", file), "r") as f:
+        with open(os.path.join(f"{logs_dir}/", file), "r") as f:
             if file.endswith(".bin"):
                 continue
             data = f.read()

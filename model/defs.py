@@ -37,7 +37,9 @@ class SourceStyle(Enum):
     iat_reuse = "iat_reuse"
 
 
-build_dir = "build"
+# no slash at end
+build_dir = "working/build"
+logs_dir = "working/logs"
 
 main_c_file = os.path.join(build_dir, "main.c")
 main_asm_file = os.path.join(build_dir, "main.asm")

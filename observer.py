@@ -5,6 +5,7 @@ from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 from model import *
 from peparser.r2helper import r2_disas
 from helper import delete_all_files_in_directory
+from model.defs import *
 
 
 class Observer():
@@ -32,16 +33,16 @@ class Observer():
     def write_to_file(self, filename, data):
         if not self.active:
             return
-        with open("logs/{}-{}".format(self.idx, filename), "w") as f:
+        with open("{}/{}-{}".format(logs_dir, self.idx, filename), "w") as f:
             f.write(data)
     def write_to_file_bin(self, filename, data):
         if not self.active:
             return
-        with open("logs/{}-{}".format(self.idx, filename), "wb") as f:
+        with open("{}/{}-{}".format(logs_dir, self.idx, filename), "wb") as f:
             f.write(data)
 
     def clean_files(self):
-        delete_all_files_in_directory("logs/")
+        delete_all_files_in_directory(f"{logs_dir}/")
         self.idx = 0
         self.logs = []
 

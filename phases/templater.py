@@ -74,12 +74,12 @@ def create_c_from_template(
                 observer.add_text("main_c_rendered", rendered_template)
 
             # TODO PEB
-            shutil.copy("data/source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
+            shutil.copy("data/source/peb_walk/peb_lookup.h", f"{build_dir}/peb_lookup.h")
         else:
             observer.add_text("main_c", file_readall_text("data/source/peb_walk/main.c"))
             shutil.copy("data/source/peb_walk/main.c", main_c_file)
             # TODO PEB
-            shutil.copy("data/source/peb_walk/peb_lookup.h", "build/peb_lookup.h")
+            shutil.copy("data/source/peb_walk/peb_lookup.h", f"{build_dir}/peb_lookup.h")
 
     elif source_style == SourceStyle.iat_reuse:
         if use_templates:

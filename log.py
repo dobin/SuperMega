@@ -1,5 +1,7 @@
 import logging
 
+from model.defs import *
+
 log_messages = []
 
 
@@ -46,7 +48,7 @@ class ListHandler(logging.Handler):
 
 def writelog():
     # write log to file
-    with open("logs/supermega.log", "w") as f:
+    with open(f"{logs_dir}/supermega.log", "w") as f:
         for line in log_messages:
             f.write(line + "\n")
 

@@ -49,7 +49,7 @@ def run_process_checkret(args, check=True):
         logger.warn(f"An error occurred: {e}")
         # Handle other exceptions
     
-    with open("logs/cmdoutput.log", "ab") as f:
+    with open(f"{logs_dir}/cmdoutput.log", "ab") as f:
         cmd = "------------------------------------\n"
         cmd += "--- " + " ".join(args) + "\n"
         f.write(cmd.encode('utf-8'))
