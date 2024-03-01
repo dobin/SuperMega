@@ -3,15 +3,15 @@ from typing import List
 import unittest
 import logging
 
-from phases.datareuse import *
-
+from model.exehost import ExeHost
+from phases.datareuse import ReusedataAsmFileParser
 
 class DataReuseTest(unittest.TestCase):
     def test_relocation_list(self):
-        data_reuser = DataReuser("data/exes/7z.exe")
-        data_reuser.init()
+        exe_host = ExeHost("data/exes/7z.exe")
+        exe_host.init()
 
-        relocs = data_reuser.get_relocations_for_section(".rdata")
+        relocs = exe_host.get_relocations_for_section(".rdata")
         self.assertEqual(30, len(relocs))
         reloc = relocs[0]
         self.assertEqual(393216, reloc.base_rva)
@@ -21,10 +21,10 @@ class DataReuseTest(unittest.TestCase):
 
 
     def test_largestgap(self):
-        data_reuser = DataReuser("data/exes/7z.exe")
-        data_reuser.init()
+        exe_host = ExeHost("data/exes/7z.exe")
+        exe_host.init()
 
-        size, start, stop = data_reuser.get_reloc_largest_gap(".rdata")
+        size, start, stop = exe_host.get_reloc_largest_gap(".rdata")
         self.assertEqual(129395, size)
         self.assertEqual(3807, start)
         self.assertEqual(133203, stop)
@@ -42,33 +42,32 @@ class DataReuseTest(unittest.TestCase):
         asm_in = "tests/data/data_reuse_pre_fixup.asm"
         data_reuse_entries = []
 
-        asmFileParser = AsmFileParser(asm_in)
+        asmFileParser = ReusedataAsmFileParser(asm_in)
         asmFileParser.init()
-        data_reuse_entries = asmFileParser.get_data_reuse_entries()
+        asmFileParser.process()
+        data_reuse_entries = asmFileParser.get_reusedata_fixups()
 
         self.assertEqual(2, len(data_reuse_entries))
-        self.assertTrue('$SG72513' in data_reuse_entries)
-        self.assertTrue('$SG72514' in data_reuse_entries)
 
-        self.assertEqual(data_reuse_entries['$SG72513'], b"U\x00S\x00E\x00R\x00P\x00R\x00O\x00F\x00I\x00L\x00E\x00\x00\x00")
+        entry = data_reuse_entries[0]
+        self.assertTrue('$SG72513' in entry.string_ref)
+        self.assertTrue('rcx' in entry.register)
+        self.assertEqual(entry.data, b"U\x00S\x00E\x00R\x00P\x00R\x00O\x00F\x00I\x00L\x00E\x00\x00\x00")
+        self.assertEqual(entry.addr, 0)
+        self.assertEqual(7, len(entry.randbytes))  # needs to be 7!
+
+        entry = data_reuse_entries[1]
+        self.assertTrue('$SG72514' in entry.string_ref)
 
 
     def test_data_reuse_fixup(self):
         asm_in = "tests/data/data_reuse_pre_fixup.asm"
         asm_out = asm_in + ".test"
-        asmFileParser = AsmFileParser(asm_in)
+        asmFileParser = ReusedataAsmFileParser(asm_in)
         asmFileParser.init()
-
-        data_fixups = asmFileParser.fixup_data_reuse()
-        self.assertEqual(2, len(data_fixups))
-        fixup = data_fixups[0]
-        self.assertTrue(fixup["string_ref"], "rcx")
-        self.assertTrue(fixup["register"], "$SG72513")
-        self.assertEqual(7, len(fixup["randbytes"]))  # needs to be 7!
-
-        asmFileParser.write_lines_to(asm_out)
-
-        with open(asm_out, "r") as f:
+        asmFileParser.process()
+        asmFileParser.write_lines_to(asm_out + ".test")
+        with open(asm_out + ".test", "r") as f:
             lines = f.readlines()
         self.assertTrue("\tDB " in lines[108-1])
         self.assertFalse("OFFSET FLAT:$SG" in lines[108-1])

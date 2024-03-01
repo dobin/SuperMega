@@ -7,6 +7,7 @@ from model.defs import *
 import pe.pehelper as pehelper
 from pe.superpe import SuperPe
 from model.carrier import Carrier
+from pe.superpe import PeSection
 
 logger = logging.getLogger("ExeHost")
 
@@ -129,7 +130,7 @@ class ExeHost():
     
     
     def get_relocations_for_section(self, section_name: str) -> List[PeRelocEntry]:
-        section = self.get_section_by_name(section_name)
+        section: PeSection = self.superpe.get_section_by_name(section_name)
         if section is None:
             return []
         return [reloc for reloc in self.base_relocs if reloc.base_rva == section.virt_addr]
@@ -137,7 +138,7 @@ class ExeHost():
 
     def get_reloc_largest_gap(self, section_name: str = ".rdata"):
         tree = IntervalTree()
-        section = self.get_section_by_name(section_name)
+        section: PeSection = self.superpe.get_section_by_name(section_name)
 
         print("-- Relocations: {}".format(len(self.base_relocs)))
         print("-- section: 0x{:x}".format(section.virt_addr))
