@@ -52,11 +52,12 @@ class PeBackdoor:
         SupportedRunModes.BackdoorEP:   'modify first branching instruction from Original Entry Point',
     }
 
-    def __init__(self):
-        self.mype = None
+    def __init__(self, mype):
+        self.mype = mype
         self.shellcodeOffset = 0     # from start of the file
         self.shellcodeOffsetRel = 0  # from start of the code section
         self.backdoorOffsetRel = 0   # from start of the code section
+        self.saveMode = PeBackdoor.SupportedSaveModes.WithinCodeSection  # always
 
 
     def backdoor(self, saveMode, runMode, shellcode, infile, outfile):

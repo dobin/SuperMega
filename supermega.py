@@ -230,39 +230,34 @@ def start(settings: Settings):
     # inject merged loader into an exe
     exit_code = 0
     if settings.inject:
-        l = len(file_readall_binary(main_shc_file))
+        main_shc = file_readall_binary(main_shc_file)
+        l = len(main_shc)
         if l + 128 > project.exe_host.code_size:
             logger.error("Error: Shellcode {}+128 too small for target code section {}".format(
                 l, project.exe_host.code_size
             ))
             return
 
-        phases.injector.inject_exe(
-            shellcode_in = main_shc_file,
-            exe_in = settings.inject_exe_in,
-            exe_out = settings.inject_exe_out,
-            inject_mode = settings.inject_mode,
-        )
-        if settings.source_style == SourceStyle.iat_reuse:
-            phases.injector.injected_fix_iat(
-                settings.inject_exe_out, project.carrier, project.exe_host)
-
+        phases.injector.inject_exe(main_shc, settings, project)
+        #if settings.source_style == SourceStyle.iat_reuse:
+        #    phases.injector.injected_fix_iat(
+        #        settings.inject_exe_out, project.carrier, project.exe_host)
             # TODO IF?
-            phases.injector.injected_fix_data(
-                settings.inject_exe_out, 
-                project.carrier,
-                project.exe_host)
+            #phases.injector.injected_fix_data(
+            #    settings.inject_exe_out, 
+            #    project.carrier,
+            #    project.exe_host)
             
-            # Just print, to verify
-            code = extract_code_from_exe_file(settings.inject_exe_out)
-            pe = pefile.PE(settings.inject_exe_out)
-            ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-            ep_raw = get_physical_address(pe, ep)
-            pe.close()
-            #print("Raw: {} / 0x{:x}".format(
-            #    ep_raw, ep_raw))
-            observer.add_code("exe_final", 
-                code[ep_raw:ep_raw+300])
+        # Just print, to verify
+        code = extract_code_from_exe_file(settings.inject_exe_out)
+        pe = pefile.PE(settings.inject_exe_out)
+        ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        ep_raw = get_physical_address(pe, ep)
+        pe.close()
+        #print("Raw: {} / 0x{:x}".format(
+        #    ep_raw, ep_raw))
+        observer.add_code("exe_final", 
+            code[ep_raw:ep_raw+300])
             
 
         if settings.verify:
