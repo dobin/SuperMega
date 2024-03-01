@@ -11,7 +11,7 @@ logger = logging.getLogger("PEHelper")
 
 
 # PEHelper
-# Work directly on PE files. Not using mype or other abstractions.
+# Work directly on PE files. Not using superpe or other abstractions.
 # Its mostly used for verification of what we were doing. 
 
 

@@ -5,9 +5,8 @@ from intervaltree import Interval, IntervalTree
 
 from model.defs import *
 import pe.pehelper as pehelper
-from pe.superpe import SuperPe
+from pe.superpe import SuperPe, PeSection
 from model.carrier import Carrier
-from pe.superpe import PeSection
 
 logger = logging.getLogger("ExeHost")
 
@@ -33,7 +32,6 @@ class ExeHost():
 
         # we keep this open
         # And modify the EXE through this at the end
-        self.pe: pefile.PE = None
         self.superpe: SuperPe = None
 
         self.iat: Dict[str, IatEntry] = {}
@@ -54,29 +52,25 @@ class ExeHost():
 
     def init(self):
         logger.info("--[ Analyzing: {}".format(self.filepath))
+        self.superpe = SuperPe(self.filepath)
 
-        pe = pefile.PE(self.filepath)
-        self.pe = pe
-        self.superpe = SuperPe(pe)
-        self.superpe.init()
-
-        if pe.FILE_HEADER.Machine != 0x8664:
+        if self.superpe.arch != "x64":
             raise Exception("Binary is not 64bit: {}".format(self.filepath))
 
-        self.ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        self.ep = self.superpe.get_entyrpoint()
         self.ep_raw = self.superpe.get_physical_address(self.ep)
 
         # image base
-        self.image_base = pe.OPTIONAL_HEADER.ImageBase
+        self.image_base = self.superpe.pe.OPTIONAL_HEADER.ImageBase
 
         # dynamic base / ASLR
-        if pe.OPTIONAL_HEADER.DllCharacteristics & pefile.DLL_CHARACTERISTICS['IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE']:
+        if self.superpe.pe.OPTIONAL_HEADER.DllCharacteristics & pefile.DLL_CHARACTERISTICS['IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE']:
             self.dynamic_base = True
         else:
             self.dynamic_base = False
 
         # .text virtual address
-        self.code_section = pehelper.get_code_section(pe)
+        self.code_section = pehelper.get_code_section(self.superpe.pe)
         self.code_virtaddr = self.code_section.VirtualAddress
         self.code_size = self.code_section.Misc_VirtualSize
         logger.info("---[ Injectable: Chosen code section: {} at 0x{:x} size: {}".format(
@@ -85,8 +79,8 @@ class ExeHost():
             self.code_size))
 
         # relocs
-        if hasattr(pe, 'DIRECTORY_ENTRY_BASERELOC'):
-            for base_reloc in pe.DIRECTORY_ENTRY_BASERELOC:
+        if hasattr(self.superpe.pe, 'DIRECTORY_ENTRY_BASERELOC'):
+            for base_reloc in self.superpe.pe.DIRECTORY_ENTRY_BASERELOC:
                 for entry in base_reloc.entries:
                     rva = entry.rva
                     base_rva = entry.base_rva
@@ -94,8 +88,8 @@ class ExeHost():
                     self.base_relocs.append(PeRelocEntry(rva, base_rva, reloc_type))
         
         # rwx section
-        entrypoint = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-        for section in pe.sections:
+        entrypoint = self.superpe.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for section in self.superpe.pe.sections:
             if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
                 section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
                 section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
@@ -107,7 +101,7 @@ class ExeHost():
         #pe.parse_data_directories()
 
         # IAT
-        for entry in pe.DIRECTORY_ENTRY_IMPORT:
+        for entry in self.superpe.pe.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
                 dll_name = entry.dll.decode('utf-8')
                 if imp.name == None:
