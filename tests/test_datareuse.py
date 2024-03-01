@@ -2,6 +2,7 @@ import shutil
 from typing import List
 import unittest
 import logging
+import os
 
 from model.exehost import ExeHost
 from phases.datareuse import ReusedataAsmFileParser
@@ -71,4 +72,4 @@ class DataReuseTest(unittest.TestCase):
             lines = f.readlines()
         self.assertTrue("\tDB " in lines[108-1])
         self.assertFalse("OFFSET FLAT:$SG" in lines[108-1])
-
+        os.remove(asm_out + ".test")

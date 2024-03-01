@@ -1,6 +1,7 @@
 *.exe.injected
 *-verify.exe
 *.infected.exe
+
 app/upload/*
 data/exes_more/
 data/shellcodes/*.txt
