@@ -106,10 +106,18 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         # nothing todo
         return
 
+    # Offset of strings in .rodata
+    sect = exe_host.superpe.get_section_by_name_b(".rdata")
+    sect_data = sect.get_data()
+    string_off = find_first_utf16_string_offset(sect_data)
+    if string_off == None:
+        raise Exception("Strings not found in .rdata section, abort")
+    if string_off < 100:
+        logging.warn("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+    
     sect = exe_host.superpe.get_section_by_name(".rdata")
-    addr = sect.raw_addr + 0x1AB0 # NEEDED, > 1A00!
+    addr = sect.raw_addr + string_off
 
-    #with open(exe_path, "r+b") as f:
     for datareuse_fixup in reusedata_fixups:
         var_data = datareuse_fixup.data
         #print("    Addr: {} / 0x{:X}  Data: {}".format(

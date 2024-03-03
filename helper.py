@@ -148,3 +148,22 @@ def file_to_lf(filename):
     data = data.replace(b'\r\n', b'\n')
     with open(filename, 'wb') as f:
         f.write(data)
+
+
+def find_first_utf16_string_offset(data, min_len=8):
+    current_string = bytearray()
+    start_offset = None  # To keep track of the start of the current string
+    for i in range(0, len(data) - 1, 2):
+        # Check if we have a valid character
+        if data[i] != 0 or data[i+1] != 0:
+            if start_offset is None:  # Mark the start of a new string
+                start_offset = i
+            current_string += bytes([data[i], data[i+1]])
+        else:
+            if len(current_string) >= min_len * 2:  # Check if the current string meets the minimum length
+                return start_offset  # Return the offset where the string starts
+            current_string = bytearray()
+            start_offset = None  # Reset start offset for the next string
+
+    return None  # No string found that meets the criteria
+

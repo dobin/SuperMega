@@ -8,6 +8,7 @@ from helper import hexdump
 
 logger = logging.getLogger("superpe")
 
+
 class PeSection():
     def __init__(self, pefile_section: pefile.SectionStructure):
         self.name: str = pefile_section.Name.rstrip(b'\x00').decode("utf-8")
@@ -15,6 +16,7 @@ class PeSection():
         self.raw_size: int = pefile_section.SizeOfRawData
         self.virt_addr: int = pefile_section.VirtualAddress
         self.virt_size: int = pefile_section.Misc_VirtualSize
+
 
 class SuperPe():
     IMAGE_DIRECTORY_ENTRY_SECURITY = 4
@@ -86,6 +88,18 @@ class SuperPe():
     def get_code_section_data(self) -> bytes:
         sect = self.get_code_section()
         return bytes(sect.get_data())
+
+
+    def get_section_data(self, sect_name) -> bytes:
+        sect = self.get_section_by_name_b(sect_name)
+        return bytes(sect.get_data())
+
+
+    def get_section_by_name_b(self, name):
+        for sect in self.pe.sections:
+            if sect.Name.decode().lower().startswith(name.lower()):
+                return sect
+        return None
 
 
     def write_code_section_data(self, data: bytes):
