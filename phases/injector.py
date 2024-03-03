@@ -105,28 +105,24 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     if len(reusedata_fixups) == 0:
         # nothing todo
         return
-
-    # Offset of strings in .rodata
-    sect = exe_host.superpe.get_section_by_name_b(".rdata")
-    sect_data = sect.get_data()
-    string_off = find_first_utf16_string_offset(sect_data)
+    
+    # Put stuff into .rdata section in the PE
+    peSection = exe_host.superpe.get_section_by_name(".rdata")
+    if peSection == None:
+        raise Exception("No .rdata section found, abort")
+    sect_data_copy = peSection.pefile_section.get_data()
+    string_off = find_first_utf16_string_offset(sect_data_copy)
     if string_off == None:
         raise Exception("Strings not found in .rdata section, abort")
     if string_off < 100:
         logging.warn("weird: Strings in .rdata section at offset {} < 100".format(string_off))
-    
-    sect = exe_host.superpe.get_section_by_name(".rdata")
-    addr = sect.raw_addr + string_off
-
+    fixup_offset_rdata = peSection.raw_addr + string_off
+    # Do all .rdata patches
     for datareuse_fixup in reusedata_fixups:
         var_data = datareuse_fixup.data
-        #print("    Addr: {} / 0x{:X}  Data: {}".format(
-        #    addr, addr, len(var_data)))
-        superpe.pe.set_bytes_at_offset(addr, var_data)
-        #f.seek(addr)
-        #f.write(var_data)
-        datareuse_fixup.addr = addr + sect.virt_addr + exe_host.image_base - sect.raw_addr
-        addr += len(var_data) + 8
+        superpe.pe.set_bytes_at_offset(fixup_offset_rdata, var_data)
+        datareuse_fixup.addr = fixup_offset_rdata + peSection.virt_addr + exe_host.image_base - peSection.raw_addr
+        fixup_offset_rdata += len(var_data) + 8
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above

@@ -16,6 +16,7 @@ class PeSection():
         self.raw_size: int = pefile_section.SizeOfRawData
         self.virt_addr: int = pefile_section.VirtualAddress
         self.virt_size: int = pefile_section.Misc_VirtualSize
+        self.pefile_section: pefile.SectionStructure = pefile_section
 
 
 class SuperPe():
@@ -43,13 +44,6 @@ class SuperPe():
         self.arch = self.getFileArch()
         if self.arch == 'x64': 
             self.ptrSize = 8
-
-    ##################
-    def get_section_by_name(self, name: str) -> PeSection:
-        for section in self.pe_sections:
-            if section.name == name:
-                return section
-        return None
     
 
     def get_physical_address(self, virtual_address):
@@ -90,17 +84,12 @@ class SuperPe():
         return bytes(sect.get_data())
 
 
-    def get_section_data(self, sect_name) -> bytes:
-        sect = self.get_section_by_name_b(sect_name)
-        return bytes(sect.get_data())
-
-
-    def get_section_by_name_b(self, name):
-        for sect in self.pe.sections:
-            if sect.Name.decode().lower().startswith(name.lower()):
-                return sect
+    def get_section_by_name(self, name: str) -> PeSection:
+        for section in self.pe_sections:
+            if section.name == name:
+                return section
         return None
-
+    
 
     def write_code_section_data(self, data: bytes):
         sect = self.get_code_section()
