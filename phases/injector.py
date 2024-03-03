@@ -110,18 +110,30 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     peSection = exe_host.superpe.get_section_by_name(".rdata")
     if peSection == None:
         raise Exception("No .rdata section found, abort")
-    sect_data_copy = peSection.pefile_section.get_data()
-    string_off = find_first_utf16_string_offset(sect_data_copy)
-    if string_off == None:
-        raise Exception("Strings not found in .rdata section, abort")
-    if string_off < 100:
-        logging.warn("weird: Strings in .rdata section at offset {} < 100".format(string_off))
-    fixup_offset_rdata = peSection.raw_addr + string_off
+    
+    rm = exe_host.get_rdata_relocmanager()
+    if False:  # seems i dont need this, even tho i dont understand why
+        sect_data_copy = peSection.pefile_section.get_data()
+        string_off = find_first_utf16_string_offset(sect_data_copy)
+        if string_off == None:
+            raise Exception("Strings not found in .rdata section, abort")
+        if string_off < 100:
+            logging.warn("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+        rm.add_range(peSection.virt_addr, peSection.virt_addr + string_off)
+
     # Do all .rdata patches
     for datareuse_fixup in reusedata_fixups:
+        # get a hole in the .rdata section to put our data
+        hole = rm.find_hole(len(datareuse_fixup.data))
+        if hole == None:
+            raise Exception("No hole found in .rdata section, abort")
+        fixup_offset_rdata = hole[0]  # the start address of the hole (from start of .rdata)
+        rm.add_range(hole[0], hole[1])  # mark it as used
         var_data = datareuse_fixup.data
         superpe.pe.set_bytes_at_offset(fixup_offset_rdata, var_data)
         datareuse_fixup.addr = fixup_offset_rdata + peSection.virt_addr + exe_host.image_base - peSection.raw_addr
+        logging.info("    Add data to .rdata at 0x{:X} (off: {}): {}".format(
+            datareuse_fixup.addr, fixup_offset_rdata, var_data.decode('utf-16le')))
         fixup_offset_rdata += len(var_data) + 8
 
     # patch code section
