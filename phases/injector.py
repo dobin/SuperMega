@@ -34,9 +34,9 @@ def inject_exe(
     # And check if it fits into the target code section
     main_shc = file_readall_binary(main_shc_file)
     l = len(main_shc)
-    if l + 128 > project.exe_host.code_size:
+    if l + 128 > project.exe_host.code_section.Misc_VirtualSize:
         logger.error("Error: Shellcode {}+128 too small for target code section {}".format(
-            l, project.exe_host.code_size
+            l, project.exe_host.code_section.Misc_VirtualSize
         ))
         return False
 
@@ -85,7 +85,7 @@ def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
             raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
         
         offset_from_code = code.index(iatRequest.placeholder)
-        instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_virtaddr
+        instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_section.VirtualAddress
         logger.info("    Replace {} at VA 0x{:X} with call to IAT at VA 0x{:X}".format(
             iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
@@ -145,7 +145,7 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
                 datareuse_fixup.randbytes))
         
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
-        instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_virtaddr
+        instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_section.VirtualAddress
         destination_virtual_address = datareuse_fixup.addr
         logger.info("    Replace {} at VA 0x{:X} with .rdata LEA at VA 0x{:X}".format(
             datareuse_fixup.randbytes.hex(), instruction_virtual_address, destination_virtual_address

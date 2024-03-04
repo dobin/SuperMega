@@ -41,11 +41,7 @@ class ExeHost():
 
         self.image_base: int = 0
         self.dynamic_base: bool = False
-
-        self.code_virtaddr: int = 0
-        self.code_size: int = 0
         self.code_section = None
-        
         self.rwx_section = None
 
         self.ep = None
@@ -71,14 +67,12 @@ class ExeHost():
         else:
             self.dynamic_base = False
 
-        # .text virtual address
-        self.code_section = pehelper.get_code_section(self.superpe.pe)
-        self.code_virtaddr = self.code_section.VirtualAddress
-        self.code_size = self.code_section.Misc_VirtualSize
+        # Info output: .text virtual address
+        self.code_section = self.superpe.get_code_section()
         logger.info("---[ Injectable: Chosen code section: {} at 0x{:X} size: {}".format(
             self.code_section.Name.decode().rstrip('\x00'),
-            self.code_virtaddr,
-            self.code_size))
+            self.code_section.VirtualAddress,
+            self.code_section.Misc_VirtualSize))
 
         # relocs
         if hasattr(self.superpe.pe, 'DIRECTORY_ENTRY_BASERELOC'):
