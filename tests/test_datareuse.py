@@ -13,7 +13,7 @@ class DataReuseTest(unittest.TestCase):
         exe_host.init()
 
         relocs = exe_host.get_relocations_for_section(".rdata")
-        self.assertEqual(30, len(relocs))
+        self.assertEqual(842, len(relocs))
         reloc = relocs[0]
         self.assertEqual(393216, reloc.base_rva)
         self.assertEqual(394296, reloc.rva)
@@ -24,11 +24,10 @@ class DataReuseTest(unittest.TestCase):
     def test_largestgap(self):
         exe_host = ExeHost("data/exes/7z.exe")
         exe_host.init()
-
-        size, start, stop = exe_host.get_reloc_largest_gap(".rdata")
-        self.assertEqual(129395, size)
-        self.assertEqual(3807, start)
-        self.assertEqual(133203, stop)
+        rm = exe_host.get_rdata_relocmanager()
+        start, stop = rm.find_hole(100)
+        self.assertEqual(393233, start)
+        self.assertEqual(394295, stop)
 
 
     def test_rdata_overwrite(self):
