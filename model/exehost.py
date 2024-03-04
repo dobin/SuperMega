@@ -75,7 +75,7 @@ class ExeHost():
         self.code_section = pehelper.get_code_section(self.superpe.pe)
         self.code_virtaddr = self.code_section.VirtualAddress
         self.code_size = self.code_section.Misc_VirtualSize
-        logger.info("---[ Injectable: Chosen code section: {} at 0x{:x} size: {}".format(
+        logger.info("---[ Injectable: Chosen code section: {} at 0x{:X} size: {}".format(
             self.code_section.Name.decode().rstrip('\x00'),
             self.code_virtaddr,
             self.code_size))

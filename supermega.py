@@ -197,7 +197,12 @@ def start(settings: Settings):
         shutil.move(main_shc_file + ".sgn", main_shc_file)
 
     # inject merged loader into an exe
-    phases.injector.inject_exe(main_shc_file, settings, project)
+    try:
+        phases.injector.inject_exe(main_shc_file, settings, project)
+    except PermissionError as e:
+        logger.error(f'Error writing file: {e}')
+        return exit(2)
+    
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Start/verify it at the end

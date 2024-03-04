@@ -161,7 +161,7 @@ class SuperPe():
         # SizeOfBlock
         self.pe.set_dword_at_rva(addr + relocsSize + 4, sizeOfReloc)
 
-        logger.info(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:x} - size of block: 0x{sizeOfReloc:x}')
+        logger.info(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:X} - size of block: 0x{sizeOfReloc:X}')
 
         i = 0
         for reloc in relocs:
@@ -170,7 +170,7 @@ class SuperPe():
 
             relocWord = (reloc_type | reloc_offset)
             self.pe.set_word_at_rva(relocDirRva + relocsSize + 8 + i * 2, relocWord)
-            logger.info(f'\tReloc{i} for addr 0x{reloc:x}: 0x{relocWord:x} - 0x{reloc_offset:x} - type: {imageBaseRelocType}')
+            logger.info(f'\tReloc{i} for addr 0x{reloc:X}: 0x{relocWord:X} - 0x{reloc_offset:X} - type: {imageBaseRelocType}')
             i += 1
 
 
@@ -183,9 +183,9 @@ class SuperPe():
         self.pe.OPTIONAL_HEADER.AddressOfEntryPoint = entrypoint
 
 
-    def write(self, outfile: str):
+    def write_pe_to_file(self, outfile: str):
         self.pe.write(outfile)
-    
+
     
     def disasmBytes(self, cs, ks, disasmData, startOffset, length, callback = None, maxDepth = 5):
         return self._disasmBytes(cs, ks, disasmData, startOffset, length, callback, maxDepth, 1)
@@ -213,7 +213,7 @@ class SuperPe():
                 operand = instr.operands[0]
 
                 if operand.type == capstone.CS_OP_IMM:
-                    logger.debug('\t' * (depth+1) + f' -> OP_IMM: 0x{operand.value.imm:x}')
+                    logger.debug('\t' * (depth+1) + f' -> OP_IMM: 0x{operand.value.imm:X}')
                     logger.debug('')
 
                     if callback:

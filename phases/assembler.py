@@ -45,7 +45,7 @@ def merge_loader_payload(
         pass
     elif decoder_style == DecoderStyle.XOR_1:
         xor_key = config.xor_key
-        logger.info("---[ XOR payload with key 0x{:x}".format(xor_key))
+        logger.info("---[ XOR payload with key 0x{:X}".format(xor_key))
         payload_data = bytes([byte ^ xor_key for byte in payload_data])
 
     logger.info("---[ Size: Stager: {} and Payload: {}  Sum: {} ".format(

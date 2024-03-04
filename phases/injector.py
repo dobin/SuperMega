@@ -58,7 +58,7 @@ def inject_exe(
     if True:
         injected_fix_data(superpe, project.carrier, project.exe_host)
 
-    superpe.write(exe_out)
+    superpe.write_pe_to_file(exe_out)
 
     # verify and log
     shellcode = file_readall_binary(shellcode_in)
@@ -86,7 +86,7 @@ def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         
         offset_from_code = code.index(iatRequest.placeholder)
         instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_virtaddr
-        logger.info("    Replace {} at VA 0x{:x} with call to IAT at VA 0x{:x}".format(
+        logger.info("    Replace {} at VA 0x{:X} with call to IAT at VA 0x{:X}".format(
             iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
         jmp = assemble_and_disassemble_jump(
@@ -147,7 +147,7 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
         instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_virtaddr
         destination_virtual_address = datareuse_fixup.addr
-        logger.info("    Replace {} at VA 0x{:x} with .rdata LEA at VA 0x{:x}".format(
+        logger.info("    Replace {} at VA 0x{:X} with .rdata LEA at VA 0x{:X}".format(
             datareuse_fixup.randbytes.hex(), instruction_virtual_address, destination_virtual_address
         ))
         lea = assemble_lea(
