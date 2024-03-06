@@ -12,21 +12,6 @@ from model.rangemanager import RangeManager
 logger = logging.getLogger("ExeHost")
 
 
-class PeRelocEntry():
-    def __init__(self, rva: int, base_rva: int, type: str):
-        self.rva: int = rva
-        self.base_rva: int = base_rva
-        self.offset: int = rva - base_rva
-        self.type: str = type
-
-
-class IatEntry():
-    def __init__(self, dll_name: str, func_name: str, iat_vaddr: int):
-        self.dll_name: str = dll_name
-        self.func_name: str = func_name
-        self.iat_vaddr: int = iat_vaddr
-
-
 class ExeHost():
     def __init__(self, filepath: FilePath):
         self.filepath: FilePath = filepath
@@ -67,48 +52,21 @@ class ExeHost():
         else:
             self.dynamic_base = False
 
-        # Info output: .text virtual address
+        # code section we inject to, usually .text
         self.code_section = self.superpe.get_code_section()
         logger.info("---[ Injectable: Chosen code section: {} at 0x{:X} size: {}".format(
             self.code_section.Name.decode().rstrip('\x00'),
             self.code_section.VirtualAddress,
             self.code_section.Misc_VirtualSize))
+        
+        # if there is a rwx section, None otherwise
+        self.rwx_section = self.superpe.get_rwx_section()
 
         # relocs
-        if hasattr(self.superpe.pe, 'DIRECTORY_ENTRY_BASERELOC'):
-            for base_reloc in self.superpe.pe.DIRECTORY_ENTRY_BASERELOC:
-                for entry in base_reloc.entries:
-                    rva = entry.rva
-                    base_rva = entry.base_rva
-                    reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
-                    self.base_relocs.append(PeRelocEntry(rva, base_rva, reloc_type))
-        
-        # rwx section
-        entrypoint = self.superpe.pe.OPTIONAL_HEADER.AddressOfEntryPoint
-        for section in self.superpe.pe.sections:
-            if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
-                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
-                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
-            ):
-                if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.Misc_VirtualSize:
-                    self.rwx_section = section
-
-        # If the PE file was loaded using the fast_load=True argument, we will need to parse the data directories:
-        #pe.parse_data_directories()
+        self.base_relocs = self.superpe.get_base_relocs()
 
         # IAT
-        for entry in self.superpe.pe.DIRECTORY_ENTRY_IMPORT:
-            for imp in entry.imports:
-                dll_name = entry.dll.decode('utf-8')
-                if imp.name == None:
-                    continue
-                imp_name = imp.name.decode('utf-8')
-                imp_addr = imp.address
-
-                if not dll_name in self.iat:
-                    self.iat[dll_name] = []
-
-                self.iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
+        self.iat = self.superpe.get_iat_entries()
         
 
     def get_vaddr_of_iatentry(self, func_name: str) -> int:

@@ -5,6 +5,7 @@ import logging
 from typing import List
 
 from helper import hexdump
+from model.defs import *
 
 logger = logging.getLogger("superpe")
 
@@ -77,11 +78,24 @@ class SuperPe():
                 if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
                     return sect
         return None
-    
+        
 
     def get_code_section_data(self) -> bytes:
         sect = self.get_code_section()
         return bytes(sect.get_data())
+    
+
+    def get_rwx_section(self):
+        # rwx section
+        entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
+        for section in self.pe.sections:
+            if (section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_READ'] and
+                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_WRITE'] and
+                section.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']
+            ):
+                if entrypoint > section.VirtualAddress and entrypoint < section.VirtualAddress + section.Misc_VirtualSize:
+                    return section
+        return None
 
 
     def get_section_by_name(self, name: str) -> PeSection:
@@ -90,6 +104,33 @@ class SuperPe():
                 return section
         return None
     
+
+    def get_base_relocs(self):
+        base_relocs = []
+        if hasattr(self.pe, 'DIRECTORY_ENTRY_BASERELOC'):
+            for base_reloc in self.pe.DIRECTORY_ENTRY_BASERELOC:
+                for entry in base_reloc.entries:
+                    rva = entry.rva
+                    base_rva = entry.base_rva
+                    reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
+                    base_relocs.append(PeRelocEntry(rva, base_rva, reloc_type))
+        return base_relocs
+    
+
+    def get_iat_entries(self):
+        iat = {}
+        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
+            for imp in entry.imports:
+                dll_name = entry.dll.decode('utf-8')
+                if imp.name == None:
+                    continue
+                imp_name = imp.name.decode('utf-8')
+                imp_addr = imp.address
+
+                if not dll_name in iat:
+                    iat[dll_name] = []
+                iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
+        return iat
 
     def write_code_section_data(self, data: bytes):
         sect = self.get_code_section()

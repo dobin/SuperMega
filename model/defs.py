@@ -37,6 +37,22 @@ class SourceStyle(Enum):
     iat_reuse = "iat_reuse"
 
 
+    
+class PeRelocEntry():
+    def __init__(self, rva: int, base_rva: int, type: str):
+        self.rva: int = rva
+        self.base_rva: int = base_rva
+        self.offset: int = rva - base_rva
+        self.type: str = type
+
+
+class IatEntry():
+    def __init__(self, dll_name: str, func_name: str, iat_vaddr: int):
+        self.dll_name: str = dll_name
+        self.func_name: str = func_name
+        self.iat_vaddr: int = iat_vaddr
+
+
 # no slash at end
 build_dir = "working/build"
 logs_dir = "working/logs"
