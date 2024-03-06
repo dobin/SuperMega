@@ -10,11 +10,12 @@
 <div class="container-fluid">
 <div class="row">
 
-
-<!-- a bootstrap dropdown to select one of the log files -->
 <div class="col-md-3">
 
-    <form method="POST" enctype="multipart/form-data" action="/inject">
+    <form method="POST" enctype="multipart/form-data" action="/add_project">
+
+    <input type="text" name="project_name" class="form-control" placeholder="Projekt" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
+
     <div class="row row-cols-lg-auto g-3">
     
     <select class="form-select" name="shellcode" aria-label="SHELLCODE">
@@ -66,7 +67,7 @@
         </label>
       </div>
 
-    <button class="btn btn-primary" type="submit" value="Inject">Inject</button>
+    <button class="btn btn-primary" type="submit" value="save">Save</button>
     <button class="btn btn-primary" type="submit" value="Verify">Verify</button>
 
     </div>

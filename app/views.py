@@ -10,11 +10,13 @@ from pygments.lexers import CLexer, NasmLexer, DiffLexer, HexdumpLexer
 from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
+import pickle
 
 from config import config
 from model.settings import Settings
 from model.defs import *
 from supermega import start
+from app.storage import storage, Project
 
 views = Blueprint('views', __name__)
 
@@ -23,38 +25,105 @@ conv = Ansi2HTMLConverter()
 
 @views.route("/")
 def index():
-    return render_template('index.html')
+    print(storage.data)
+    return render_template('index.html', data=storage.data)
 
 
-@views.route("/inject", methods=['GET', 'POST'])
-def inject():
-    config.load()
-    settings = Settings()
+@views.route("/project/<name>")
+def project(name):
+    project = storage.get_project(name)
 
-    settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
-    settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
-    settings.inject_exe_out = "app/upload/infected/" + request.form['exe'] + ".injected"
+    exes = []
+    for file in os.listdir("app/upload/exe"):
+        exes.append(file)
 
-    source_style = request.form['source_style']
-    settings.source_style = SourceStyle[source_style]
+    shellcodes = []
+    for file in os.listdir("app/upload/shellcode"):
+        shellcodes.append(file)
 
-    alloc_style = request.form['alloc_style']
-    settings.alloc_style = AllocStyle[alloc_style]
+    sourcestyles = [(color.name, color.value) for color in SourceStyle]
+    allocstyles = [(color.name, color.value) for color in AllocStyle]
+    decoderstyles = [(color.name, color.value) for color in DecoderStyle]
+    execstyles = [(color.name, color.value) for color in ExecStyle]
+    injectstyles = [(color.name, color.value) for color in InjectStyle]
 
-    decoder_style = request.form['decoder_style']
-    settings.decoder_style = DecoderStyle[decoder_style]
-
-    exec_style = request.form['exec_style']
-    settings.exec_style = ExecStyle[exec_style]
-
-    inject_style = request.form['inject_style']
-    settings.inject_style = InjectStyle[inject_style]
+    return render_template('project.html', 
+        project_name = name,
+        project=project, 
         
-    print(str(settings))
-    start(settings)
+        exes=exes,
+        shellcodes=shellcodes,
+        sourcestyles=sourcestyles,
+        allocstyles=allocstyles,
+        decoderstyles=decoderstyles,
+        execstyles=execstyles,
+        injectstyles=injectstyles,
+        )
 
-    return render_template('inject.html')
 
+@views.route("/add_project", methods=['POST', 'GET'])
+def inject():
+
+    if request.method == 'POST':
+        config.load()
+        settings = Settings()
+
+        project_name = request.form['project_name']
+
+        settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
+        settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
+        settings.inject_exe_out = "app/upload/infected/" + request.form['exe'] + ".injected"
+
+        source_style = request.form['source_style']
+        settings.source_style = SourceStyle[source_style]
+
+        alloc_style = request.form['alloc_style']
+        settings.alloc_style = AllocStyle[alloc_style]
+
+        decoder_style = request.form['decoder_style']
+        settings.decoder_style = DecoderStyle[decoder_style]
+
+        exec_style = request.form['exec_style']
+        settings.exec_style = ExecStyle[exec_style]
+
+        inject_style = request.form['inject_style']
+        settings.inject_style = InjectStyle[inject_style]
+            
+        print(str(settings))
+
+        project = Project(project_name, settings)
+        project.settings = settings
+        storage.add_project(project)
+        storage.save_data()
+        return render_template('project_add_post.html')
+    else:
+        exes = []
+        for file in os.listdir("app/upload/exe"):
+            exes.append(file)
+
+        shellcodes = []
+        for file in os.listdir("app/upload/shellcode"):
+            shellcodes.append(file)
+
+        sourcestyles = [(color.name, color.value) for color in SourceStyle]
+        allocstyles = [(color.name, color.value) for color in AllocStyle]
+        decoderstyles = [(color.name, color.value) for color in DecoderStyle]
+        execstyles = [(color.name, color.value) for color in ExecStyle]
+        injectstyles = [(color.name, color.value) for color in InjectStyle]
+
+        return render_template('project_add_get.html', 
+            exes=exes,
+            shellcodes=shellcodes,
+            sourcestyles=sourcestyles,
+            allocstyles=allocstyles,
+            decoderstyles=decoderstyles,
+            execstyles=execstyles,
+            injectstyles=injectstyles,
+        )
+
+    #start(settings)
+
+    
 
 @views.route("/build")
 def build():
@@ -83,8 +152,8 @@ def build():
     )
 
 
-@views.route("/project")
-def project():
+@views.route("/files")
+def files():
     log_files = []
 
     id = 0
