@@ -33,6 +33,7 @@ def index():
 @views.route("/project/<name>")
 def project(name):
     project = storage.get_project(name)
+    log_files = get_logfiles()
 
     exes = []
     for file in os.listdir("app/upload/exe"):
@@ -59,6 +60,8 @@ def project(name):
         decoderstyles=decoderstyles,
         execstyles=execstyles,
         injectstyles=injectstyles,
+
+        log_files=log_files,
         )
 
 
@@ -167,8 +170,14 @@ def build():
 
 @views.route("/files")
 def files():
-    log_files = []
+    log_files = get_logfiles()
+    return render_template('files.html', 
+        log_files=log_files
+    )
 
+
+def get_logfiles():
+    log_files = []
     id = 0
     asm_a = ""  # for diff
     asm_b = ""
@@ -181,7 +190,7 @@ def files():
             if file.endswith(".bin"):
                 continue
             data = f.read()
-
+            print("FILE: {}".format(file))
             if 'main_c' in file:
                 data = highlight(data, CLexer(), HtmlFormatter(full=False))
             elif '_asm_' in file:
@@ -191,17 +200,18 @@ def files():
                 if '_updated' in file:
                     asm_b = data
                 data = highlight(data, NasmLexer(), HtmlFormatter(full=False))
-            elif '_shc' in file:
-                if '.txt' in file:
+            elif '.ascii' in file:
+                data = conv.convert(data, full=False)
+            elif '.txt' in file:
                     # skip it
                     continue
-                if '.ascii' in file:
-                    data = conv.convert(data, full=False)
-                if '.hex' in file:
-                    data = escape(data)
-                    #data = highlight(data, HexdumpLexer(), HtmlFormatter(full=False))
+            elif '.hex' in file:
+                print("-> hex")
+                continue
+                #data = escape(data)
+                #data = highlight(data, HexdumpLexer(), HtmlFormatter(full=False))
             elif '.log' in file:
-                data = escape(data)
+                data = conv.convert(data, full=False)
             else:
                 data = escape(data)
 
@@ -230,8 +240,4 @@ def files():
                 id += 1
                 #asm_a = ""
                 asm_b = ""
-
-
-    return render_template('project.html', 
-        log_files=log_files
-    )
+    return log_files
