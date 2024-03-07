@@ -18,7 +18,6 @@
         <div class="col-md-3">
         
             <form method="POST" enctype="multipart/form-data" action="/add_project">
-            
 
             <div class="row row-cols-lg-auto g-3">
 
@@ -64,7 +63,7 @@
                 {% for name, value in decoderstyles %}
                 <option value="{{name}}"
                 {% if value in project.settings.decoder_style.value %} selected {% endif %}
-                >{{value}} // {{project.settings.decoder_style.value}}</option>
+                >{{value}}</option>
                 {% endfor %}
             </select>
         
@@ -85,8 +84,12 @@
             </select>
 
             <button class="btn btn-primary" type="submit" value="save">Save</button>
-
         </div>
+    </form>
+
+    <form method="POST" enctype="multipart/form-data" action="/start_project">
+        <input type="hidden" name="project_name" value="{{project_name}}">
+        <button class="btn btn-primary" type="submit" value="start">Start</button>
     </form>
 
 </div>

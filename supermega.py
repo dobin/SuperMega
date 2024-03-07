@@ -163,14 +163,18 @@ def start(settings: Settings):
 
     # Compile: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
-        phases.compiler.compile(
-            c_in = main_c_file, 
-            asm_out = main_asm_file, 
-            payload_len = project.payload.len,
-            carrier = project.carrier,
-            source_style = project.settings.source_style,
-            exe_host = project.exe_host,
-            short_call_patching = project.settings.short_call_patching)
+        try:
+            phases.compiler.compile(
+                c_in = main_c_file, 
+                asm_out = main_asm_file, 
+                payload_len = project.payload.len,
+                carrier = project.carrier,
+                source_style = project.settings.source_style,
+                exe_host = project.exe_host,
+                short_call_patching = project.settings.short_call_patching)
+        except Exception as e:
+            logger.error(f'Error compiling: {e}')
+            return exit(1)
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:

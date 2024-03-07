@@ -21,6 +21,7 @@ from app.storage import storage, Project
 views = Blueprint('views', __name__)
 
 conv = Ansi2HTMLConverter()
+config.load()
 
 
 @views.route("/")
@@ -64,12 +65,15 @@ def project(name):
 @views.route("/add_project", methods=['POST', 'GET'])
 def inject():
     if request.method == 'POST':
-        config.load()
         settings = Settings()
 
         project_name = request.form['project_name']
 
         settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
+        if request.form['shellcode'] == "createfile.bin":
+            settings.verify = True
+            settings.try_start_final_infected_exe = False
+
         settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
         settings.inject_exe_out = "app/upload/infected/" + request.form['exe'] + ".injected"
 
@@ -124,8 +128,15 @@ def inject():
             injectstyles=injectstyles,
         )
 
-    #start(settings)
-    
+
+@views.route("/start_project", methods=['POST', 'GET'])
+def start_project():
+    #project_name = request.args.get('project_name')
+    project_name = request.form['project_name']
+    project = storage.get_project(project_name)
+    start(project.settings)
+    return redirect("/project/{}".format(project_name), code=302)
+
 
 @views.route("/build")
 def build():
