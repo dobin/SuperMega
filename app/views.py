@@ -63,7 +63,6 @@ def project(name):
 
 @views.route("/add_project", methods=['POST', 'GET'])
 def inject():
-
     if request.method == 'POST':
         config.load()
         settings = Settings()
@@ -88,15 +87,19 @@ def inject():
 
         inject_style = request.form['inject_style']
         settings.inject_style = InjectStyle[inject_style]
-            
-        print(str(settings))
-
-        project = Project(project_name, settings)
-        project.settings = settings
-        storage.add_project(project)
+        
+        if storage.get_project(project_name) != None:
+            project = storage.get_project(project_name)
+            project.settings = settings
+        else:
+            project = Project(project_name, settings)
+            project.settings = settings
+            settings.project_name = project_name
+            storage.add_project(project)
         storage.save_data()
-        return render_template('project_add_post.html')
-    else:
+        return redirect("/project/{}".format(project_name), code=302)
+    
+    else: # GET
         exes = []
         for file in os.listdir("app/upload/exe"):
             exes.append(file)
@@ -122,7 +125,6 @@ def inject():
         )
 
     #start(settings)
-
     
 
 @views.route("/build")
