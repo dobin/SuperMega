@@ -1,4 +1,5 @@
-from flask import Blueprint, current_app, flash, request, redirect, url_for, render_template, send_file, make_response, session, escape
+from flask import Flask, Blueprint, current_app, request, redirect, url_for, render_template, send_file, make_response, session, escape
+from threading import Thread
 from werkzeug.utils import secure_filename
 import os
 import logging
@@ -19,6 +20,8 @@ views = Blueprint('views', __name__)
 
 conv = Ansi2HTMLConverter()
 config.load()
+
+thread_running = False
 
 
 @views.route("/")
@@ -129,8 +132,16 @@ def add_project():
         )
 
 
+def supermega_thread(settings: Settings):
+    global thread_running
+    start(settings)
+    thread_running = False
+
+
 @views.route("/start_project", methods=['POST', 'GET'])
 def start_project():
+    global thread_running
+
     #project_name = request.args.get('project_name')
     project_name = request.form.get('project_name')
     try_start = request.form.get('try_start')
@@ -140,8 +151,23 @@ def start_project():
         try_start = False
     project = storage.get_project(project_name)
     project.settings.try_start_final_infected_exe = try_start
-    start(project.settings)
-    return redirect("/project/{}".format(project_name), code=302)
+
+    thread = Thread(target=supermega_thread, args=(project.settings, ))
+    thread.start()
+    thread_running = True
+
+    return redirect("/status_project/{}".format(project_name), code=302)
+
+
+@views.route("/status_project/<project_name>")
+def status_project(project_name):
+    global thread_running
+    if thread_running:
+        return render_template('status_project.html', 
+            project_name=project_name,
+            logdata = "asdf")
+    else:
+        return redirect("/project/{}".format(project_name), code=302)
 
 
 def get_logfiles():

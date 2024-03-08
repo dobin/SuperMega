@@ -128,7 +128,8 @@ def main():
             settings.inject_exe_in = args.inject
             settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
 
-    start(settings)
+    exit_code = start(settings)
+    exit(exit_code)
 
 
 def start(settings: Settings):
@@ -224,7 +225,7 @@ def start(settings: Settings):
         clean_files()
 
     writelog()
-    exit(exit_code)
+    return exit_code
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):

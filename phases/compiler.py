@@ -157,18 +157,6 @@ def get_function_stubs(asm_in: FilePath) -> List[str]:
             print("    > loader shellcode IAT requirement: {}".format(func_name))
             functions.append(func_name)
 
-        if False:
-            if "EXTRN	__imp_" in line:
-                a = line
-                a = a.split("__imp_")[1]
-                a = a.split(":PROC")[0]
-                func_name = a
-                #func_name = line.strip("\r\n ")
-                #func_name = line.replace("EXTRN\t__imp_", "")
-                #func_name = line.replace(":PROC", "")
-                print("-----> {}".format(func_name))
-                functions.append(func_name)
-
     return functions
 
 

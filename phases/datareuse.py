@@ -86,8 +86,6 @@ class ReusedataAsmFileParser():
                         hex = part.split('H')[0]
                         if len(hex) == 3:
                             hex = hex.lstrip('0')
-                        #print("--> {}".format(line))
-                        #print("---> {}".format(hex))
                         value += bytes.fromhex(hex)
 
                 if not name in self.fixups:
