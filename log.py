@@ -66,3 +66,6 @@ def setup_logging():
 
     root_logger.addHandler(ch)
     root_logger.addHandler(list_handler)
+
+def clear_log():
+    log_messages.clear()

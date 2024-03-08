@@ -7,12 +7,14 @@
     {% include 'navigation.html' %}
 
     <div class="indent">
-        <h1> Project {{project_name}} </h1>
+        <h2> {{project_name}} </h2>
         <form method="POST" enctype="multipart/form-data" action="/add_project">
+        <input type="hidden" name="project_name" value="{{project_name}}">
+
         <div class="row">
-            <div class="col-4">
-                <input type="text" name="project_name" class="hidden form-control" value="{{project_name}}"
-                placeholder="Projekt" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
+            <div class="col-3">
+                <input type="text" name="comment" class="hidden form-control" value="{{project.comment}}"
+                placeholder="" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
             
                 <select class="form-select" name="shellcode" aria-label="SHELLCODE">
                     {% for shellcode in shellcodes %}
@@ -33,7 +35,7 @@
                     {% endfor %}
                 </select>
                 </div>
-            <div class="col-4">
+            <div class="col-3">
 
                 <select class="form-select" name="source_style" aria-label="SOURCESTYLE">
                     {% for name, value in sourcestyles %}
@@ -52,7 +54,7 @@
                 </select>
             
             </div>
-            <div class="col-4">
+            <div class="col-3">
                 <select class="form-select" name="alloc_style" aria-label="ALLOCSTYLE">
                     {% for name, value in allocstyles %}
                     <option value="{{name}}"
@@ -78,19 +80,32 @@
                 </select>
     
             </div>
-        </div>
-        </form>
+            </form>
 
-        <div class="row">
-            <div class="col-4">
+            <div class="col-3">
                 <button class="btn btn-primary" type="submit" value="save">Save</button>
 
                 <form method="POST" enctype="multipart/form-data" action="/start_project">
                     <input type="hidden" name="project_name" value="{{project_name}}">
+
+                    <div class="form-check">
+                        <input class="form-check-input" name="try_start" type="checkbox" value="checked" id="flexCheckDefault" checked>
+                        <label class="form-check-label" for="flexCheckDefault">
+                            Start Infected Exe
+                        </label>
+                    </div>
+
                     <button class="btn btn-primary" type="submit" value="start">Start</button>
                 </form>
             </div>
+
         </div>
+
+        <div class="row">
+            <div class="col">
+              <div class="custom-line"></div> <!-- Here's the horizontal line -->
+            </div>
+          </div>
 
 
     <div class="row">

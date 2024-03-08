@@ -216,8 +216,6 @@ Trailing {sect_name} bytes:
         for ins in trampoline.split(';'):
             logger.info(f'\t{ins.strip()}')
 
-        logger.info('')
-
         return (trampoline, addrOffset)
     
 
@@ -245,7 +243,7 @@ Trailing {sect_name} bytes:
             self.compiledTrampoline = encoding
             self.compiledTrampolineCount = count
 
-            logger.info('Successfully backdoored entry point with jump/call to shellcode')
+            logger.debug('Successfully backdoored entry point with jump/call to shellcode')
             return instr.address
 
         return 0

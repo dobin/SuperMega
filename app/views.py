@@ -2,15 +2,12 @@ from flask import Blueprint, current_app, flash, request, redirect, url_for, ren
 from werkzeug.utils import secure_filename
 import os
 import logging
-import io
 from typing import List, Tuple
-from datetime import date
 from pygments import highlight
 from pygments.lexers import CLexer, NasmLexer, DiffLexer, HexdumpLexer
 from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
-import pickle
 
 from config import config
 from model.settings import Settings
@@ -66,7 +63,7 @@ def project(name):
 
 
 @views.route("/add_project", methods=['POST', 'GET'])
-def inject():
+def add_project():
     if request.method == 'POST':
         settings = Settings()
 
@@ -135,45 +132,16 @@ def inject():
 @views.route("/start_project", methods=['POST', 'GET'])
 def start_project():
     #project_name = request.args.get('project_name')
-    project_name = request.form['project_name']
+    project_name = request.form.get('project_name')
+    try_start = request.form.get('try_start')
+    if try_start != None:
+        try_start = True
+    else:
+        try_start = False
     project = storage.get_project(project_name)
+    project.settings.try_start_final_infected_exe = try_start
     start(project.settings)
     return redirect("/project/{}".format(project_name), code=302)
-
-
-@views.route("/build")
-def build():
-    exes = []
-    for file in os.listdir("app/upload/exe"):
-        exes.append(file)
-
-    shellcodes = []
-    for file in os.listdir("app/upload/shellcode"):
-        shellcodes.append(file)
-
-    sourcestyles = [(color.name, color.value) for color in SourceStyle]
-    allocstyles = [(color.name, color.value) for color in AllocStyle]
-    decoderstyles = [(color.name, color.value) for color in DecoderStyle]
-    execstyles = [(color.name, color.value) for color in ExecStyle]
-    injectstyles = [(color.name, color.value) for color in InjectStyle]
-
-    return render_template('build.html', 
-        exes=exes,
-        shellcodes=shellcodes,
-        sourcestyles=sourcestyles,
-        allocstyles=allocstyles,
-        decoderstyles=decoderstyles,
-        execstyles=execstyles,
-        injectstyles=injectstyles,
-    )
-
-
-@views.route("/files")
-def files():
-    log_files = get_logfiles()
-    return render_template('files.html', 
-        log_files=log_files
-    )
 
 
 def get_logfiles():
@@ -184,13 +152,11 @@ def get_logfiles():
     for file in os.listdir(f"{logs_dir}/"):
         if file.startswith("."):
             continue
-        print("Handle: ", file)
 
         with open(os.path.join(f"{logs_dir}/", file), "r") as f:
             if file.endswith(".bin"):
                 continue
             data = f.read()
-            print("FILE: {}".format(file))
             if 'main_c' in file:
                 data = highlight(data, CLexer(), HtmlFormatter(full=False))
             elif '_asm_' in file:
@@ -203,11 +169,9 @@ def get_logfiles():
             elif '.ascii' in file:
                 data = conv.convert(data, full=False)
             elif '.txt' in file:
-                    # skip it
-                    continue
+                continue # skip it 
             elif '.hex' in file:
-                print("-> hex")
-                continue
+                continue # skip it 
                 #data = escape(data)
                 #data = highlight(data, HexdumpLexer(), HtmlFormatter(full=False))
             elif '.log' in file:

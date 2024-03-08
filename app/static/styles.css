@@ -64,3 +64,15 @@
     width: 40em;
     text-align: left;
   }
+
+
+  .nav-item .btn {
+    margin-bottom: 5px; /* Add some space between the buttons */
+  }
+
+  .custom-line {
+    border-top: 1px solid #7e7e7e; /* Create a solid line */
+    width: 100%; /* Span the full width of the container */
+    margin: 20px 0; /* Add some vertical spacing */
+  }
+  

@@ -178,8 +178,6 @@ class SuperPe():
         if self.arch == 'x64':
             imageBaseRelocType = SuperPe.IMAGE_REL_BASED_DIR64
 
-        logger.info('Adding new relocations to backdoored PE file...')
-
         relocsSize = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_BASERELOC].Size
         relocsIndex = self.getSectionIndexByDataDir(SuperPe.IMAGE_DIRECTORY_ENTRY_BASERELOC)
         addr = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress

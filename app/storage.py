@@ -25,18 +25,12 @@ class Storage():
         self.save_data()
 
     def get_data(self):
-        print("Read data")
         with open("app/data.pickle", "rb") as f:
             data = f.read()
             data = pickle.loads(data)
-
-        for project in data:
-            print("  {}".format(project.name))
-
         return data
 
     def save_data(self):
-        print("Save data")
         with open("app/data.pickle", "wb") as f:
             f.write(pickle.dumps(self.data))
 
