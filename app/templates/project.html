@@ -7,6 +7,7 @@
     {% include 'navigation.html' %}
 
     <div class="indent">
+
         <h2> {{project_name}} </h2>
         <form method="POST" enctype="multipart/form-data" action="/add_project">
         <input type="hidden" name="project_name" value="{{project_name}}">
@@ -80,25 +81,28 @@
                 </select>
     
             </div>
-            </form>
 
             <div class="col-3">
-                <button class="btn btn-primary" type="submit" value="save">Save</button>
+                <div class="row">
+                    <button class="btn btn-primary" type="submit" value="save">Save</button>
+                    </form>
+                </div>
 
-                <form method="POST" enctype="multipart/form-data" action="/start_project">
-                    <input type="hidden" name="project_name" value="{{project_name}}">
+                <div class="row">
+                <div class="d-flex">
+                    <form method="POST" enctype="multipart/form-data" action="/start_project">
+                        <input type="hidden" name="project_name" value="{{project_name}}">
 
-                    <div class="form-check">
+                        <button class="btn btn-primary" type="submit" value="start">Start</button>
+
                         <input class="form-check-input" name="try_start" type="checkbox" value="checked" id="flexCheckDefault" checked>
                         <label class="form-check-label" for="flexCheckDefault">
                             Start Infected Exe
                         </label>
-                    </div>
-
-                    <button class="btn btn-primary" type="submit" value="start">Start</button>
-                </form>
+                    </form>
+                </div>
+                </div>
             </div>
-
         </div>
 
         <div class="row">
