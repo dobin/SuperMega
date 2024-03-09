@@ -175,14 +175,18 @@ def start(settings: Settings):
                 short_call_patching = project.settings.short_call_patching)
         except Exception as e:
             logger.error(f'Error compiling: {e}')
-            return exit(1)
+            return 1
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
-        phases.assembler.asm_to_shellcode(
-            asm_in = main_asm_file, 
-            build_exe = main_exe_file, 
-            shellcode_out = main_shc_file)
+        try:
+            phases.assembler.asm_to_shellcode(
+                asm_in = main_asm_file, 
+                build_exe = main_exe_file, 
+                shellcode_out = main_shc_file)
+        except Exception as e:
+            logger.error("Error: Assembling failed")
+            return 2
     
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.dataref_style == DataRefStyle.APPEND:
@@ -207,6 +211,9 @@ def start(settings: Settings):
     except PermissionError as e:
         logger.error(f'Error writing file: {e}')
         return exit(2)
+    except Exception as e:
+        logger.error(f'Error injecting: {e}')
+        return exit(3)
     
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
