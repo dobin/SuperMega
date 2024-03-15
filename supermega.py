@@ -185,8 +185,9 @@ def start(settings: Settings):
                 build_exe = main_exe_file, 
                 shellcode_out = main_shc_file)
         except Exception as e:
-            logger.error("Error: Assembling failed")
+            logger.error("Error: Assembling failed: {}".format(e))
             return 2
+    #shutil.copy(main_shc_file, "working/build/shellcode.bin")
     
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.dataref_style == DataRefStyle.APPEND:
