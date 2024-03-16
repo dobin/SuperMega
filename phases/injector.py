@@ -113,7 +113,7 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     
     rm = exe_host.get_rdata_relocmanager()
 
-    if True:
+    if True:  # FIXME this is a hack which is sometimes necessary
         sect_data_copy = peSection.pefile_section.get_data()
         string_off = find_first_utf16_string_offset(sect_data_copy)
         if string_off == None:

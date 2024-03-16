@@ -52,16 +52,16 @@ def writelog():
         for line in log_messages:
             f.write(line + "\n")
 
-def setup_logging():
+def setup_logging(level = logging.INFO):
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(level)
 
     ch = logging.StreamHandler()
-    ch.setLevel(logging.INFO)
+    ch.setLevel(level)
     ch.setFormatter(CustomFormatter())
 
     list_handler = ListHandler(log_messages)
-    list_handler.setLevel(logging.DEBUG)
+    list_handler.setLevel(level)
     list_handler.setFormatter(CustomFormatter())
 
     root_logger.addHandler(ch)

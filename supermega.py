@@ -42,91 +42,64 @@ def main():
     parser.add_argument('--short-call-patching', action='store_true', help='Make short calls long. You will know when you need it.')
     parser.add_argument('--no-clean-at-start', action='store_true', help='Debug: Dont remove any temporary files at start')
     parser.add_argument('--no-clean-at-exit', action='store_true', help='Debug: Dont remove any temporary files at exit')
-    parser.add_argument('--verify', type=str, help='Debug: Perform verification: std/iat')
     parser.add_argument('--show', action='store_true', help='Debug: Show tool output')
     args = parser.parse_args()
 
     if args.show:
         config.ShowCommandOutput = True
 
-    if args.verify:
-        settings.payload_path = "data/shellcodes/createfile.bin"
-        settings.verify = True
+    settings.try_start_final_infected_exe = args.start_injected
+    settings.cleanup_files_on_start = not args.no_clean_at_start
+    settings.cleanup_files_on_exit =not args.no_clean_at_exit
 
-        settings.try_start_final_infected_exe = False
+    if args.short_call_patching:
+        settings.short_call_patching = True
 
-        if args.verify == "peb":
+    if args.sourcestyle:
+        if args.sourcestyle == "peb_walk":
             settings.source_style = SourceStyle.peb_walk
-            settings.inject_mode = InjectStyle.BackdoorCallInstr
-            settings.inject_exe_in = "data/exes/7z.exe"
-            settings.inject_exe_out = "data/exes/7z-verify.exe"
-        elif args.verify == "iat":
+        elif args.sourcestyle == "iat_reuse":
             settings.source_style = SourceStyle.iat_reuse
+
+    if args.alloc:
+        if args.alloc == "rwx_1":
+            settings.alloc_style = AllocStyle.RWX
+    if args.decoder:
+        if args.decoder == "plain_1":
+            settings.decoder_style = DecoderStyle.PLAIN_1
+        elif args.decoder == "xor_1":
+            settings.decoder_style = DecoderStyle.XOR_1
+    if args.exec:
+        if args.exec == "direct_1":
+            settings.exec_style = ExecStyle.CALL
+
+    if args.inject:
+        if args.rbrunmode == "eop":
+            settings.inject_mode = InjectStyle.ChangeEntryPoint
+        elif args.rbrunmode == "backdoor":
             settings.inject_mode = InjectStyle.BackdoorCallInstr
-            settings.inject_exe_in = "data/exes/procexp64.exe"
-            settings.inject_exe_out = "data/exes/procexp64-verify.exe"
-        elif args.verify == "rwx":
-            settings.source_style = SourceStyle.peb_walk
-            settings.inject_mode = InjectStyle.ChangeEntryPoint  # ,2 is broken atm
-            settings.inject_exe_in = "data/exes/wifiinfoview.exe"
-            settings.inject_exe_out = "data/exes/wifiinfoview.exe-verify.exe"
         else:
-            logger.info("Unknown verify option {}, use std/iat".format(args.verify))
+            logging.error("Invalid mode, use one of:")
+            for i in ["eop", "backdoor"]:
+                logging.error("  {}  {}".format(i, rbrunmode_str(i)))
             return
 
-    else:
-        settings.try_start_final_infected_exe = args.start_injected
-        settings.cleanup_files_on_start = not args.no_clean_at_start
-        settings.cleanup_files_on_exit =not args.no_clean_at_exit
+    if not args.shellcode or not args.inject:
+        logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
+        logger.info(r"Example: .\supermega.py --shellcode .\data\shellcodes\calc64.bin --inject .\data\exes\7z.exe")
+        return 1
 
-        if args.short_call_patching:
-            settings.short_call_patching = True
-
-        if args.sourcestyle:
-            if args.sourcestyle == "peb_walk":
-                settings.source_style = SourceStyle.peb_walk
-            elif args.sourcestyle == "iat_reuse":
-                settings.source_style = SourceStyle.iat_reuse
-
-        if args.alloc:
-            if args.alloc == "rwx_1":
-                settings.alloc_style = AllocStyle.RWX
-        if args.decoder:
-            if args.decoder == "plain_1":
-                settings.decoder_style = DecoderStyle.PLAIN_1
-            elif args.decoder == "xor_1":
-                settings.decoder_style = DecoderStyle.XOR_1
-        if args.exec:
-            if args.exec == "direct_1":
-                settings.exec_style = ExecStyle.CALL
-
-        if args.inject:
-            if args.rbrunmode == "eop":
-                settings.inject_mode = InjectStyle.ChangeEntryPoint
-            elif args.rbrunmode == "backdoor":
-                settings.inject_mode = InjectStyle.BackdoorCallInstr
-            else:
-                logging.error("Invalid mode, use one of:")
-                for i in ["eop", "backdoor"]:
-                    logging.error("  {}  {}".format(i, rbrunmode_str(i)))
-                return
-
-        if not args.shellcode or not args.inject:
-            logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
-            logger.info(r"Example: .\supermega.py --shellcode .\data\shellcodes\calc64.bin --inject .\data\exes\7z.exe")
-            return 1
-
-        if args.shellcode:
-            if not os.path.isfile(args.shellcode):
-                logger.info("Could not find: {}".format(args.shellcode))
-                return
-            settings.payload_path = args.shellcode
-        if args.inject:
-            if not os.path.isfile(args.inject):
-                logger.info("Could not find: {}".format(args.inject))
-                return
-            settings.inject_exe_in = args.inject
-            settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
+    if args.shellcode:
+        if not os.path.isfile(args.shellcode):
+            logger.info("Could not find: {}".format(args.shellcode))
+            return
+        settings.payload_path = args.shellcode
+    if args.inject:
+        if not os.path.isfile(args.inject):
+            logger.info("Could not find: {}".format(args.inject))
+            return
+        settings.inject_exe_in = args.inject
+        settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
 
     exit_code = start(settings)
     exit(exit_code)
@@ -211,10 +184,10 @@ def start(settings: Settings):
         phases.injector.inject_exe(main_shc_file, settings, project)
     except PermissionError as e:
         logger.error(f'Error writing file: {e}')
-        return exit(2)
+        return 2
     except Exception as e:
         logger.error(f'Error injecting: {e}')
-        return exit(3)
+        return 3
     
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
