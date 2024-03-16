@@ -46,7 +46,7 @@ Code section size : {sect_size}
 ''')
 
         offset = int((sect_size - len(self.shellcodeData)) / 2)
-        logger.debug(f'Inserting shellcode into 0x{offset:X} offset.')
+        logger.info(f'Inserting shellcode into 0x{offset:X} offset.')
 
         self.superpe.pe.set_bytes_at_offset(offset, self.shellcodeData)
         self.shellcodeOffset = offset

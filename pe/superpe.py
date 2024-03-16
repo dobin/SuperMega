@@ -132,8 +132,12 @@ class SuperPe():
                 iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
         return iat
 
+
     def write_code_section_data(self, data: bytes):
         sect = self.get_code_section()
+        if len(data) != sect.SizeOfRawData:
+            logger.error(f'New code section data is larger than the original! {len(data)} != {sect.SizeOfRawData}')
+            return
         self.pe.set_bytes_at_offset(sect.PointerToRawData, data)
 
 

@@ -112,7 +112,8 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         raise Exception("No .rdata section found, abort")
     
     rm = exe_host.get_rdata_relocmanager()
-    if False:  # seems i dont need this, even tho i dont understand why
+
+    if True:
         sect_data_copy = peSection.pefile_section.get_data()
         string_off = find_first_utf16_string_offset(sect_data_copy)
         if string_off == None:
@@ -126,7 +127,9 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         # get a hole in the .rdata section to put our data
         hole = rm.find_hole(len(datareuse_fixup.data))
         if hole == None:
-            raise Exception("No hole found in .rdata section, abort")
+            raise Exception("No suitable hole with size {} found in .rdata section, abort".format(
+                len(datareuse_fixup.data)
+            ))
         fixup_offset_rdata = hole[0]  # the start address of the hole (from start of .rdata)
         rm.add_range(hole[0], hole[1])  # mark it as used
         var_data = datareuse_fixup.data
@@ -141,14 +144,14 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     code = superpe.get_code_section_data()
     for datareuse_fixup in reusedata_fixups:
         if not datareuse_fixup.randbytes in code:
-            raise Exception("DataResuse: ID {} not found, abort".format(
+            raise Exception("DataReuse: ID {} not found, abort".format(
                 datareuse_fixup.randbytes))
         
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
         instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_section.VirtualAddress
         destination_virtual_address = datareuse_fixup.addr
-        logger.info("    Replace {} at VA 0x{:X} with .rdata LEA at VA 0x{:X}".format(
-            datareuse_fixup.randbytes.hex(), instruction_virtual_address, destination_virtual_address
+        logger.info("    Replace {} at VA 0x{:X} with LEA {} .rdata 0x{:X}".format(
+            datareuse_fixup.randbytes.hex(), instruction_virtual_address, datareuse_fixup.register, destination_virtual_address
         ))
         lea = assemble_lea(
             instruction_virtual_address, destination_virtual_address, datareuse_fixup.register

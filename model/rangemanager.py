@@ -1,4 +1,9 @@
+import logging
 from intervaltree import Interval, IntervalTree
+
+
+logger = logging.getLogger("RangeManager")
+
 
 class RangeManager:
     def __init__(self, min=0, max=1000):
