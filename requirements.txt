@@ -5,3 +5,4 @@ keystone-engine
 jinja2
 Pygments
 ansi2html
+requests

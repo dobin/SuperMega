@@ -6,3 +6,5 @@ path_runshc: 'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc\r
 #- path_shexec = r'C:\Research\hasherezade\exec_fiber\sh-exec-fiber.exe'
 
 path_sgn: 'C:\tools\sgn2.1\sgn.exe'
+
+avred_server: "192.168.1.1:8001"

