@@ -187,14 +187,15 @@ def start(settings: Settings):
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     if config.get("avred_server") != "":
-        filename = os.path.basename(settings.inject_exe_in)
-        with open(settings.inject_exe_out, "rb") as f:
-            data = f.read()
-        try:
-            scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
-        except Exception as e:
-            logger.error(f'Error scanning: {e}')
-            return 4
+        if settings.verify or settings.try_start_final_infected_exe:
+            filename = os.path.basename(settings.inject_exe_in)
+            with open(settings.inject_exe_out, "rb") as f:
+                data = f.read()
+            try:
+                scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
+            except Exception as e:
+                logger.error(f'Error scanning: {e}')
+                return 4
     else:
         # Start/verify it at the end
         if settings.verify:

@@ -16,6 +16,9 @@ from model.settings import Settings
 from model.defs import *
 from supermega import start
 from app.storage import storage, Project
+from sender import scannerDetectsBytes
+from phases.injector import verify_injected_exe
+from helper import run_process_checkret
 
 views = Blueprint('views', __name__)
 
@@ -23,6 +26,9 @@ conv = Ansi2HTMLConverter()
 config.load()
 
 thread_running = False
+
+
+logger = logging.getLogger("Views")
 
 
 @views.route("/")
@@ -78,7 +84,7 @@ def add_project():
             settings.try_start_final_infected_exe = False
 
         settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
-        settings.inject_exe_out = "app/upload/infected/" + request.form['exe'] + ".injected"
+        settings.inject_exe_out = "app/upload/infected/" + request.form['exe'].replace(".exe", ".infected.exe")
 
         source_style = request.form['source_style']
         settings.source_style = SourceStyle[source_style]
@@ -102,6 +108,8 @@ def add_project():
         else:
             # add new project
             project = Project(project_name, settings)
+            project.project_dir = "app/projects/{}".format(project_name)
+            project.project_exe = request.form['exe'].replace(".exe", ".infected.exe")
             project.settings = settings
             settings.project_name = project_name
             storage.add_project(project)
@@ -134,34 +142,31 @@ def add_project():
         )
 
 
-def supermega_thread(settings: Settings, project_name: str):
+def supermega_thread(project: Project):
     global thread_running
-    start(settings)
+    start(project.settings)
     thread_running = False
 
     # copy generated file to project folder
-    file_basename = os.path.basename(settings.inject_exe_out)
+    file_basename = os.path.basename(project.settings.inject_exe_out)
+    project.project_exe = file_basename
+    dest = "app/projects/{}/{}".format(project.name, file_basename)
+    logger.info("Copy {} to project folder {}".format(project.settings.inject_exe_out, dest))
     shutil.copy(
-        settings.inject_exe_out,
-        "app/projects/{}/{}".format(project_name, file_basename)
+        project.settings.inject_exe_out,
+        dest,
     )
 
 
-@views.route("/start_project", methods=['POST', 'GET'])
-def start_project():
+@views.route("/build_project", methods=['POST', 'GET'])
+def build_project():
     global thread_running
 
-    #project_name = request.args.get('project_name')
     project_name = request.form.get('project_name')
-    try_start = request.form.get('try_start')
-    if try_start != None:
-        try_start = True
-    else:
-        try_start = False
     project = storage.get_project(project_name)
-    project.settings.try_start_final_infected_exe = try_start
+    project.settings.try_start_final_infected_exe = False
 
-    thread = Thread(target=supermega_thread, args=(project.settings, project_name, ))
+    thread = Thread(target=supermega_thread, args=(project, ))
     thread.start()
     thread_running = True
 
@@ -177,6 +182,43 @@ def status_project(project_name):
             logdata = "asdf")
     else:
         return redirect("/project/{}".format(project_name), code=302)
+
+
+@views.route("/exec_project", methods=['POST', 'GET'])
+def start_project():
+    project_name = request.form.get('project_name')
+    project = storage.get_project(project_name)
+    if project == None:
+        return redirect("/", code=302)
+
+    remote = False
+    remote_arg = request.args.get('remote')
+    if remote_arg == "true":
+        remote = True
+
+    if remote:
+        logger.info("--[ Exec {} on server {}".format(project.project_exe, config.get("avred_server")))
+        filepath = "{}/{}".format(project.project_dir, project.project_exe)
+        with open(filepath, "rb") as f:
+            data = f.read()
+        try:
+            scannerDetectsBytes(data, project.project_exe, useBrotli=True, verify=project.settings.verify)
+        except Exception as e:
+            logger.error(f'Error scanning: {e}')
+            return 4
+    else:
+        logger.info("--[ Exec {} locally".format(project.project_exe))
+        # Start/verify it at the end
+        if project.settings.verify:
+            logger.info("--[ Verify infected exe")
+            exit_code = verify_injected_exe(project.settings.inject_exe_out)
+        else:
+            logger.info("--[ Start infected exe: {}".format(project.settings.inject_exe_out))
+            run_process_checkret([
+                project.settings.inject_exe_out,
+            ], check=False)
+
+    return redirect("/project/{}".format(project_name), code=302)
 
 
 def get_logfiles():

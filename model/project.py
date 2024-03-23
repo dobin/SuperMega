@@ -18,6 +18,9 @@ class Project():
         self.exe_host: ExeHost = ExeHost(self.settings.inject_exe_in)
         self.carrier: Carrier = Carrier()
 
+        self.project_dir: str = ""
+        self.project_exe: str = ""
+
 
     def init(self):
         self.payload.init()
