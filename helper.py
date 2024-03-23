@@ -105,9 +105,9 @@ def delete_all_files_in_directory(directory_path):
 def rbrunmode_str(rbrunmode):
     rbrunmode = str(rbrunmode)
     if rbrunmode == "1":
-        return "change AddressOfEntryPoint"
+        return "change address of entrypoint"
     elif rbrunmode == "2":
-        return "hijack branching instruction at Original Entry Point (jmp, call, ...)"
+        return "hijack branching instruction in entrypoint"
     else:
         return "Invalid: {}".format(rbrunmode)
 
