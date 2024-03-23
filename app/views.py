@@ -78,6 +78,7 @@ def add_project():
         settings = Settings()
 
         project_name = request.form['project_name']
+        comment = request.form['comment']
 
         settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
         if request.form['shellcode'] == "createfile.bin":
@@ -106,6 +107,7 @@ def add_project():
             # overwrite project
             project = storage.get_project(project_name)
             project.settings = settings
+            project.comment = comment
         else:
             # add new project
             project = Project(project_name, settings)
@@ -113,6 +115,7 @@ def add_project():
             project.project_exe = request.form['exe'].replace(".exe", ".infected.exe")
             project.settings = settings
             settings.project_name = project_name
+            project.comment = comment
             storage.add_project(project)
         storage.save_data()
         return redirect("/project/{}".format(project_name), code=302)
