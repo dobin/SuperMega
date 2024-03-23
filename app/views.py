@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, current_app, request, redirect, url_for, render_template, send_file, make_response, session, escape
+from flask import Flask, Blueprint, current_app, request, redirect, url_for, render_template, send_file, make_response, session, escape, jsonify
 from threading import Thread
 from werkzeug.utils import secure_filename
 import os
@@ -10,6 +10,7 @@ from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
 import shutil
+import subprocess
 
 from config import config
 from model.settings import Settings
@@ -196,27 +197,43 @@ def start_project():
     if remote_arg == "true":
         remote = True
 
+    no_exec = False
+    no_exec_arg = request.args.get('no_exec')
+    if no_exec_arg == "true":
+        no_exec = True
+
+    logger.info("--[ Exec project: {} remote: {} no_exec: {}".format(project_name, remote, no_exec))
+
     if remote:
         logger.info("--[ Exec {} on server {}".format(project.project_exe, config.get("avred_server")))
         filepath = "{}/{}".format(project.project_dir, project.project_exe)
         with open(filepath, "rb") as f:
             data = f.read()
         try:
-            scannerDetectsBytes(data, project.project_exe, useBrotli=True, verify=project.settings.verify)
+            scannerDetectsBytes(data, 
+                                project.project_exe, 
+                                useBrotli=True, 
+                                verify=project.settings.verify,
+                                no_exec=no_exec)
         except Exception as e:
             logger.error(f'Error scanning: {e}')
-            return 4
+            return jsonify({
+				"exception": str(e)
+			}), 500
     else:
-        logger.info("--[ Exec {} locally".format(project.project_exe))
         # Start/verify it at the end
         if project.settings.verify:
             logger.info("--[ Verify infected exe")
             exit_code = verify_injected_exe(project.settings.inject_exe_out)
-        else:
+        elif no_exec == False:
             logger.info("--[ Start infected exe: {}".format(project.settings.inject_exe_out))
             run_process_checkret([
                 project.settings.inject_exe_out,
             ], check=False)
+        elif no_exec == True:
+            dirname = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
+            logger.info("--[ Open folder: {}".format(dirname))
+            subprocess.run(['explorer', dirname])
 
     return redirect("/project/{}".format(project_name), code=302)
 

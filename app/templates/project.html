@@ -83,15 +83,19 @@
 
             <div class="col-3">
                 <div class="row">
+                    <div class="col-6">
+
                     <button class="btn btn-primary" type="submit" value="save">Save Settings</button>
                     </form>
-                </div>
+                    </div>
 
-                <div class="row">
+                    <div class="col-6">
+
                     <form method="POST" enctype="multipart/form-data" action="/build_project">
                         <input type="hidden" name="project_name" value="{{project_name}}">
                         <button class="btn btn-primary" type="submit" value="start">Build</button>
                     </form>
+                    </div>
                 </div>
                 
                 <div class="row">
@@ -100,11 +104,21 @@
                             <input type="hidden" name="project_name" value="{{project_name}}">
                             <button class="btn btn-primary" type="submit" value="start">Start Local</button>
                         </form>
+
+                        <form method="POST" enctype="multipart/form-data" action="/exec_project?no_exec=true">
+                            <input type="hidden" name="project_name" value="{{project_name}}">
+                            <button class="btn btn-primary" type="submit" value="start">File Local</button>
+                        </form>
                     </div>
                     <div class="col-6">
                         <form method="POST" enctype="multipart/form-data" action="/exec_project?remote=true">
                             <input type="hidden" name="project_name" value="{{project_name}}">
                             <button class="btn btn-primary" type="submit" value="start">Start Remote</button>
+                        </form>
+
+                        <form method="POST" enctype="multipart/form-data" action="/exec_project?remote=true&no_exec=true">
+                            <input type="hidden" name="project_name" value="{{project_name}}">
+                            <button class="btn btn-primary" type="submit" value="start">File Remote</button>
                         </form>
                     </div>
                 </div>

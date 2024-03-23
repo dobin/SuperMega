@@ -11,8 +11,8 @@ from config import config
 logger = logging.getLogger("Sender")
 
 
-def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False):
-    params = { 'filename': filename, 'brotli': useBrotli, 'verify': verify }
+def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False, no_exec=False):
+    params = { 'filename': filename, 'brotli': useBrotli, 'verify': verify, 'no_exec' : no_exec}
     if useBrotli:
         scanData = brotli.compress(data)
     else:

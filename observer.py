@@ -14,6 +14,10 @@ class Observer():
         self.idx = 0
         self.active = True
 
+    def reset(self):
+        self.logs = []
+        self.idx = 0
+
     def add_text(self, name, data):
         self.write_to_file(name + ".txt", data)
         self.idx += 1

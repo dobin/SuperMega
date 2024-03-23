@@ -107,6 +107,8 @@ def start(settings: Settings):
     if settings.cleanup_files_on_start:
         clean_files()
         delete_all_files_in_directory(f"{logs_dir}/")
+    # And logs
+    observer.reset()
     exit_code = 0  # 0 = success
 
     # Load our input
