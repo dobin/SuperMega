@@ -9,6 +9,7 @@ from pygments.lexers import CLexer, NasmLexer, DiffLexer, HexdumpLexer
 from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
+import shutil
 
 from config import config
 from model.settings import Settings
@@ -26,7 +27,6 @@ thread_running = False
 
 @views.route("/")
 def index():
-    print(storage.data)
     return render_template('index.html', data=storage.data)
 
 
@@ -96,9 +96,11 @@ def add_project():
         settings.inject_style = InjectStyle[inject_style]
         
         if storage.get_project(project_name) != None:
+            # overwrite project
             project = storage.get_project(project_name)
             project.settings = settings
         else:
+            # add new project
             project = Project(project_name, settings)
             project.settings = settings
             settings.project_name = project_name
@@ -132,10 +134,17 @@ def add_project():
         )
 
 
-def supermega_thread(settings: Settings):
+def supermega_thread(settings: Settings, project_name: str):
     global thread_running
     start(settings)
     thread_running = False
+
+    # copy generated file to project folder
+    file_basename = os.path.basename(settings.inject_exe_out)
+    shutil.copy(
+        settings.inject_exe_out,
+        "app/projects/{}/{}".format(project_name, file_basename)
+    )
 
 
 @views.route("/start_project", methods=['POST', 'GET'])
@@ -152,7 +161,7 @@ def start_project():
     project = storage.get_project(project_name)
     project.settings.try_start_final_infected_exe = try_start
 
-    thread = Thread(target=supermega_thread, args=(project.settings, ))
+    thread = Thread(target=supermega_thread, args=(project.settings, project_name, ))
     thread.start()
     thread_running = True
 

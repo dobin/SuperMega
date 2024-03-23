@@ -14,9 +14,9 @@
 
     <form method="POST" enctype="multipart/form-data" action="/add_project">
 
-    <input type="text" name="project_name" class="form-control" placeholder="Projekt" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
-
     <div class="row row-cols-lg-auto g-3">
+
+    <input type="text" name="project_name" class="form-control" placeholder="Projekt name" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
     
     <select class="form-select" name="shellcode" aria-label="SHELLCODE">
         {% for shellcode in shellcodes %}
@@ -59,13 +59,6 @@
         <option value="{{name}}">{{value}}</option>
         {% endfor %}
     </select>
-
-    <div class="form-check">
-        <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-        <label class="form-check-label" for="flexCheckDefault">
-          Execute after injection
-        </label>
-      </div>
 
     <button class="btn btn-primary" type="submit" value="save">Save</button>
 
