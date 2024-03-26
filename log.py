@@ -52,6 +52,9 @@ def writelog():
         for line in log_messages:
             f.write(line + "\n")
 
+def getlog():
+    return log_messages
+
 def setup_logging(level = logging.INFO):
     root_logger = logging.getLogger()
     root_logger.setLevel(level)

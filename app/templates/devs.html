@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'header.html' %}
+  </head>
+  <body>
+    {% include 'navigation.html' %}
+
+    <div class="indent">
+
+    <h1> ShcDevs: </h1>
+
+    <ul>
+      {% for item in data %}
+        <li><a href="/dev/{{item['name']}}">{{ item['name'] }}</a>
+            ({{item["date"]}})
+        </li>
+      {% endfor %}
+    </ul>
+
+  </div>
+  </body>
+</html>

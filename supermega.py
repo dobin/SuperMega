@@ -18,7 +18,7 @@ from model.project import Project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging, writelog
-
+from utils import delete_all_files_in_directory
 
 def main():
     """Argument parsing for when called from command line"""

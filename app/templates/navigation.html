@@ -14,7 +14,20 @@
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link {{ 'active' if request.path == '/' else '' }}" href="/">Home</a></li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.path == '/' else '' }}" 
+                       href="/">Home</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.path == '/projects' else '' }}" 
+                       href="/projects">Projects</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.path == '/dev' else '' }}" 
+                       href="/dev">ShcDev</a>
+                </li>
             </ul>
         </div>
     </div>

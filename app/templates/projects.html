@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'header.html' %}
+  </head>
+  <body>
+    {% include 'navigation.html' %}
+
+    <div class="indent">
+
+    <h1> Projects </h1>
+
+    <ul>
+      {% for item in data %}
+        <li><a href="/project/{{item.name}}">{{ item.name }}</a></li>
+      {% endfor %}
+    </ul>
+
+    <a href="/add_project">Add Project</a>
+  </div>
+  </body>
+</html>

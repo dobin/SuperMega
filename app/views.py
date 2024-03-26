@@ -11,7 +11,10 @@ import difflib
 from ansi2html import Ansi2HTMLConverter
 import shutil
 import subprocess
+import time
+from datetime import datetime
 
+from observer import observer
 from config import config
 from model.settings import Settings
 from model.defs import *
@@ -19,7 +22,10 @@ from supermega import start
 from app.storage import storage, Project
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
+from phases.compiler import compile_dev
+from phases.assembler import asm_to_shellcode
 from helper import run_process_checkret
+from log import getlog
 
 views = Blueprint('views', __name__)
 
@@ -35,6 +41,84 @@ logger = logging.getLogger("Views")
 @views.route("/")
 def index():
     return render_template('index.html', data=storage.data)
+
+
+@views.route("/projects")
+def projects_route():
+    return render_template('projects.html', data=storage.data)
+
+
+@views.route("/dev")
+def devs_route():
+    data = []
+    path = "data/dev"
+    for file_path in os.listdir(path):
+        creation_time = os.path.getctime("data/dev" + "/" + file_path)
+        readable_time = datetime.fromtimestamp(creation_time).strftime('%Y-%m-%d %H:%M:%S')
+        data.append({
+            "name": file_path,
+            "date": readable_time,
+        })
+    return render_template('devs.html', data=data)
+
+
+@views.route("/dev/<name>")
+def dev_route(name):
+    data = []
+    log = ""
+    path = "data/dev/{}".format(name)
+    for file_path in os.listdir(path):
+        creation_time = os.path.getctime(path + "/" + file_path)
+        readable_time = datetime.fromtimestamp(creation_time).strftime('%Y-%m-%d %H:%M:%S')
+        
+        info = ""
+        if file_path.endswith(".asm"):
+            info = "text assembly (cleaned, from compiled .c)"
+        elif file_path.endswith(".bin"):
+            info = "generated shellcode (from .exe)"
+        elif file_path.endswith(".c"):
+            info = "input C code"
+        elif file_path.endswith(".exe"):
+            info = "temporary shellcode holder (from .c)"
+        elif file_path.endswith(".log"):
+            info = "log file"
+            with open(path + "/" + file_path, "r") as f:
+                log = f.read()
+
+            print(log)
+
+        data.append({
+            "name": file_path,
+            "date": readable_time,
+            "info": info,
+        })
+
+    return render_template('dev.html', 
+        name=name, files=data, log=log)
+
+
+@views.route("/dev/<name>/build")
+def dev_build_route(name):
+
+    c_in = "data/dev/{}/main.c".format(name)
+    asm_out = "data/dev/{}/main.asm".format(name)
+    build_exe = "data/dev/{}/main.exe".format(name)
+    shellcode_out = "data/dev/{}/main.bin".format(name)
+    log = "data/dev/{}/main.log".format(name)
+
+    compile_dev(c_in, asm_out)
+    asm_to_shellcode(asm_out, build_exe, shellcode_out)
+
+    with open(log, "w") as f:
+        for log_line in getlog():
+            f.write("{}\n".format(log_line))
+
+        f.write("\n\n")
+
+        for log in observer.logs:
+            f.write("{}".format(log))
+
+    return redirect("/dev/{}".format(name), code=302)
 
 
 @views.route("/project/<name>")

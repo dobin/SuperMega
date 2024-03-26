@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'header.html' %}
+  </head>
+  <body>
+    {% include 'navigation.html' %}
+
+    <div class="indent">
+
+    <h1> ShcDev: {{name}}</h1>
+
+    <table class="table">
+        {% for file in files %}
+        <tr>
+            <td><a href="/dev/{{name}}/file/{file['name']}">{{ file['name']}}</a></td>
+            <td>{{file["date"]}}</td>
+            <td>{{file["info"]}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="/dev/{{name}}/build">Build</a>
+
+    <br><hr>
+
+    <pre>{{log}}</pre>
+
+  </div>
+  </body>
+</html>

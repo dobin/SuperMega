@@ -2,7 +2,7 @@ import r2pipe
 import os
 
 from model.defs import *
-from helper import hexdump
+from utils import hexdump
 
 def r2_disas(data: bytes):
     filename = "r2_data.bin"

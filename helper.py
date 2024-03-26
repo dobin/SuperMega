@@ -6,6 +6,7 @@ import logging
 
 from config import config
 from model.defs import *
+from observer import observer
 
 logger = logging.getLogger("Helper")
 
@@ -48,22 +49,28 @@ def run_process_checkret(args, check=True):
     except Exception as e:
         logger.warn(f"An error occurred: {e}")
         # Handle other exceptions
-    
+
     with open(f"{logs_dir}/cmdoutput.log", "ab") as f:
         cmd = "------------------------------------\n"
         cmd += "--- " + " ".join(args) + "\n"
         f.write(cmd.encode('utf-8'))
         if ret.stdout != None:
+            observer.add_log(ret.stdout.decode('utf-8'))
             f.write(ret.stdout)
         if ret.stderr != None:
+            observer.add_log(ret.stderr.decode('utf-8'))
             f.write(ret.stderr)
+
     if ret.returncode != 0 and check:
         logger.info("----! FAILED Command: {}".format(" ".join(args)))
         if ret.stdout != None:
+            observer.add_log(ret.stdout.decode('utf-8'))
             logger.info(ret.stdout.decode('utf-8'))
         if ret.stderr != None:
+            observer.add_log(ret.stderr.decode('utf-8'))
             logger.info(ret.stderr.decode('utf-8'))
         raise Exception("Command failed: " + " ".join(args))
+    
     if config.ShowCommandOutput:
         logger.info("> " + " ".join(args))
         if ret.stdout != None:
@@ -92,16 +99,6 @@ def file_readall_binary(filepath) -> bytes:
     return data
 
 
-def delete_all_files_in_directory(directory_path):
-    files = glob.glob(os.path.join(directory_path, '*'))
-    for file_path in files:
-        try:
-            os.remove(file_path)
-            #logger.info(f"Deleted {file_path}")
-        except Exception as e:
-            logger.info(f"Error deleting {file_path}: {e}")
-
-
 def rbrunmode_str(rbrunmode):
     rbrunmode = str(rbrunmode)
     if rbrunmode == "1":
@@ -111,34 +108,6 @@ def rbrunmode_str(rbrunmode):
     else:
         return "Invalid: {}".format(rbrunmode)
 
-
-def hexdump(data, addr = 0, num = 0):
-    s = ''
-    n = 0
-    lines = []
-    if num == 0: num = len(data)
-
-    if len(data) == 0:
-        return '<empty>'
-
-    for i in range(0, num, 16):
-        line = ''
-        line += '%04x | ' % (addr + i)
-        n += 16
-
-        for j in range(n-16, n):
-            if j >= len(data): break
-            line += '%02x ' % (data[j] & 0xff)
-
-        line += ' ' * (3 * 16 + 7 - len(line)) + ' | '
-
-        for j in range(n-16, n):
-            if j >= len(data): break
-            c = data[j] if not (data[j] < 0x20 or data[j] > 0x7e) else '.'
-            line += '%c' % c
-
-        lines.append(line)
-    return '\n'.join(lines)
 
 
 def file_to_lf(filename):

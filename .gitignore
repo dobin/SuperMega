@@ -17,3 +17,4 @@ doc/
 *.pickle
 logs/
 app/projects/*
+data/dev/*

@@ -11,7 +11,7 @@ import keystone
 from enum import IntEnum
 import logging
 
-from helper import hexdump
+from utils import hexdump
 from pe.superpe import SuperPe
 from model.defs import *
 

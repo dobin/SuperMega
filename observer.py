@@ -2,9 +2,8 @@ import json
 import pprint
 from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 
-from model import *
 from pe.r2helper import r2_disas
-from helper import delete_all_files_in_directory
+from utils import delete_all_files_in_directory
 from model.defs import *
 
 
@@ -17,6 +16,9 @@ class Observer():
     def reset(self):
         self.logs = []
         self.idx = 0
+
+    def add_log(self, log):
+        self.logs.append(log)
 
     def add_text(self, name, data):
         self.write_to_file(name + ".txt", data)
