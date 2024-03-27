@@ -4,7 +4,6 @@
 
 app/upload/*
 data/exes_more/
-data/shellcodes/*.txt
 *.obj
 *.lnk
 /*.bin
@@ -17,5 +16,6 @@ doc/
 *.pickle
 logs/
 app/projects/*
-data/dev/*
 data_orig/
+app/upload_orig/
+data/source/payload/

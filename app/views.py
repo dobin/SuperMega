@@ -34,7 +34,6 @@ config.load()
 
 thread_running = False
 
-
 logger = logging.getLogger("Views")
 
 
@@ -51,12 +50,12 @@ def projects_route():
 @views.route("/dev")
 def devs_route():
     data = []
-    path = "data/dev"
-    for file_path in os.listdir(path):
-        creation_time = os.path.getctime("data/dev" + "/" + file_path)
+    for filename in os.listdir(PATH_PAYLOAD):
+        file_path = PATH_PAYLOAD + filename
+        creation_time = os.path.getctime(file_path)
         readable_time = datetime.fromtimestamp(creation_time).strftime('%Y-%m-%d %H:%M:%S')
         data.append({
-            "name": file_path,
+            "name": filename,
             "date": readable_time,
         })
     return render_template('devs.html', data=data)
@@ -66,29 +65,31 @@ def devs_route():
 def dev_route(name):
     data = []
     log = ""
-    path = "data/dev/{}".format(name)
-    for file_path in os.listdir(path):
-        creation_time = os.path.getctime(path + "/" + file_path)
+    path = PATH_PAYLOAD + name
+    for filename in os.listdir(path):
+        filepath = path + "/" + filename
+        
+        creation_time = os.path.getmtime(filepath)
         readable_time = datetime.fromtimestamp(creation_time).strftime('%Y-%m-%d %H:%M:%S')
         
         info = ""
-        if file_path.endswith(".asm"):
+        if filename.endswith(".asm"):
             info = "text assembly (cleaned, from compiled .c)"
-        elif file_path.endswith(".bin"):
+        elif filename.endswith(".bin"):
             info = "generated shellcode (from .exe)"
-        elif file_path.endswith(".c"):
+        elif filename.endswith(".c"):
             info = "input C code"
-        elif file_path.endswith(".exe"):
+        elif filename.endswith(".exe"):
             info = "temporary shellcode holder (from .c)"
-        elif file_path.endswith(".log"):
+        elif filename.endswith(".log"):
             info = "log file"
-            with open(path + "/" + file_path, "r") as f:
+            with open(path + "/" + filename, "r") as f:
                 log = f.read()
 
-            print(log)
+            #print(log)
 
         data.append({
-            "name": file_path,
+            "name": filename,
             "date": readable_time,
             "info": info,
         })
@@ -100,11 +101,11 @@ def dev_route(name):
 @views.route("/dev/<name>/build")
 def dev_build_route(name):
 
-    c_in = "data/dev/{}/main.c".format(name)
-    asm_out = "data/dev/{}/main.asm".format(name)
-    build_exe = "data/dev/{}/main.exe".format(name)
-    shellcode_out = "data/dev/{}/main.bin".format(name)
-    log = "data/dev/{}/main.log".format(name)
+    c_in = PATH_PAYLOAD + "{}/main.c".format(name)
+    asm_out = PATH_PAYLOAD + "{}/main.asm".format(name)
+    build_exe = PATH_PAYLOAD + "{}/main.exe".format(name)
+    shellcode_out = PATH_PAYLOAD + "{}/main.bin".format(name)
+    log = PATH_PAYLOAD + "{}/main.log".format(name)
 
     compile_dev(c_in, asm_out)
     asm_to_shellcode(asm_out, build_exe, shellcode_out)
@@ -127,11 +128,11 @@ def project(name):
     log_files = get_logfiles()
 
     exes = []
-    for file in os.listdir("app/upload/exe"):
+    for file in os.listdir(PATH_EXES):
         exes.append(file)
 
     shellcodes = []
-    for file in os.listdir("app/upload/shellcode"):
+    for file in os.listdir(PATH_SHELLCODES):
         shellcodes.append(file)
 
     sourcestyles = [(color.name, color.value) for color in SourceStyle]
@@ -164,13 +165,13 @@ def add_project():
         project_name = request.form['project_name']
         comment = request.form['comment']
 
-        settings.payload_path = "app/upload/shellcode/" + request.form['shellcode']
+        settings.payload_path = PATH_SHELLCODES + request.form['shellcode']
         if request.form['shellcode'] == "createfile.bin":
             settings.verify = True
             settings.try_start_final_infected_exe = False
 
-        settings.inject_exe_in = "app/upload/exe/" + request.form['exe']
-        settings.inject_exe_out = "app/upload/infected/" + request.form['exe'].replace(".exe", ".infected.exe")
+        settings.inject_exe_in = PATH_EXES + request.form['exe']
+        settings.inject_exe_out = PATH_EXES + request.form['exe'].replace(".exe", ".infected.exe")
 
         source_style = request.form['source_style']
         settings.source_style = SourceStyle[source_style]
@@ -195,7 +196,7 @@ def add_project():
         else:
             # add new project
             project = Project(project_name, settings)
-            project.project_dir = "app/projects/{}".format(project_name)
+            project.project_dir = PATH_WEB_PROJECT + "{}".format(project_name)
             project.project_exe = request.form['exe'].replace(".exe", ".infected.exe")
             project.settings = settings
             settings.project_name = project_name
@@ -206,11 +207,11 @@ def add_project():
     
     else: # GET
         exes = []
-        for file in os.listdir("app/upload/exe"):
+        for file in os.listdir(PATH_EXES):
             exes.append(file)
 
         shellcodes = []
-        for file in os.listdir("app/upload/shellcode"):
+        for file in os.listdir(PATH_SHELLCODES):
             shellcodes.append(file)
 
         sourcestyles = [(color.name, color.value) for color in SourceStyle]
@@ -238,7 +239,7 @@ def supermega_thread(project: Project):
     # copy generated file to project folder
     file_basename = os.path.basename(project.settings.inject_exe_out)
     project.project_exe = file_basename
-    dest = "app/projects/{}/{}".format(project.name, file_basename)
+    dest = PATH_WEB_PROJECT + "{}/{}".format(project.name, file_basename)
     logger.info("Copy {} to project folder {}".format(project.settings.inject_exe_out, dest))
     shutil.copy(
         project.settings.inject_exe_out,

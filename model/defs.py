@@ -14,6 +14,8 @@ PATH_IAT_REUSE = "data/source/carrier/iat_reuse/"
 PATH_PAYLOAD = "data/source/payload/"
 PATH_DECODER = "data/source/carrier/decoder/"
 
+PATH_WEB_PROJECT = "app/projects/"
+
 # Correlated with real template files
 # in data/plugins/
 

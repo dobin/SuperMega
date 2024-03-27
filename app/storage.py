@@ -4,7 +4,7 @@ import yaml
 
 from typing import List, Tuple
 from model.settings import Settings
-
+from model.defs import *
 
 class Project():
     def __init__(self, name: str, settings: Settings):
@@ -28,8 +28,8 @@ class Storage():
         self.save_data()
 
         # directories and contents
-        os.makedirs("app/projects/{}".format(project.name), exist_ok=True)
-        with open("app/projects/{}/settings.yaml".format(project.name), "w") as f:
+        os.makedirs(PATH_WEB_PROJECT + project.name, exist_ok=True)
+        with open("{}/{}/settings.yaml".format(PATH_WEB_PROJECT, project.name), "w") as f:
             f.write(yaml.dump(project.settings))
 
     def get_data(self) -> List[Project]:
