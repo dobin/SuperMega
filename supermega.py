@@ -145,6 +145,7 @@ def start(settings: Settings):
                 short_call_patching = project.settings.short_call_patching)
         except Exception as e:
             logger.error(f'Error compiling: {e}')
+            writelog()
             return 1
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
@@ -156,6 +157,7 @@ def start(settings: Settings):
                 shellcode_out = main_shc_file)
         except Exception as e:
             logger.error("Error: Assembling failed: {}".format(e))
+            writelog()
             return 2
     #shutil.copy(main_shc_file, "working/build/shellcode.bin")
     
@@ -181,9 +183,11 @@ def start(settings: Settings):
         phases.injector.inject_exe(main_shc_file, settings, project)
     except PermissionError as e:
         logger.error(f'Error writing file: {e}')
+        writelog()
         return 2
     except Exception as e:
         logger.error(f'Error injecting: {e}')
+        writelog()
         return 3
     
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
@@ -197,6 +201,7 @@ def start(settings: Settings):
                 scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
             except Exception as e:
                 logger.error(f'Error scanning: {e}')
+                writelog()
                 return 4
     else:
         # Start/verify it at the end
