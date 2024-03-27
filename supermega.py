@@ -17,7 +17,7 @@ from sender import scannerDetectsBytes
 from model.project import Project
 from model.settings import Settings
 from model.defs import *
-from log import setup_logging, writelog
+from log import setup_logging, writelog, clearlog
 from utils import delete_all_files_in_directory
 
 def main():
@@ -109,6 +109,7 @@ def start(settings: Settings):
         delete_all_files_in_directory(f"{logs_dir}/")
     # And logs
     observer.reset()
+    clearlog()
     exit_code = 0  # 0 = success
 
     # Load our input

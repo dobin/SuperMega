@@ -55,6 +55,10 @@ def writelog():
 def getlog():
     return log_messages
 
+def clearlog():
+    log_messages.clear()
+
+
 def setup_logging(level = logging.INFO):
     root_logger = logging.getLogger()
     root_logger.setLevel(level)
