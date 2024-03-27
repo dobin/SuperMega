@@ -93,7 +93,7 @@ int main()
 {{ plugin_decoder }}
 
     // Execute *dest
-{{ plugin_executor }}
+    (*(void(*)())(dest))();
 
 	return 0;
 }

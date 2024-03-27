@@ -7,6 +7,13 @@ class FilePath(str):
 # with data/shellcodes/createfile.bin
 VerifyFilename: FilePath = r'C:\Temp\a'
 
+PATH_EXES = "data/binary/exes/"
+PATH_SHELLCODES = "data/binary/shellcodes/"
+PATH_PEB_WALK = "data/source/carrier/peb_walk/"
+PATH_IAT_REUSE = "data/source/carrier/iat_reuse/"
+PATH_PAYLOAD = "data/source/payload/"
+PATH_DECODER = "data/source/carrier/decoder/"
+
 # Correlated with real template files
 # in data/plugins/
 

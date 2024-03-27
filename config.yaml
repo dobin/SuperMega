@@ -7,4 +7,5 @@ path_runshc: 'C:\Users\hacker\Source\Repos\masm_shc\out\build\x64-Debug\runshc\r
 
 path_sgn: 'C:\tools\sgn2.1\sgn.exe'
 
-avred_server: "192.168.1.1:8001"
+#avred_server: "http://192.168.88.65:8001"
+avred_server: ""

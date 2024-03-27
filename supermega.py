@@ -30,9 +30,9 @@ def main():
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
     parser.add_argument('--sourcestyle', type=str, help='peb_walk or iat_reuse')
-    parser.add_argument('--alloc', type=str, help='Template: which allocator plugin')
+    #parser.add_argument('--alloc', type=str, help='Template: which allocator plugin')
     parser.add_argument('--decoder', type=str, help='Template: which decoder plugin')
-    parser.add_argument('--exec', type=str, help='Template: which exec plugin')
+    #parser.add_argument('--exec', type=str, help='Template: which exec plugin')
     parser.add_argument('--rbrunmode', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
@@ -58,17 +58,17 @@ def main():
             settings.source_style = SourceStyle.peb_walk
         elif args.sourcestyle == "iat_reuse":
             settings.source_style = SourceStyle.iat_reuse
-    if args.alloc:
-        if args.alloc == "rwx_1":
-            settings.alloc_style = AllocStyle.RWX
+    #if args.alloc:
+    #    if args.alloc == "rwx_1":
+    #        settings.alloc_style = AllocStyle.RWX
     if args.decoder:
         if args.decoder == "plain_1":
             settings.decoder_style = DecoderStyle.PLAIN_1
         elif args.decoder == "xor_1":
             settings.decoder_style = DecoderStyle.XOR_1
-    if args.exec:
-        if args.exec == "direct_1":
-            settings.exec_style = ExecStyle.CALL
+    #if args.exec:
+    #    if args.exec == "direct_1":
+    #        settings.exec_style = ExecStyle.CALL
     if args.inject:
         if args.rbrunmode == "eop":
             settings.inject_mode = InjectStyle.ChangeEntryPoint

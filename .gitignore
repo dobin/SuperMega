@@ -18,3 +18,4 @@ doc/
 logs/
 app/projects/*
 data/dev/*
+data_orig/
