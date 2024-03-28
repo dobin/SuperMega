@@ -25,8 +25,17 @@
                 </li>
 
                 <li class="nav-item">
-                    <a class="nav-link {{ 'active' if request.path == '/dev' else '' }}" 
-                       href="/dev">ShcDev</a>
+                    <a class="nav-link {{ 'active' if request.path == '/shellcodes' else '' }}" 
+                       href="/shellcodes">Shellcodes</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.path == '/exes' else '' }}" 
+                       href="/exes">EXE's</a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link {{ 'active' if request.path == '/shcdev' else '' }}" 
+                       href="/shcdev">ShcDev</a>
                 </li>
             </ul>
         </div>

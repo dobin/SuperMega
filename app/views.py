@@ -25,7 +25,7 @@ from phases.injector import verify_injected_exe
 from phases.compiler import compile_dev
 from phases.assembler import asm_to_shellcode
 from helper import run_process_checkret
-from log import getlog
+from log import MyLog
 
 views = Blueprint('views', __name__)
 
@@ -47,7 +47,7 @@ def projects_route():
     return render_template('projects.html', data=storage.data)
 
 
-@views.route("/dev")
+@views.route("/shcdev")
 def devs_route():
     data = []
     for filename in os.listdir(PATH_PAYLOAD):
@@ -61,7 +61,7 @@ def devs_route():
     return render_template('devs.html', data=data)
 
 
-@views.route("/dev/<name>")
+@views.route("/shcdev/<name>")
 def dev_route(name):
     data = []
     log = ""
@@ -98,7 +98,7 @@ def dev_route(name):
         name=name, files=data, log=log)
 
 
-@views.route("/dev/<name>/build")
+@views.route("/shcdev/<name>/build")
 def dev_build_route(name):
 
     c_in = PATH_PAYLOAD + "{}/main.c".format(name)
@@ -111,7 +111,7 @@ def dev_build_route(name):
     asm_to_shellcode(asm_out, build_exe, shellcode_out)
 
     with open(log, "w") as f:
-        for log_line in getlog():
+        for log_line in MyLog.getlog():
             f.write("{}\n".format(log_line))
 
         f.write("\n\n")
@@ -119,7 +119,7 @@ def dev_build_route(name):
         for log in observer.logs:
             f.write("{}".format(log))
 
-    return redirect("/dev/{}".format(name), code=302)
+    return redirect("/shcdev/{}".format(name), code=302)
 
 
 @views.route("/project/<name>")
