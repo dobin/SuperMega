@@ -157,7 +157,7 @@ def project(name):
         )
 
 
-@views.route("/add_project", methods=['POST', 'GET'])
+@views.route("/project_add", methods=['POST', 'GET'])
 def add_project():
     if request.method == 'POST':
         settings = Settings()
@@ -247,11 +247,10 @@ def supermega_thread(project: Project):
     )
 
 
-@views.route("/build_project", methods=['POST', 'GET'])
-def build_project():
+@views.route("/project/<project_name>/build", methods=['POST', 'GET'])
+def build_project(project_name):
     global thread_running
 
-    project_name = request.form.get('project_name')
     project = storage.get_project(project_name)
     project.settings.try_start_final_infected_exe = False
 
@@ -259,10 +258,10 @@ def build_project():
     thread.start()
     thread_running = True
 
-    return redirect("/status_project/{}".format(project_name), code=302)
+    return redirect("/project/{}/status".format(project_name), code=302)
 
 
-@views.route("/status_project/<project_name>")
+@views.route("/project/<project_name>/status")
 def status_project(project_name):
     global thread_running
     if thread_running:
@@ -273,9 +272,8 @@ def status_project(project_name):
         return redirect("/project/{}".format(project_name), code=302)
 
 
-@views.route("/exec_project", methods=['POST', 'GET'])
-def start_project():
-    project_name = request.form.get('project_name')
+@views.route("/project/<project_name>/exec", methods=['POST', 'GET'])
+def start_project(project_name):
     project = storage.get_project(project_name)
     if project == None:
         return redirect("/", code=302)

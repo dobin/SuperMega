@@ -9,7 +9,7 @@
     <div class="indent">
 
         <h2> {{project_name}} </h2>
-        <form method="POST" enctype="multipart/form-data" action="/add_project">
+        <form method="POST" enctype="multipart/form-data" action="/project_add">
         <input type="hidden" name="project_name" value="{{project_name}}">
 
         <div class="row">
@@ -92,8 +92,7 @@
 
                     <div class="col-6">
 
-                    <form method="POST" enctype="multipart/form-data" action="/build_project">
-                        <input type="hidden" name="project_name" value="{{project_name}}">
+                    <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
                         <button class="btn btn-primary" type="submit" value="start">Build</button>
                     </form>
                     </div>
@@ -101,24 +100,20 @@
                 
                 <div class="row">
                     <div class="col-6">
-                        <form method="POST" enctype="multipart/form-data" action="/exec_project">
-                            <input type="hidden" name="project_name" value="{{project_name}}">
+                        <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec">
                             <button class="btn btn-primary" type="submit" value="start">Start Local</button>
                         </form>
 
-                        <form method="POST" enctype="multipart/form-data" action="/exec_project?no_exec=true">
-                            <input type="hidden" name="project_name" value="{{project_name}}">
+                        <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
                             <button class="btn btn-primary" type="submit" value="start">File Local</button>
                         </form>
                     </div>
                     <div class="col-6">
-                        <form method="POST" enctype="multipart/form-data" action="/exec_project?remote=true">
-                            <input type="hidden" name="project_name" value="{{project_name}}">
+                        <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?remote=true">
                             <button class="btn btn-primary" type="submit" value="start">Start Remote</button>
                         </form>
 
-                        <form method="POST" enctype="multipart/form-data" action="/exec_project?remote=true&no_exec=true">
-                            <input type="hidden" name="project_name" value="{{project_name}}">
+                        <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?remote=true&no_exec=true">
                             <button class="btn btn-primary" type="submit" value="start">File Remote</button>
                         </form>
                     </div>
