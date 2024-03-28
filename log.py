@@ -2,7 +2,6 @@ import logging
 
 from model.defs import *
 
-log_messages = []
 
 
 # Logging
@@ -17,6 +16,7 @@ class LogColors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
 
 class CustomFormatter(logging.Formatter):
     #format = "%(asctime)s - %(name)-12s - [%(levelname)-8s] - %(message)s (%(filename)s:%(lineno)d)"
@@ -35,6 +35,7 @@ class CustomFormatter(logging.Formatter):
         formatter = logging.Formatter(log_fmt, datefmt="%Y-%m-%d %H:%M:%S")
         return formatter.format(record)
 
+
 class ListHandler(logging.Handler):
     def __init__(self, log_list):
         super().__init__()
@@ -46,33 +47,39 @@ class ListHandler(logging.Handler):
         self.log_list.append(log_entry)
 
 
-def writelog():
-    # write log to file
-    with open(f"{logs_dir}/supermega.log", "w") as f:
-        for line in log_messages:
-            f.write(line + "\n")
+class _MyLog():
+    def __init__(self):
+        self.log_messages = []
 
-def getlog():
-    return log_messages
+    def log(self, message):
+        self.log_messages.append(message)
 
-def clearlog():
-    log_messages.clear()
+    def getlog(self):
+        return self.log_messages
+
+    def clearlog(self):
+        self.log_messages.clear()
+
+    def setup_logging(self, level = logging.INFO):
+        root_logger = logging.getLogger()
+        root_logger.setLevel(level)
+
+        ch = logging.StreamHandler()
+        ch.setLevel(level)
+        ch.setFormatter(CustomFormatter())
+
+        list_handler = ListHandler(self.log_messages)
+        list_handler.setLevel(level)
+        list_handler.setFormatter(CustomFormatter())
+
+        root_logger.addHandler(ch)
+        root_logger.addHandler(list_handler)
+
+    def writelog(self):
+        # write log to file
+        with open(f"{logs_dir}/supermega.log", "w") as f:
+            for line in self.log_messages:
+                f.write(line + "\n")
 
 
-def setup_logging(level = logging.INFO):
-    root_logger = logging.getLogger()
-    root_logger.setLevel(level)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(level)
-    ch.setFormatter(CustomFormatter())
-
-    list_handler = ListHandler(log_messages)
-    list_handler.setLevel(level)
-    list_handler.setFormatter(CustomFormatter())
-
-    root_logger.addHandler(ch)
-    root_logger.addHandler(list_handler)
-
-def clear_log():
-    log_messages.clear()
+MyLog: _MyLog = _MyLog()
