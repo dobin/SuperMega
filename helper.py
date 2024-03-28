@@ -55,19 +55,19 @@ def run_process_checkret(args, check=True):
         cmd += "--- " + " ".join(args) + "\n"
         f.write(cmd.encode('utf-8'))
         if ret.stdout != None:
-            observer.add_log(ret.stdout.decode('utf-8'))
+            observer.add_cmd_output(ret.stdout.decode('utf-8'))
             f.write(ret.stdout)
         if ret.stderr != None:
-            observer.add_log(ret.stderr.decode('utf-8'))
+            observer.add_cmd_output(ret.stderr.decode('utf-8'))
             f.write(ret.stderr)
 
     if ret.returncode != 0 and check:
         logger.info("----! FAILED Command: {}".format(" ".join(args)))
         if ret.stdout != None:
-            observer.add_log(ret.stdout.decode('utf-8'))
+            observer.add_cmd_output(ret.stdout.decode('utf-8'))
             logger.info(ret.stdout.decode('utf-8'))
         if ret.stderr != None:
-            observer.add_log(ret.stderr.decode('utf-8'))
+            observer.add_cmd_output(ret.stderr.decode('utf-8'))
             logger.info(ret.stderr.decode('utf-8'))
         raise Exception("Command failed: " + " ".join(args))
     

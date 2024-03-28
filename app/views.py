@@ -25,7 +25,6 @@ from phases.injector import verify_injected_exe
 from phases.compiler import compile_dev
 from phases.assembler import asm_to_shellcode
 from helper import run_process_checkret
-from log import MyLog
 
 views = Blueprint('views', __name__)
 
@@ -111,7 +110,7 @@ def dev_build_route(name):
     asm_to_shellcode(asm_out, build_exe, shellcode_out)
 
     with open(log, "w") as f:
-        for log_line in MyLog.getlog():
+        for log_line in observer.getlog():
             f.write("{}\n".format(log_line))
 
         f.write("\n\n")
@@ -267,7 +266,7 @@ def status_project(project_name):
     if thread_running:
         return render_template('status_project.html', 
             project_name=project_name,
-            logdata = "asdf")
+            logdata = "\n".join(observer.get_logs()))
     else:
         return redirect("/project/{}".format(project_name), code=302)
 

@@ -6,11 +6,11 @@ from flask import Flask
 import logging
 
 from app.views import views
-from log import MyLog
+from log import setup_logging
 
 if __name__ == "__main__":
 	logging.getLogger('werkzeug').setLevel(logging.ERROR)
-	MyLog.setup_logging()
+	setup_logging()
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--listenip', type=str, help='IP to listen on', default="0.0.0.0")
 	parser.add_argument('--listenport', type=int, help='Port to listen on', default=5001)

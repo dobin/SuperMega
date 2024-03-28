@@ -9,16 +9,30 @@ from model.defs import *
 
 class Observer():
     def __init__(self):
+        self.cmd_output = []
         self.logs = []
         self.idx = 0
         self.active = True
 
     def reset(self):
+        self.cmd_output = []
         self.logs = []
         self.idx = 0
 
+    def add_cmd_output(self, cmd_output):
+        self.cmd_output.append(cmd_output)
+
     def add_log(self, log):
         self.logs.append(log)
+
+    def get_logs(self):
+        return self.logs
+
+    def writelog(self):
+        # write log to file
+        with open(f"{logs_dir}/supermega.log", "w") as f:
+            for line in self.logs:
+                f.write(line + "\n")
 
     def add_text(self, name, data):
         self.write_to_file(name + ".txt", data)

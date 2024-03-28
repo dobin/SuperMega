@@ -5,7 +5,7 @@ from config import config
 from model.defs import *
 
 from model.settings import Settings
-from log import MyLog
+from log import setup_logging
 from supermega import start
 
 
@@ -56,5 +56,5 @@ def main():
 
 
 if __name__ == "__main__":
-    MyLog.setup_logging(level=logging.WARN)
+    setup_logging(level=logging.WARN)
     main()

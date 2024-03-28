@@ -1,7 +1,7 @@
 import logging
 
 from model.defs import *
-
+from observer import observer
 
 # ANSI escape sequences for colors
 class LogColors:
@@ -34,49 +34,22 @@ class CustomFormatter(logging.Formatter):
 
 
 class ListHandler(logging.Handler):
-    def __init__(self, log_list):
-        super().__init__()
-        self.log_list = log_list
-
     def emit(self, record):
         # Format the log record and store it in the list
         log_entry = self.format(record)
-        self.log_list.append(log_entry)
+        observer.add_log(log_entry)
 
+def setup_logging(level = logging.INFO):
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
 
-class _MyLog():
-    def __init__(self):
-        self.log_messages = []
+    ch = logging.StreamHandler()
+    ch.setLevel(level)
+    ch.setFormatter(CustomFormatter())
 
-    def log(self, message):
-        self.log_messages.append(message)
+    list_handler = ListHandler()
+    list_handler.setLevel(level)
+    list_handler.setFormatter(CustomFormatter())
 
-    def getlog(self):
-        return self.log_messages
-
-    def clearlog(self):
-        self.log_messages.clear()
-
-    def setup_logging(self, level = logging.INFO):
-        root_logger = logging.getLogger()
-        root_logger.setLevel(level)
-
-        ch = logging.StreamHandler()
-        ch.setLevel(level)
-        ch.setFormatter(CustomFormatter())
-
-        list_handler = ListHandler(self.log_messages)
-        list_handler.setLevel(level)
-        list_handler.setFormatter(CustomFormatter())
-
-        root_logger.addHandler(ch)
-        root_logger.addHandler(list_handler)
-
-    def writelog(self):
-        # write log to file
-        with open(f"{logs_dir}/supermega.log", "w") as f:
-            for line in self.log_messages:
-                f.write(line + "\n")
-
-
-MyLog: _MyLog = _MyLog()
+    root_logger.addHandler(ch)
+    root_logger.addHandler(list_handler)

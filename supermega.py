@@ -17,7 +17,7 @@ from sender import scannerDetectsBytes
 from model.project import Project
 from model.settings import Settings
 from model.defs import *
-from log import MyLog
+from log import setup_logging
 from utils import delete_all_files_in_directory
 
 def main():
@@ -109,7 +109,6 @@ def start(settings: Settings):
         delete_all_files_in_directory(f"{logs_dir}/")
     # And logs
     observer.reset()
-    MyLog.clearlog()
     exit_code = 0  # 0 = success
 
     # Load our input
@@ -146,7 +145,7 @@ def start(settings: Settings):
                 short_call_patching = project.settings.short_call_patching)
         except Exception as e:
             logger.error(f'Error compiling: {e}')
-            MyLog.writelog()
+            observer.writelog()
             return 1
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
@@ -158,7 +157,7 @@ def start(settings: Settings):
                 shellcode_out = main_shc_file)
         except Exception as e:
             logger.error("Error: Assembling failed: {}".format(e))
-            MyLog.writelog()
+            observer.writelog()
             return 2
     #shutil.copy(main_shc_file, "working/build/shellcode.bin")
     
@@ -184,11 +183,11 @@ def start(settings: Settings):
         phases.injector.inject_exe(main_shc_file, settings, project)
     except PermissionError as e:
         logger.error(f'Error writing file: {e}')
-        MyLog.writelog()
+        observer.writelog()
         return 2
     except Exception as e:
         logger.error(f'Error injecting: {e}')
-        MyLog.writelog()
+        observer.writelog()
         return 3
     
     observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
@@ -202,7 +201,7 @@ def start(settings: Settings):
                 scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
             except Exception as e:
                 logger.error(f'Error scanning: {e}')
-                MyLog.writelog()
+                observer.writelog()
                 return 4
     else:
         # Start/verify it at the end
@@ -219,7 +218,7 @@ def start(settings: Settings):
     if settings.cleanup_files_on_exit:
         clean_files()
 
-    MyLog.writelog()
+    observer.writelog()
     return exit_code
 
 
@@ -265,5 +264,5 @@ def verify_shellcode(shc_name):
 
 
 if __name__ == "__main__":
-    MyLog.setup_logging()
+    setup_logging()
     main()
