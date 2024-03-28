@@ -104,7 +104,22 @@ your own shellcode loader.
 
 ### Environment Variables
 
+It needs all the Microsoft Visual Studio specific paths as environment
+variables. Either start the "visual studio developer console", or if you are sane, 
+use the following commandline to get all the damn env right. 
+Use this when `Cannot find Windows.h`.
+
+```
+cmd.exe /c "`"C:\Program Files (x86)\Microsoft Visual Studio\<year>\<edition>\Common7\Tools\VsDevCmd.bat`" && powershell"
+```
+
+Also make sure radare2 is in path:
+```
 $Env:PATH += ";C:\Tools\radare2-5.8.8-w64\bin"
+```
+
+
+### Alternative
 
 Use
 ```

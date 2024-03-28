@@ -3,9 +3,6 @@ import logging
 from model.defs import *
 
 
-
-# Logging
-
 # ANSI escape sequences for colors
 class LogColors:
     HEADER = '\033[95m'

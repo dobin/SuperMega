@@ -15,6 +15,8 @@ PATH_PAYLOAD = "data/source/payload/"
 PATH_DECODER = "data/source/carrier/decoder/"
 
 PATH_WEB_PROJECT = "app/projects/"
+PATH_WORKING = "working/"
+
 
 # Correlated with real template files
 # in data/plugins/
