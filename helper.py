@@ -50,33 +50,45 @@ def run_process_checkret(args, check=True):
         logger.warn(f"An error occurred: {e}")
         # Handle other exceptions
 
+    stdout_s = ""
+    stdout_b = b""
+    if ret.stdout != None:
+        stdout_b = ret.stdout
+        stdout_s = ret.stdout.decode('utf-8')
+    stderr_s = ""
+    stderr_b = b""
+    if ret.stderr != None:
+        stderr_b = ret.stderr
+        stderr_s = ret.stderr.decode('utf-8')
+
+    # write directly to logs/ dir
     with open(f"{logs_dir}/cmdoutput.log", "ab") as f:
         cmd = "------------------------------------\n"
         cmd += "--- " + " ".join(args) + "\n"
         f.write(cmd.encode('utf-8'))
-        if ret.stdout != None:
-            observer.add_cmd_output(ret.stdout.decode('utf-8'))
-            f.write(ret.stdout)
-        if ret.stderr != None:
-            observer.add_cmd_output(ret.stderr.decode('utf-8'))
-            f.write(ret.stderr)
+        observer.add_cmd_output(stdout_s)
+        f.write(stdout_b)
+        observer.add_cmd_output(stderr_s)
+        f.write(stderr_b)
 
+    # check return code (optional)
     if ret.returncode != 0 and check:
         logger.info("----! FAILED Command: {}".format(" ".join(args)))
         if ret.stdout != None:
-            observer.add_cmd_output(ret.stdout.decode('utf-8'))
-            logger.info(ret.stdout.decode('utf-8'))
+            observer.add_cmd_output(stdout_s)
+            logger.info(stdout_s)
         if ret.stderr != None:
-            observer.add_cmd_output(ret.stderr.decode('utf-8'))
-            logger.info(ret.stderr.decode('utf-8'))
+            observer.add_cmd_output(stderr_s)
+            logger.info(stderr_s)
         raise Exception("Command failed: " + " ".join(args))
     
+    # debug: show command output
     if config.ShowCommandOutput:
         logger.info("> " + " ".join(args))
         if ret.stdout != None:
-            logger.info(ret.stdout.decode('utf-8'))
+            logger.info(stdout_s)
         if ret.stderr != None:
-            logger.info(ret.stderr.decode('utf-8'))
+            logger.info(stderr_s)
 
 
 def try_start_shellcode(shc_file):
