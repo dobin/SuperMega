@@ -16,7 +16,7 @@ logger = logging.getLogger("Injector")
 
 
 def inject_exe(
-    main_shc_file: FilePath,
+    main_shc_path: FilePath,
     settings: Settings,
     project: Project,
 ):
@@ -32,7 +32,7 @@ def inject_exe(
 
     # Read prepared loader shellcode
     # And check if it fits into the target code section
-    main_shc = file_readall_binary(main_shc_file)
+    main_shc = file_readall_binary(main_shc_path)
     l = len(main_shc)
     if l + 128 > project.exe_host.code_section.Misc_VirtualSize:
         logger.error("Error: Shellcode {}+128 too small for target code section {}".format(

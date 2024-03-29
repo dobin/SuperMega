@@ -1,9 +1,7 @@
 import requests as req
 import logging
 import brotli
-import os
 import time
-import shutil
 
 from config import config
 
@@ -32,10 +30,3 @@ def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False
         raise Exception("Server error, aborting")
     
     return jsonRes
-
-
-def main():
-    with open("data/exes/7z-verify.exe", "rb") as f:
-        data = f.read()
-    res = scannerDetectsBytes(data, "test.exe")
-    print("Answer: {}".format(res))

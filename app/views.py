@@ -124,7 +124,8 @@ def dev_build_route(name):
 @views.route("/project/<name>")
 def project(name):
     project = storage.get_project(name)
-    log_files = get_logfiles()
+    project.settings.prep()
+    log_files = get_logfiles(project.settings.main_dir)
 
     exes = []
     for file in os.listdir(PATH_EXES):
@@ -153,7 +154,7 @@ def project(name):
         injectstyles=injectstyles,
 
         log_files=log_files,
-        )
+    )
 
 
 @views.route("/project_add", methods=['POST', 'GET'])
@@ -235,16 +236,6 @@ def supermega_thread(project: Project):
     start(project.settings)
     thread_running = False
 
-    # copy generated file to project folder
-    file_basename = os.path.basename(project.settings.inject_exe_out)
-    project.project_exe = file_basename
-    dest = PATH_WEB_PROJECT + "{}/{}".format(project.name, file_basename)
-    logger.info("Copy {} to project folder {}".format(project.settings.inject_exe_out, dest))
-    shutil.copy(
-        project.settings.inject_exe_out,
-        dest,
-    )
-
 
 @views.route("/project/<project_name>/build", methods=['POST', 'GET'])
 def build_project(project_name):
@@ -323,18 +314,20 @@ def start_project(project_name):
     return redirect("/project/{}".format(project_name), code=302)
 
 
-def get_logfiles():
+def get_logfiles(directory):
     log_files = []
     id = 0
     asm_a = ""  # for diff
     asm_b = ""
-    for file in os.listdir(f"{logs_dir}/"):
+    for file in os.listdir(f"{directory}/"):
         if file.startswith("."):
             continue
+        if not file.startswith("log-"):
+            continue
+        if file.endswith(".bin"):
+            continue
 
-        with open(os.path.join(f"{logs_dir}/", file), "r") as f:
-            if file.endswith(".bin"):
-                continue
+        with open(os.path.join(f"{directory}/", file), "r") as f:
             data = f.read()
             if 'main_c' in file:
                 data = highlight(data, CLexer(), HtmlFormatter(full=False))

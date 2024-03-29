@@ -7,6 +7,7 @@ class FilePath(str):
 # with data/shellcodes/createfile.bin
 VerifyFilename: FilePath = r'C:\Temp\a'
 
+# Directory structure
 PATH_EXES = "data/binary/exes/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_PEB_WALK = "data/source/carrier/peb_walk/"
@@ -14,8 +15,7 @@ PATH_IAT_REUSE = "data/source/carrier/iat_reuse/"
 PATH_PAYLOAD = "data/source/payload/"
 PATH_DECODER = "data/source/carrier/decoder/"
 
-PATH_WEB_PROJECT = "app/projects/"
-PATH_WORKING = "working/"
+PATH_WEB_PROJECT = "app/projects/"  # web only
 
 
 # Correlated with real template files
@@ -62,13 +62,3 @@ class IatEntry():
         self.dll_name: str = dll_name
         self.func_name: str = func_name
         self.iat_vaddr: int = iat_vaddr
-
-
-# no slash at end
-build_dir = "working/build"
-logs_dir = "working/logs"
-
-main_c_file = os.path.join(build_dir, "main.c")
-main_asm_file = os.path.join(build_dir, "main.asm")
-main_exe_file = os.path.join(build_dir, "main.exe")
-main_shc_file = os.path.join(build_dir, "main.bin")

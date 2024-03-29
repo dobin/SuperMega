@@ -22,7 +22,7 @@ def main():
     settings.source_style = SourceStyle.peb_walk
     settings.inject_mode = InjectStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "7z.exe"
-    settings.inject_exe_out = PATH_EXES + "7z-verify.exe"
+    settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
     if start(settings) != 0:
         print("Error")
         return 1
@@ -31,7 +31,7 @@ def main():
     settings.source_style = SourceStyle.peb_walk
     settings.inject_mode = InjectStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "7z.exe"
-    settings.inject_exe_out = PATH_EXES + "7z-verify.exe"
+    settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
     if start(settings) != 0:
         print("Error")
         return 1
@@ -40,7 +40,7 @@ def main():
     settings.source_style = SourceStyle.iat_reuse
     settings.inject_mode = InjectStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
-    settings.inject_exe_out = PATH_EXES + "procexp64-verify.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:
         print("Error")
         return 1
@@ -49,7 +49,7 @@ def main():
     settings.source_style = SourceStyle.iat_reuse
     settings.inject_mode = InjectStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
-    settings.inject_exe_out = PATH_EXES + "procexp64-verify.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:
         print("Error")
         return 1

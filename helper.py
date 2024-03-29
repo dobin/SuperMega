@@ -13,25 +13,20 @@ logger = logging.getLogger("Helper")
 SHC_VERIFY_SLEEP = 0.1
 
 
-def clean_files():
+def clean_files(settings):
     logger.info("--( Remove old files")
-    
+
     files_to_clean = [
-        # compile artefacts in current dir
+        # compile artefacts in current working dir
         "main-clean.obj",
         "main.obj",
         "mllink$.lnk",
-        #"out/7z-verify.exe",
-        #"out/wifiinfoview-verify.exe",
-        #"out/procexp64-verify.exe",
-        # out/ stuff
-        os.path.join(build_dir, "main.asm"),
-        os.path.join(build_dir, "main.bin"),
-        os.path.join(build_dir, "main.c"),
-        os.path.join(build_dir, "peb_lookup.h"),
-        os.path.join(build_dir, "main.exe"),
-        
-        VerifyFilename,
+
+        # temporary files
+        settings.main_c_path,
+        settings.main_asm_path,
+        settings.main_shc_path,
+        settings.main_exe_path,
     ]
     for file in files_to_clean:
         pathlib.Path(file).unlink(missing_ok=True)

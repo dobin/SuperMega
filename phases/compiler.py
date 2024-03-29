@@ -14,7 +14,6 @@ from model.carrier import Carrier
 from model.exehost import ExeHost
 
 logger = logging.getLogger("Compiler")
-use_templates = True
 
 # NOTE: Mostly copy-pasted from compiler.py::compile()
 def compile_dev(
