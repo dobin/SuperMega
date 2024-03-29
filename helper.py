@@ -13,15 +13,20 @@ logger = logging.getLogger("Helper")
 SHC_VERIFY_SLEEP = 0.1
 
 
-def clean_files(settings):
-    logger.info("--( Remove old files")
-
+def clean_tmp_files():
     files_to_clean = [
         # compile artefacts in current working dir
         "main-clean.obj",
         "main.obj",
         "mllink$.lnk",
+    ]
+    for file in files_to_clean:
+        pathlib.Path(file).unlink(missing_ok=True)
 
+def clean_files(settings):
+    logger.info("--( Remove old files")
+
+    files_to_clean = [
         # temporary files
         settings.main_c_path,
         settings.main_asm_path,

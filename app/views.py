@@ -19,7 +19,7 @@ from config import config
 from model.settings import Settings
 from model.defs import *
 from supermega import start
-from app.storage import storage, Project
+from app.storage import storage, WebProject
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from phases.compiler import compile_dev
@@ -38,12 +38,13 @@ logger = logging.getLogger("Views")
 
 @views.route("/")
 def index():
-    return render_template('index.html', data=storage.data)
+    return render_template('index.html')
 
 
 @views.route("/projects")
 def projects_route():
-    return render_template('projects.html', data=storage.data)
+    projects = storage.get_projects()
+    return render_template('projects.html', projects=projects)
 
 
 @views.route("/shcdev")
@@ -124,7 +125,6 @@ def dev_build_route(name):
 @views.route("/project/<name>")
 def project(name):
     project = storage.get_project(name)
-    project.settings.prep()
     log_files = get_logfiles(project.settings.main_dir)
 
     exes = []
@@ -169,6 +169,8 @@ def add_project():
         if request.form['shellcode'] == "createfile.bin":
             settings.verify = True
             settings.try_start_final_infected_exe = False
+        else:
+            settings.cleanup_files_on_exit = False
 
         settings.inject_exe_in = PATH_EXES + request.form['exe']
         settings.inject_exe_out = PATH_EXES + request.form['exe'].replace(".exe", ".infected.exe")
@@ -193,16 +195,13 @@ def add_project():
             project = storage.get_project(project_name)
             project.settings = settings
             project.comment = comment
+            storage.save_project(project)
         else:
             # add new project
-            project = Project(project_name, settings)
-            project.project_dir = PATH_WEB_PROJECT + "{}".format(project_name)
-            project.project_exe = request.form['exe'].replace(".exe", ".infected.exe")
-            project.settings = settings
-            settings.project_name = project_name
+            project = WebProject(project_name, settings)
             project.comment = comment
             storage.add_project(project)
-        storage.save_data()
+
         return redirect("/project/{}".format(project_name), code=302)
     
     else: # GET
@@ -231,9 +230,9 @@ def add_project():
         )
 
 
-def supermega_thread(project: Project):
+def supermega_thread(settings: Settings):
     global thread_running
-    start(project.settings)
+    start(settings)
     thread_running = False
 
 
@@ -244,7 +243,22 @@ def build_project(project_name):
     project = storage.get_project(project_name)
     project.settings.try_start_final_infected_exe = False
 
-    thread = Thread(target=supermega_thread, args=(project, ))
+    src = "{}{}/".format(PATH_CARRIER, project.settings.source_style.value)
+    dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
+
+    # delete all files in dst directory
+    for file in os.listdir(dst):
+        if file == "project.pickle":
+            continue
+        os.remove(dst + file)
+
+    # copy *.c *.h files from src directory to dst directory
+    for file in os.listdir(src):
+        if file.endswith(".c") or file.endswith(".h"):
+            logger.info("Copy {} to {}".format(src + file, dst))
+            shutil.copy2(src + file, dst)
+
+    thread = Thread(target=supermega_thread, args=(project.settings, ))
     thread.start()
     thread_running = True
 

@@ -16,6 +16,7 @@ class Observer():
     def reset(self):
         self.cmd_output = []
         self.logs = []
+        self.files = []
         self.idx = 0
 
 

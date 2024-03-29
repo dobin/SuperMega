@@ -96,6 +96,7 @@ def main():
         settings.inject_exe_in = args.inject
         settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
 
+    settings.prep()
     exit_code = start(settings)
     exit(exit_code)
 
@@ -103,16 +104,15 @@ def main():
 def start(settings: Settings) -> int:
     """Main entry point for the application. Will handle log files and cleanup"""
 
-    settings.prep()
-
     # Delete: all old files
+    clean_tmp_files()
     if settings.cleanup_files_on_start:
         clean_files(settings)
         
     # And logs
     observer.reset()
 
-    # Do the thing and catch errors
+    # Do the thing and catch the errors
     try:
         start_real(settings)
     except Exception as e:
@@ -121,6 +121,7 @@ def start(settings: Settings) -> int:
         return 1
     
     # Cleanup files
+    clean_tmp_files()
     if settings.cleanup_files_on_exit:
         clean_files(settings)
 

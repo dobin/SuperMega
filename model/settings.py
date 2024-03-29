@@ -2,7 +2,7 @@ from model.defs import *
 
 
 class Settings():
-    def __init__(self):
+    def __init__(self, web=""):
         self.payload_path: FilePath = ""
 
         # Settings
@@ -29,10 +29,20 @@ class Settings():
 
 
     def prep(self):
-        self.main_dir = "data/source/carrier/" + self.source_style.value + "/"
-
+        self.main_dir = "{}{}/".format(PATH_CARRIER, self.source_style.value)
         self.template_path = self.main_dir + "template.c"
         self.main_c_path = self.main_dir + "main.c"
         self.main_asm_path = self.main_dir + "main.asm"
         self.main_exe_path = self.main_dir + "main.exe"
         self.main_shc_path = self.main_dir + "main.bin"
+
+
+    def prep_web(self, project_name):
+        self.main_dir = "{}{}/".format(PATH_WEB_PROJECT, project_name)
+        self.template_path = self.main_dir + "template.c"
+        self.main_c_path = self.main_dir + "main.c"
+        self.main_asm_path = self.main_dir + "main.asm"
+        self.main_exe_path = self.main_dir + "main.exe"
+        self.main_shc_path = self.main_dir + "main.bin"
+        self.inject_exe_out = "{}{}".format(
+            self.main_dir, os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe"))

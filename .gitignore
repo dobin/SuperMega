@@ -10,3 +10,4 @@ data/source/payload/
 log-*
 *.verify.exe
 *.infected.exe
+projects/*
