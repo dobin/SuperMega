@@ -1,11 +1,6 @@
-import json
-import pprint
-from capstone import Cs, CS_ARCH_X86, CS_MODE_64
 from typing import List, Dict
 
 from pe.r2helper import r2_disas
-from utils import delete_all_files_in_directory
-from model.defs import *
 
 
 class Observer():
@@ -51,32 +46,6 @@ class Observer():
         #self.write_to_file(name + ".disas.ascii", ret['color'])
         #self.write_to_file(name + ".hex", ret['hexdump'])
         #self.write_to_file_bin(name + ".bin", data)
-        #self.idx += 1
-
-  
-    #def write_to_file(self, filename, data):
-    #    if not self.active:
-    #        return
-    #    with open("{}/{}-{}".format(logs_dir, self.idx, filename), "w") as f:
-    #        f.write(data)
-
-
-    #def write_to_file_bin(self, filename, data):
-    #    if not self.active:
-    #        return
-    #    with open("{}/{}-{}".format(logs_dir, self.idx, filename), "wb") as f:
-    #        f.write(data)
-
-
-    #def clean_files(self):
-    #    delete_all_files_in_directory(f"{logs_dir}/")
-    #    self.idx = 0
-    #    self.logs = []
-
-
-    #def __str__(self):
-    #    s = "<todo>"
-    #    return s
-
+ 
 
 observer = Observer()

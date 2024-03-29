@@ -101,7 +101,9 @@ def main():
     exit(exit_code)
 
 
-def start(settings: Settings):
+def start(settings: Settings) -> int:
+    """Main entry point for the application. Will handle log files and cleanup"""
+
     # Delete: all old files
     if settings.cleanup_files_on_start:
         clean_files()
@@ -121,25 +123,7 @@ def start(settings: Settings):
         clean_files()
 
     write_logs()
-
-
-def write_logs():
-    # Our log output
-    with open(f"{logs_dir}/supermega.log", "w") as f:
-        for line in observer.get_logs():
-            f.write(line + "\n")
-
-    # Stdout of executed commands
-    with open(f"{logs_dir}/cmdoutput.log", "w") as f:
-        for line in observer.get_cmd_output():
-            f.write(line)
-
-    # Write all files
-    idx = 0
-    for name, data in observer.files:
-        with open(f"{logs_dir}/{idx}-{name}", "w") as f:
-            f.write(data)
-        idx += 1
+    return 0
 
 
 def start_real(settings: Settings):
@@ -216,12 +200,33 @@ def start_real(settings: Settings):
         if settings.verify:
             logger.info("--[ Verify infected exe")
             payload_exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
-            logging.info("Payload xit code: {}".format(payload_exit_code))
+            logging.info("Payload exit code: {}".format(payload_exit_code))
+            if payload_exit_code != 0:
+                raise Exception("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
             logger.info("--[ Start infected exe: {}".format(settings.inject_exe_out))
             run_process_checkret([
                 settings.inject_exe_out,
-            ], check=False)
+            ], check=True)
+
+
+def write_logs():
+    # Our log output
+    with open(f"{logs_dir}/supermega.log", "w") as f:
+        for line in observer.get_logs():
+            f.write(line + "\n")
+
+    # Stdout of executed commands
+    with open(f"{logs_dir}/cmdoutput.log", "w") as f:
+        for line in observer.get_cmd_output():
+            f.write(line)
+
+    # Write all files
+    idx = 0
+    for name, data in observer.files:
+        with open(f"{logs_dir}/{idx}-{name}", "w") as f:
+            f.write(data)
+        idx += 1
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
