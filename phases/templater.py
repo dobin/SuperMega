@@ -57,7 +57,7 @@ def create_c_from_template(
         if use_templates:
             with open(PATH_PEB_WALK + "template.c", 'r', encoding='utf-8') as file:
                 template_content = file.read()
-                observer.add_text("main_c_template", template_content)
+                observer.add_text_file("main_c_template", template_content)
 
             template = Template(template_content)
             rendered_template = template.render({
@@ -68,12 +68,12 @@ def create_c_from_template(
             })
             with open(main_c_file, "w", encoding='utf-8') as file:
                 file.write(rendered_template)
-                observer.add_text("main_c_rendered", rendered_template)
+                observer.add_text_file("main_c_rendered", rendered_template)
 
             # TODO PEB
             shutil.copy(PATH_PEB_WALK + "peb_lookup.h", f"{build_dir}/peb_lookup.h")
         else:
-            observer.add_text("main_c", file_readall_text(PATH_PEB_WALK + "main.c"))
+            observer.add_text_file("main_c", file_readall_text(PATH_PEB_WALK + "main.c"))
             shutil.copy(PATH_PEB_WALK + "main.c", main_c_file)
             # TODO PEB
             shutil.copy(PATH_PEB_WALK + "peb_lookup.h", f"{build_dir}/peb_lookup.h")
@@ -82,7 +82,7 @@ def create_c_from_template(
         if use_templates:
             with open(PATH_IAT_REUSE + "template.c", 'r', encoding='utf-8') as file:
                 template_content = file.read()
-                observer.add_text("main_c_template", template_content)
+                observer.add_text_file("main_c_template", template_content)
             template = Template(template_content)
             rendered_template = template.render({
                 'plugin_allocator': plugin_allocator,
@@ -92,7 +92,7 @@ def create_c_from_template(
             })
             with open(main_c_file, "w", encoding='utf-8') as file:
                 file.write(rendered_template)
-                observer.add_text("main_c_rendered", rendered_template)
+                observer.add_text_file("main_c_rendered", rendered_template)
         else:
-            observer.add_text("main_c", file_readall_text(PATH_IAT_REUSE + "main.c"))
+            observer.add_text_file("main_c", file_readall_text(PATH_IAT_REUSE + "main.c"))
             shutil.copy(PATH_IAT_REUSE + "main.c", main_c_file)

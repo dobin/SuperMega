@@ -20,6 +20,7 @@ from model.defs import *
 from log import setup_logging
 from utils import delete_all_files_in_directory
 
+
 def main():
     """Argument parsing for when called from command line"""
     logger.info("Super Mega")
@@ -101,15 +102,48 @@ def main():
 
 
 def start(settings: Settings):
-    """Main entry point for the application. This is where the magic happens, based on settings"""
-
     # Delete: all old files
     if settings.cleanup_files_on_start:
         clean_files()
         delete_all_files_in_directory(f"{logs_dir}/")
     # And logs
     observer.reset()
-    exit_code = 0  # 0 = success
+
+    try:
+        start_real(settings)
+    except Exception as e:
+        logger.error(f'Error compiling: {e}')
+        write_logs()
+        return 1
+    
+    # Cleanup files
+    if settings.cleanup_files_on_exit:
+        clean_files()
+
+    write_logs()
+
+
+def write_logs():
+    # Our log output
+    with open(f"{logs_dir}/supermega.log", "w") as f:
+        for line in observer.get_logs():
+            f.write(line + "\n")
+
+    # Stdout of executed commands
+    with open(f"{logs_dir}/cmdoutput.log", "w") as f:
+        for line in observer.get_cmd_output():
+            f.write(line)
+
+    # Write all files
+    idx = 0
+    for name, data in observer.files:
+        with open(f"{logs_dir}/{idx}-{name}", "w") as f:
+            f.write(data)
+        idx += 1
+
+
+def start_real(settings: Settings):
+    """Main entry point for the application. This is where the magic happens, based on settings"""
 
     # Load our input
     project = Project(settings)
@@ -134,32 +168,21 @@ def start(settings: Settings):
 
     # Compile: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
-        try:
-            phases.compiler.compile(
-                c_in = main_c_file, 
-                asm_out = main_asm_file, 
-                payload_len = project.payload.len,
-                carrier = project.carrier,
-                source_style = project.settings.source_style,
-                exe_host = project.exe_host,
-                short_call_patching = project.settings.short_call_patching)
-        except Exception as e:
-            logger.error(f'Error compiling: {e}')
-            observer.writelog()
-            return 1
+        phases.compiler.compile(
+            c_in = main_c_file, 
+            asm_out = main_asm_file, 
+            payload_len = project.payload.len,
+            carrier = project.carrier,
+            source_style = project.settings.source_style,
+            exe_host = project.exe_host,
+            short_call_patching = project.settings.short_call_patching)
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
-        try:
-            phases.assembler.asm_to_shellcode(
-                asm_in = main_asm_file, 
-                build_exe = main_exe_file, 
-                shellcode_out = main_shc_file)
-        except Exception as e:
-            logger.error("Error: Assembling failed: {}".format(e))
-            observer.writelog()
-            return 2
-    #shutil.copy(main_shc_file, "working/build/shellcode.bin")
+        phases.assembler.asm_to_shellcode(
+            asm_in = main_asm_file, 
+            build_exe = main_exe_file, 
+            shellcode_out = main_shc_file)
     
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.dataref_style == DataRefStyle.APPEND:
@@ -175,51 +198,30 @@ def start(settings: Settings):
             project.exe_host.rwx_section.Name.decode().rstrip('\x00')
         ))
         obfuscate_shc_loader(main_shc_file, main_shc_file + ".sgn")
-        observer.add_code("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
+        observer.add_code_file("payload_sgn", file_readall_binary(main_shc_file + ".sgn"))
         shutil.move(main_shc_file + ".sgn", main_shc_file)
 
     # inject merged loader into an exe
-    try:
-        phases.injector.inject_exe(main_shc_file, settings, project)
-    except PermissionError as e:
-        logger.error(f'Error writing file: {e}')
-        observer.writelog()
-        return 2
-    except Exception as e:
-        logger.error(f'Error injecting: {e}')
-        observer.writelog()
-        return 3
-    
-    observer.add_code("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
+    phases.injector.inject_exe(main_shc_file, settings, project)
+    observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     if config.get("avred_server") != "":
         if settings.verify or settings.try_start_final_infected_exe:
             filename = os.path.basename(settings.inject_exe_in)
             with open(settings.inject_exe_out, "rb") as f:
                 data = f.read()
-            try:
-                scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
-            except Exception as e:
-                logger.error(f'Error scanning: {e}')
-                observer.writelog()
-                return 4
+            scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
     else:
         # Start/verify it at the end
         if settings.verify:
             logger.info("--[ Verify infected exe")
-            exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
+            payload_exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
+            logging.info("Payload xit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
             logger.info("--[ Start infected exe: {}".format(settings.inject_exe_out))
             run_process_checkret([
                 settings.inject_exe_out,
             ], check=False)
-
-    # Cleanup files
-    if settings.cleanup_files_on_exit:
-        clean_files()
-
-    observer.writelog()
-    return exit_code
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):

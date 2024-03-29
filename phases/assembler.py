@@ -22,7 +22,7 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath, shellcode_out: FileP
     if not os.path.isfile(build_exe):
         raise Exception("Compiling failed")
     code = extract_code_from_exe_file(build_exe)
-    observer.add_code("carrier_shc", code) 
+    observer.add_code_file("carrier_shc", code) 
     with open(shellcode_out, 'wb') as f:
         f.write(code)
 
@@ -35,7 +35,7 @@ def merge_loader_payload(
 ):
     logger.info("--[ Merge stager with payload -> {}".format(
         shellcode_out))
-    observer.add_code("payload_shc", payload_data)
+    observer.add_code_file("payload_shc", payload_data)
     
     with open(shellcode_in, 'rb') as input1:
         data_stager = input1.read()
@@ -55,5 +55,5 @@ def merge_loader_payload(
         # append them
         data = data_stager + payload_data
         output.write(data)
-        observer.add_code("loader_shc", data) 
+        observer.add_code_file("loader_shc", data) 
         

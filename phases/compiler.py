@@ -36,7 +36,7 @@ def compile_dev(
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
     file_to_lf(asm_out)
-    observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
+    observer.add_text_file("carrier_asm_orig", file_readall_text(asm_out))
 
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
@@ -55,7 +55,7 @@ def compile_dev(
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
     if config.debug:
-        observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
+        observer.add_text_file("carrier_asm_cleanup", file_readall_text(asm_out))
 
 
 def compile(
@@ -81,7 +81,7 @@ def compile(
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
     file_to_lf(asm_out)
-    observer.add_text("carrier_asm_orig", file_readall_text(asm_out))
+    observer.add_text_file("carrier_asm_orig", file_readall_text(asm_out))
 
     # DataReuse first
     asmFileParser = ReusedataAsmFileParser(asm_out)
@@ -96,7 +96,7 @@ def compile(
         raise Exception("Error: Fixup failed")
     
     if config.debug:
-        observer.add_text("carrier_asm_fixup", file_readall_text(asm_out))
+        observer.add_text_file("carrier_asm_fixup", file_readall_text(asm_out))
 
     # Assembly cleanup (masm_shc)
     asm_clean_file = asm_out + ".clean"
@@ -114,7 +114,7 @@ def compile(
 
     if source_style == SourceStyle.iat_reuse:
         fixup_iat_reuse(asm_clean_file, carrier)
-        observer.add_text("carrier_asm_updated", file_readall_text(asm_clean_file))
+        observer.add_text_file("carrier_asm_updated", file_readall_text(asm_clean_file))
 
         if not exe_host.has_all_carrier_functions(carrier):
             logger.error("Error: Not all carrier functions are available in the target exe")
@@ -123,7 +123,7 @@ def compile(
     # Move to destination we expect
     shutil.move(asm_clean_file, asm_out)
     if config.debug:
-        observer.add_text("carrier_asm_cleanup", file_readall_text(asm_out))
+        observer.add_text_file("carrier_asm_cleanup", file_readall_text(asm_out))
 
 
 def bytes_to_asm_db(byte_data: bytes) -> bytes:
@@ -224,4 +224,4 @@ def fixup_iat_reuse(filename: FilePath, carrier: Carrier):
         asmfile.writelines(lines)
 
     if config.debug:
-        observer.add_text("carrier_asm_iat_patch", file_readall_text(filename))
+        observer.add_text_file("carrier_asm_iat_patch", file_readall_text(filename))
