@@ -26,7 +26,7 @@ def inject_exe(
     inject_mode: InjectStyle = settings.inject_mode
     source_style: SourceStyle = settings.source_style
 
-    logger.info("--[ Injecting: {} into: {} -> {}".format(
+    logger.info("--[ Injecting: {} + {} -> {}".format(
         shellcode_in, exe_in, exe_out
     ))
 
@@ -52,6 +52,7 @@ def inject_exe(
         logger.error('Could not setup shellcode launch within PE file!')
         return False
     
+    logger.info("--[ Rewrite placeholders with their data")
     if source_style == SourceStyle.iat_reuse:
         injected_fix_iat(superpe, project.carrier, project.exe_host)
     

@@ -4,7 +4,7 @@ bak/
 tools/
 doc/
 
-data/exes_more/
+data/binary/exes_more/
 data/source/payload/
 
 log-*
