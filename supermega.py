@@ -14,7 +14,7 @@ import phases.injector
 from observer import observer
 from pe.pehelper import extract_code_from_exe_file_ep
 from sender import scannerDetectsBytes
-from model.project import Project
+from model.project import Project, prepare_project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
@@ -96,7 +96,8 @@ def main():
         settings.inject_exe_in = args.inject
         settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
 
-    settings.prep()
+    settings.prep_web("default")
+    write_webproject("default", settings)
     exit_code = start(settings)
     exit(exit_code)
 
@@ -111,6 +112,9 @@ def start(settings: Settings) -> int:
         
     # And logs
     observer.reset()
+
+    # Prepare the project: copy all files to projects/<project_name>/
+    prepare_project("default", settings)
 
     # Do the thing and catch the errors
     try:

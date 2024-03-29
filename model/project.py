@@ -1,12 +1,20 @@
 import logging
+import shutil
 
+from model.defs import *
 from model.payload import Payload
 from model.exehost import ExeHost
 from model.settings import Settings
 from model.carrier import Carrier
 
-
 logger = logging.getLogger("Project")
+
+
+class WebProject():
+    def __init__(self, name: str, settings: Settings):
+        self.name = name
+        self.settings: Settings = settings
+        self.comment: str = ""
 
 
 class Project():
@@ -26,3 +34,22 @@ class Project():
         self.payload.init()
         self.exe_host.init()
         self.carrier.init()
+
+
+def prepare_project(project_name, settings):
+    src = "{}{}/".format(PATH_CARRIER, settings.source_style.value)
+    dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
+
+    # delete all files in dst directory
+    for file in os.listdir(dst):
+        if file == "project.pickle":
+            continue
+        if file.startswith("."):
+            continue
+        os.remove(dst + file)
+
+    # copy *.c *.h files from src directory to dst directory
+    for file in os.listdir(src):
+        if file.endswith(".c") or file.endswith(".h"):
+            logger.info("Copy {} to {}".format(src + file, dst))
+            shutil.copy2(src + file, dst)

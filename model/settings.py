@@ -1,4 +1,7 @@
+import logging
 from model.defs import *
+
+logger = logging.getLogger("Views")
 
 
 class Settings():
@@ -26,15 +29,6 @@ class Settings():
         self.cleanup_files_on_exit: bool = True
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
-
-
-    def prep(self):
-        self.main_dir = "{}{}/".format(PATH_CARRIER, self.source_style.value)
-        self.template_path = self.main_dir + "template.c"
-        self.main_c_path = self.main_dir + "main.c"
-        self.main_asm_path = self.main_dir + "main.asm"
-        self.main_exe_path = self.main_dir + "main.exe"
-        self.main_shc_path = self.main_dir + "main.bin"
 
 
     def prep_web(self, project_name):

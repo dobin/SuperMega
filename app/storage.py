@@ -4,15 +4,8 @@ import yaml
 import pickle
 
 from typing import List, Tuple
-from model.settings import Settings
 from model.defs import *
-
-
-class WebProject():
-    def __init__(self, name: str, settings: Settings):
-        self.name = name
-        self.settings: Settings = settings
-        self.comment: str = ""
+from model.project import WebProject
 
 
 class Storage():

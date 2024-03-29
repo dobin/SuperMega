@@ -9,7 +9,6 @@ from pygments.lexers import CLexer, NasmLexer, DiffLexer, HexdumpLexer
 from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
-import shutil
 import subprocess
 import time
 from datetime import datetime
@@ -25,6 +24,7 @@ from phases.injector import verify_injected_exe
 from phases.compiler import compile_dev
 from phases.assembler import asm_to_shellcode
 from helper import run_process_checkret
+from model.project import prepare_project
 
 views = Blueprint('views', __name__)
 
@@ -184,12 +184,6 @@ def add_project():
         decoder_style = request.form['decoder_style']
         settings.decoder_style = DecoderStyle[decoder_style]
 
-        exec_style = request.form['exec_style']
-        settings.exec_style = ExecStyle[exec_style]
-
-        inject_style = request.form['inject_style']
-        settings.inject_style = InjectStyle[inject_style]
-        
         if storage.get_project(project_name) != None:
             # overwrite project
             project = storage.get_project(project_name)
@@ -242,22 +236,7 @@ def build_project(project_name):
 
     project = storage.get_project(project_name)
     project.settings.try_start_final_infected_exe = False
-
-    src = "{}{}/".format(PATH_CARRIER, project.settings.source_style.value)
-    dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
-
-    # delete all files in dst directory
-    for file in os.listdir(dst):
-        if file == "project.pickle":
-            continue
-        os.remove(dst + file)
-
-    # copy *.c *.h files from src directory to dst directory
-    for file in os.listdir(src):
-        if file.endswith(".c") or file.endswith(".h"):
-            logger.info("Copy {} to {}".format(src + file, dst))
-            shutil.copy2(src + file, dst)
-
+    prepare_project(project_name, project.settings)
     thread = Thread(target=supermega_thread, args=(project.settings, ))
     thread.start()
     thread_running = True

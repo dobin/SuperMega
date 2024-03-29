@@ -3,7 +3,9 @@ import os
 import pathlib
 import glob
 import logging
+import pickle
 
+from model.project import WebProject
 from config import config
 from model.defs import *
 from observer import observer
@@ -11,6 +13,15 @@ from observer import observer
 logger = logging.getLogger("Helper")
 
 SHC_VERIFY_SLEEP = 0.1
+
+
+def write_webproject(project_name, settings):
+    filepath = "{}project.pickle".format(settings.main_dir)
+    logger.info("Write project to: {}".format(filepath))
+    webProject = WebProject(project_name, settings)
+    webProject.comment = "Created by command line interface"
+    with open(filepath, "wb") as f:
+        pickle.dump(webProject, f)
 
 
 def clean_tmp_files():
@@ -22,6 +33,7 @@ def clean_tmp_files():
     ]
     for file in files_to_clean:
         pathlib.Path(file).unlink(missing_ok=True)
+
 
 def clean_files(settings):
     logger.info("--( Remove old files")
