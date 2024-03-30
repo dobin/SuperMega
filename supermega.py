@@ -121,7 +121,7 @@ def start(settings: Settings) -> int:
         start_real(settings)
     except Exception as e:
         logger.error(f'Error compiling: {e}')
-        write_logs(settings.main_dir)
+        observer.write_logs(settings.main_dir)
         return 1
     
     # Cleanup files
@@ -130,7 +130,7 @@ def start(settings: Settings) -> int:
         clean_files(settings)
 
     # Write logs (on success)
-    write_logs(settings.main_dir)
+    observer.write_logs(settings.main_dir)
     return 0
 
 
@@ -210,25 +210,6 @@ def start_real(settings: Settings):
             run_process_checkret([
                 settings.inject_exe_out,
             ], check=True)
-
-
-def write_logs(working_dir: str):
-    # Our log output
-    with open(f"{working_dir}log-supermega.log", "w") as f:
-        for line in observer.get_logs():
-            f.write(line + "\n")
-
-    # Stdout of executed commands
-    with open(f"{working_dir}log-cmdoutput.log", "w") as f:
-        for line in observer.get_cmd_output():
-            f.write(line)
-
-    # Write all files
-    idx = 0
-    for name, data in observer.files:
-        with open(f"{working_dir}log-{idx}-{name}", "w") as f:
-            f.write(data)
-        idx += 1
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
