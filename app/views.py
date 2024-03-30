@@ -10,7 +10,6 @@ from pygments.formatters import HtmlFormatter
 import difflib
 from ansi2html import Ansi2HTMLConverter
 import subprocess
-import time
 from datetime import datetime
 
 from observer import observer
@@ -23,7 +22,7 @@ from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from phases.compiler import compile_dev
 from phases.assembler import asm_to_shellcode
-from helper import run_process_checkret
+from helper import run_process_checkret, clean_tmp_files
 from model.project import prepare_project
 
 views = Blueprint('views', __name__)
@@ -81,12 +80,14 @@ def dev_route(name):
             info = "input C code"
         elif filename.endswith(".exe"):
             info = "temporary shellcode holder (from .c)"
-        elif filename.endswith(".log"):
-            info = "log file"
+        elif filename.endswith("cmdoutput.log"):
+            info = "command output"
             with open(path + "/" + filename, "r") as f:
-                log = f.read()
-
-            #print(log)
+                log += f.read() + "\n-----------------------------------\n"
+        elif filename.endswith("supermega.log"):
+            info = "supermega logging output"
+            with open(path + "/" + filename, "r") as f:
+                log += f.read()
 
         data.append({
             "name": filename,
@@ -105,26 +106,19 @@ def dev_build_route(name):
     asm_out = PATH_PAYLOAD + "{}/main.asm".format(name)
     build_exe = PATH_PAYLOAD + "{}/main.exe".format(name)
     shellcode_out = PATH_PAYLOAD + "{}/main.bin".format(name)
-    log = PATH_PAYLOAD + "{}/main.log".format(name)
 
     compile_dev(c_in, asm_out)
     asm_to_shellcode(asm_out, build_exe, shellcode_out)
-
-    with open(log, "w") as f:
-        for log_line in observer.getlog():
-            f.write("{}\n".format(log_line))
-
-        f.write("\n\n")
-
-        for log in observer.logs:
-            f.write("{}".format(log))
-
+    observer.write_logs(PATH_PAYLOAD + "{}/".format(name))
+    clean_tmp_files()
     return redirect("/shcdev/{}".format(name), code=302)
 
 
 @views.route("/project/<name>")
 def project(name):
     project = storage.get_project(name)
+    if project == None:
+        return redirect("/projects", code=302)
     log_files = get_logfiles(project.settings.main_dir)
 
     exes = []
