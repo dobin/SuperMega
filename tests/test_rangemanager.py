@@ -2,6 +2,7 @@ from typing import List
 import unittest
 import logging
 
+from model.defs import *
 from pe.superpe import SuperPe
 from model.exehost import ExeHost
 from model.rangemanager import RangeManager
@@ -22,7 +23,7 @@ class RangeManagerTest(unittest.TestCase):
 
 
     def test_relocmanager(self):
-        exehost = ExeHost("data/exes/procexp64.exe")
+        exehost = ExeHost(PATH_EXES + "procexp64.exe")
         exehost.init()
         section = exehost.superpe.get_section_by_name(".rdata")
         rm = exehost.get_rdata_relocmanager()

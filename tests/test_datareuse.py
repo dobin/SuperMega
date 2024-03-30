@@ -3,13 +3,13 @@ from typing import List
 import unittest
 import logging
 import os
-
+from model.defs import *
 from model.exehost import ExeHost
 from phases.datareuse import ReusedataAsmFileParser
 
 class DataReuseTest(unittest.TestCase):
     def test_relocation_list(self):
-        exe_host = ExeHost("data/exes/7z.exe")
+        exe_host = ExeHost(PATH_EXES + "7z.exe")
         exe_host.init()
 
         relocs = exe_host.get_relocations_for_section(".rdata")
@@ -22,7 +22,7 @@ class DataReuseTest(unittest.TestCase):
 
 
     def test_largestgap(self):
-        exe_host = ExeHost("data/exes/7z.exe")
+        exe_host = ExeHost(PATH_EXES + "7z.exe")
         exe_host.init()
         rm = exe_host.get_rdata_relocmanager()
         start, stop = rm.find_hole(100)
