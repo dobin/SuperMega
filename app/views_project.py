@@ -41,6 +41,15 @@ def project(name):
     project = storage.get_project(name)
     if project == None:
         return redirect("/projects", code=302)
+    
+    exe_path = project.settings.inject_exe_out
+    is_built = False
+    if os.path.exists(exe_path):
+        is_built = True
+
+    project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
+
+
     log_files = get_logfiles(project.settings.main_dir)
 
     exes = []
@@ -60,6 +69,8 @@ def project(name):
     return render_template('project.html', 
         project_name = name,
         project=project, 
+        is_built=is_built,
+        project_dir=project_dir,
         
         exes=exes,
         shellcodes=shellcodes,

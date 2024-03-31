@@ -9,27 +9,20 @@
     <div class="indent">
 
         <h2> {{project_name}} </h2>
-        <form method="POST" enctype="multipart/form-data" action="/project_add">
-        <input type="hidden" name="project_name" value="{{project_name}}">
+
 
         <div class="row">
             <!-- Buttons -->
             <div class="col-3">
                 <div class="row">
                     <div class="col-6">
-
-                    <button class="btn btn-primary" type="submit" value="save">Save Settings</button>
-                    </form>
-                    </div>
-
-                    <div class="col-6">
-
                     <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
                         <button class="btn btn-primary" type="submit" value="start">Build</button>
                     </form>
                     </div>
                 </div>
                 
+                {% if is_built %}
                 <div class="row">
                     <div class="col-6">
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec">
@@ -50,10 +43,15 @@
                         </form>
                     </div>
                 </div>
+                {% endif %}
             </div>
 
             <!-- Input files -->
             <div class="col-3">
+                <!-- leave this here or it will fuck up layout -->
+                <form method="POST" enctype="multipart/form-data" action="/project_add">
+                <input type="hidden" name="project_name" value="{{project_name}}">
+                    
                 <input type="text" name="comment" class="hidden form-control" 
                        placeholder="Comment" value="{{project.comment}}"
                        aria-label="PROJECTNAME" aria-describedby="basic-addon1"
@@ -77,7 +75,7 @@
                     {{exe}}</option>
                     {% endfor %}
                 </select>
-                </div>
+            </div>
 
             <!-- row 3 -->
             <div class="col-3">
@@ -123,14 +121,15 @@
                     {% endfor %}
                 </select>
             </div>
-
         </div>
+        </form>
 
         <div class="row">
             <div class="col">
+              {{ project_dir }}
               <div class="custom-line"></div> <!-- Here's the horizontal line -->
             </div>
-          </div>
+        </div>
 
 
     <div class="row">
