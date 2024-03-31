@@ -6,6 +6,8 @@ from flask import Flask
 import logging
 
 from app.views import views
+from app.views_project import views_project
+from app.views_shcdev import views_shcdev
 from log import setup_logging
 
 if __name__ == "__main__":
@@ -33,4 +35,6 @@ if __name__ == "__main__":
 	app.config.from_prefixed_env()
     
 	app.register_blueprint(views)
+	app.register_blueprint(views_project)
+	app.register_blueprint(views_shcdev)
 	app.run(host=args.listenip, port=args.listenport, debug=args.debug)
