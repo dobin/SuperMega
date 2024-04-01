@@ -45,6 +45,19 @@ class SuperPe():
         self.arch = self.getFileArch()
         if self.arch == 'x64': 
             self.ptrSize = 8
+
+
+    def is_64(self) -> bool:
+        return self.arch == 'x64'
+    
+
+    def is_dotnet(self) -> bool:
+        # DotNet or not
+        # https://stackoverflow.com/questions/45574925/is-there-a-way-to-check-if-an-exe-is-dot-net-with-python-pefile
+        entry = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[14]
+        if entry.VirtualAddress != 0 and entry.Size != 0:
+            return True
+        return False
     
 
     def get_physical_address(self, virtual_address):

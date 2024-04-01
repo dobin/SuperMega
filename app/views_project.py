@@ -20,6 +20,7 @@ from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from helper import run_process_checkret
 from model.project import prepare_project
+from pe.superpe import SuperPe
 
 logger = logging.getLogger("ViewsProjects")
 
@@ -47,9 +48,11 @@ def project(name):
     if os.path.exists(exe_path):
         is_built = True
 
+    superpe = SuperPe(project.settings.inject_exe_in)
+    is_64 = superpe.is_64()
+    is_dotnet = superpe.is_dotnet()
+
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
-
-
     log_files = get_logfiles(project.settings.main_dir)
 
     exes = []
@@ -83,6 +86,8 @@ def project(name):
         injectstyles=injectstyles,
 
         log_files=log_files,
+        is_64=is_64,
+        is_dotnet=is_dotnet,
     )
 
 
