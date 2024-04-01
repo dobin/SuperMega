@@ -10,7 +10,11 @@ logger = logging.getLogger("Sender")
 
 
 def scannerDetectsBytes(data: bytes, filename: str, useBrotli=True, verify=False, no_exec=False):
+    if config.get("avred_server") == "":
+        logging.error("No AVRed server configured, aborting")
+        return
     params = { 'filename': filename, 'brotli': useBrotli, 'verify': verify, 'no_exec' : no_exec}
+    
     if useBrotli:
         scanData = brotli.compress(data)
     else:

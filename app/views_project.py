@@ -201,13 +201,13 @@ def start_project(project_name):
     logger.info("--[ Exec project: {} remote: {} no_exec: {}".format(project_name, remote, no_exec))
 
     if remote:
-        logger.info("--[ Exec {} on server {}".format(project.project_exe, config.get("avred_server")))
-        filepath = "{}/{}".format(project.project_dir, project.project_exe)
-        with open(filepath, "rb") as f:
+        logger.info("--[ Exec {} on server {}".format(project.settings.inject_exe_out, config.get("avred_server")))
+        with open(project.settings.inject_exe_out, "rb") as f:
             data = f.read()
+        filename = os.path.basename(project.settings.inject_exe_out)
         try:
             scannerDetectsBytes(data, 
-                                project.project_exe, 
+                                filename, 
                                 useBrotli=True, 
                                 verify=project.settings.verify,
                                 no_exec=no_exec)
