@@ -54,7 +54,9 @@ def project(name):
 
     exes = []
     for file in os.listdir(PATH_EXES):
-        exes.append(file)
+        exes.append(PATH_EXES + file)
+    for file in os.listdir(PATH_EXES_MORE):
+        exes.append(PATH_EXES_MORE + file)
 
     shellcodes = []
     for file in os.listdir(PATH_SHELLCODES):
@@ -99,8 +101,8 @@ def add_project():
         else:
             settings.cleanup_files_on_exit = False
 
-        settings.inject_exe_in = PATH_EXES + request.form['exe']
-        settings.inject_exe_out = PATH_EXES + request.form['exe'].replace(".exe", ".infected.exe")
+        settings.inject_exe_in = request.form['exe']
+        settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
 
         source_style = request.form['source_style']
         settings.source_style = SourceStyle[source_style]
@@ -128,7 +130,10 @@ def add_project():
     else: # GET
         exes = []
         for file in os.listdir(PATH_EXES):
-            exes.append(file)
+            exes.append(PATH_EXES + file)
+            
+        for file in os.listdir(PATH_EXES_MORE):
+            exes.append(PATH_EXES_MORE + file)
 
         shellcodes = []
         for file in os.listdir(PATH_SHELLCODES):

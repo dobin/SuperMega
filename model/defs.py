@@ -9,6 +9,7 @@ VerifyFilename: FilePath = r'C:\Temp\a'
 
 # Directory structure
 PATH_EXES = "data/binary/exes/"
+PATH_EXES_MORE = "data/binary/exes_more/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
 PATH_PEB_WALK = "data/source/carrier/peb_walk/"
