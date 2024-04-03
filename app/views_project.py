@@ -112,6 +112,9 @@ def add_project():
         source_style = request.form['source_style']
         settings.source_style = SourceStyle[source_style]
 
+        inject_mode = request.form['inject_mode']
+        settings.inject_mode = InjectStyle[inject_mode]
+
         alloc_style = request.form['alloc_style']
         settings.alloc_style = AllocStyle[alloc_style]
 

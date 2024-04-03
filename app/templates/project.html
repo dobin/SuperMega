@@ -91,10 +91,10 @@
                     {% endfor %}
                 </select>
             
-                <select class="form-select" name="inject_style" aria-label="INJECTSTYLE" onchange="this.form.submit()">
+                <select class="form-select" name="inject_mode" aria-label="INJECTSTYLE" onchange="this.form.submit()">
                     {% for name, value in injectstyles %}
                     <option value="{{name}}"
-                    {% if value in project.settings.inject_mode.value %} selected {% endif %}
+                        {% if value in project.settings.inject_mode.value %} selected {% endif %}
                     >{{value}}</option>
                     {% endfor %}
                 </select>
