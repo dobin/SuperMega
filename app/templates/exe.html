@@ -1,0 +1,12 @@
+
+<h1> IAT </h1>
+
+{% for dll in iat %}
+<h2>DLL: {{dll}}</h2>
+<ul>
+    {% for entry in iat[dll] %}
+    <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr }})</li>
+    {% endfor%}
+</ul>
+{% endfor %}
+
