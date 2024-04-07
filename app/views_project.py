@@ -65,11 +65,9 @@ def project(name):
     for file in os.listdir(PATH_SHELLCODES):
         shellcodes.append(file)
 
-    sourcestyles = [(color.name, color.value) for color in SourceStyle]
-    allocstyles = [(color.name, color.value) for color in AllocStyle]
+    function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
     decoderstyles = [(color.name, color.value) for color in DecoderStyle]
-    execstyles = [(color.name, color.value) for color in ExecStyle]
-    injectstyles = [(color.name, color.value) for color in InjectStyle]
+    carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
 
     return render_template('project.html', 
         project_name = name,
@@ -79,11 +77,9 @@ def project(name):
         
         exes=exes,
         shellcodes=shellcodes,
-        sourcestyles=sourcestyles,
-        allocstyles=allocstyles,
+        function_invoke_styles=function_invoke_styles,
         decoderstyles=decoderstyles,
-        execstyles=execstyles,
-        injectstyles=injectstyles,
+        carrier_invoke_styles=carrier_invoke_styles,
 
         log_files=log_files,
         is_64=is_64,
@@ -110,13 +106,10 @@ def add_project():
         settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
 
         source_style = request.form['source_style']
-        settings.source_style = SourceStyle[source_style]
+        settings.source_style = FunctionInvokeStyle[source_style]
 
-        inject_mode = request.form['inject_mode']
-        settings.inject_mode = InjectStyle[inject_mode]
-
-        alloc_style = request.form['alloc_style']
-        settings.alloc_style = AllocStyle[alloc_style]
+        carrier_invoke_style = request.form['carrier_invoke_style']
+        settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
 
         decoder_style = request.form['decoder_style']
         settings.decoder_style = DecoderStyle[decoder_style]
@@ -147,20 +140,16 @@ def add_project():
         for file in os.listdir(PATH_SHELLCODES):
             shellcodes.append(file)
 
-        sourcestyles = [(color.name, color.value) for color in SourceStyle]
-        allocstyles = [(color.name, color.value) for color in AllocStyle]
+        function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
         decoderstyles = [(color.name, color.value) for color in DecoderStyle]
-        execstyles = [(color.name, color.value) for color in ExecStyle]
-        injectstyles = [(color.name, color.value) for color in InjectStyle]
+        carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
 
         return render_template('project_add_get.html', 
             exes=exes,
             shellcodes=shellcodes,
-            sourcestyles=sourcestyles,
-            allocstyles=allocstyles,
+            function_invoke_styles=function_invoke_styles,
             decoderstyles=decoderstyles,
-            execstyles=execstyles,
-            injectstyles=injectstyles,
+            carrier_invoke_styles=carrier_invoke_styles,
         )
 
 

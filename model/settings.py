@@ -9,15 +9,13 @@ class Settings():
         self.payload_path: FilePath = ""
 
         # Settings
-        self.source_style: SourceStyle = SourceStyle.peb_walk
-        self.alloc_style: AllocStyle = AllocStyle.RWX
-        self.exec_style: ExecStyle = ExecStyle.CALL
+        self.source_style: FunctionInvokeStyle = FunctionInvokeStyle.peb_walk
         self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
         self.dataref_style: DataRefStyle = DataRefStyle.APPEND
         self.short_call_patching: bool = False
 
         # Injectable
-        self.inject_mode: InjectStyle = InjectStyle.BackdoorCallInstr
+        self.carrier_invoke_style: CarrierInvokeStyle = CarrierInvokeStyle.BackdoorCallInstr
         self.inject_exe_in: FilePath = ""
         self.inject_exe_out: FilePath = ""
 

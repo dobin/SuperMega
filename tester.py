@@ -19,8 +19,8 @@ def main():
     settings.try_start_final_infected_exe = False
     
     # 7z, peb-walk, change-entrypoint
-    settings.source_style = SourceStyle.peb_walk
-    settings.inject_mode = InjectStyle.ChangeEntryPoint
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "7z.exe"
     settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
     if start(settings) != 0:
@@ -28,8 +28,8 @@ def main():
         return 1
 
     # 7z, peb-walk, hijack
-    settings.source_style = SourceStyle.peb_walk
-    settings.inject_mode = InjectStyle.BackdoorCallInstr
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "7z.exe"
     settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
     if start(settings) != 0:
@@ -37,8 +37,8 @@ def main():
         return 1
 
     # procexp, iat-reuse, change-entrypoint
-    settings.source_style = SourceStyle.iat_reuse
-    settings.inject_mode = InjectStyle.ChangeEntryPoint
+    settings.source_style = FunctionInvokeStyle.iat_reuse
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:
@@ -46,8 +46,8 @@ def main():
         return 1
 
     # procexp, iat-reuse, change-entrypoint
-    settings.source_style = SourceStyle.iat_reuse
-    settings.inject_mode = InjectStyle.ChangeEntryPoint
+    settings.source_style = FunctionInvokeStyle.iat_reuse
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:

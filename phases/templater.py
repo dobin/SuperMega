@@ -24,7 +24,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         })
 
     # C Template: peb_walk
-    if settings.source_style == SourceStyle.peb_walk:
+    if settings.source_style == FunctionInvokeStyle.peb_walk:
         with open(settings.template_path, 'r', encoding='utf-8') as file:
             template_content = file.read()
             observer.add_text_file("main_c_template", template_content)
@@ -39,7 +39,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
             observer.add_text_file("main_c_rendered", rendered_template)
 
     # C Template: iat_reuse
-    elif settings.source_style == SourceStyle.iat_reuse:
+    elif settings.source_style == FunctionInvokeStyle.iat_reuse:
         with open(PATH_IAT_REUSE + "template.c", 'r', encoding='utf-8') as file:
             template_content = file.read()
             observer.add_text_file("main_c_template", template_content)

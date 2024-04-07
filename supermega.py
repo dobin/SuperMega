@@ -29,11 +29,9 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
-    parser.add_argument('--sourcestyle', type=str, help='peb_walk or iat_reuse')
-    #parser.add_argument('--alloc', type=str, help='Template: which allocator plugin')
+    parser.add_argument('--function_invoke_style', type=str, help='peb_walk or iat_reuse')
     parser.add_argument('--decoder', type=str, help='Template: which decoder plugin')
-    #parser.add_argument('--exec', type=str, help='Template: which exec plugin')
-    parser.add_argument('--rbrunmode', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
+    parser.add_argument('--carrier_invoke', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
     parser.add_argument('--start-loader-shellcode', action='store_true', help='Dev: Start the loader shellcode (without payload)')
     parser.add_argument('--start-final-shellcode', action='store_true', help='Debug: Start the final shellcode (loader + payload)')
@@ -53,31 +51,25 @@ def main():
     if args.short_call_patching:
         settings.short_call_patching = True
 
-    if args.sourcestyle:
-        if args.sourcestyle == "peb_walk":
-            settings.source_style = SourceStyle.peb_walk
-        elif args.sourcestyle == "iat_reuse":
-            settings.source_style = SourceStyle.iat_reuse
-    #if args.alloc:
-    #    if args.alloc == "rwx_1":
-    #        settings.alloc_style = AllocStyle.RWX
+    if args.function_invoke_style:
+        if args.function_invoke_style == "peb_walk":
+            settings.source_style = FunctionInvokeStyle.peb_walk
+        elif args.function_invoke_style == "iat_reuse":
+            settings.source_style = FunctionInvokeStyle.iat_reuse
     if args.decoder:
         if args.decoder == "plain_1":
             settings.decoder_style = DecoderStyle.PLAIN_1
         elif args.decoder == "xor_1":
             settings.decoder_style = DecoderStyle.XOR_1
-    #if args.exec:
-    #    if args.exec == "direct_1":
-    #        settings.exec_style = ExecStyle.CALL
     if args.inject:
-        if args.rbrunmode == "eop":
-            settings.inject_mode = InjectStyle.ChangeEntryPoint
-        elif args.rbrunmode == "backdoor":
-            settings.inject_mode = InjectStyle.BackdoorCallInstr
+        if args.carrier_invoke == "eop":
+            settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+        elif args.carrier_invoke == "backdoor":
+            settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
         else:
             logging.error("Invalid mode, use one of:")
             for i in ["eop", "backdoor"]:
-                logging.error("  {}  {}".format(i, rbrunmode_str(i)))
+                logging.error("  {}  {}".format(i, carrier_invoke_style_str(i)))
             return
 
     if not args.shellcode or not args.inject:
@@ -141,13 +133,10 @@ def start_real(settings: Settings):
     project = Project(settings)
     project.init()
 
-    logger.warning("--I SourceStyle: {}  Inject Mode: {}  ".format(
-        project.settings.source_style.value, project.settings.inject_mode.value))
-    logger.warning("--I   Loader modules:  Alloc: {}  Decoder: {}  Exec: {}".format(
-        project.settings.alloc_style.value, 
-        project.settings.decoder_style.value,
-        project.settings.exec_style.value
-    ))
+    logger.warning("--I FunctionInvokeStyle: {}  Inject Mode: {}  DecoderStyle: {}".format(
+        project.settings.source_style.value, 
+        project.settings.carrier_invoke_style.value,
+        project.settings.decoder_style.value))
 
     # Create: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, project.payload.len)

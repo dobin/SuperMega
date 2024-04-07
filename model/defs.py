@@ -23,32 +23,24 @@ PATH_WEB_PROJECT = "projects/"
 # Correlated with real template files
 # in data/plugins/
 
-class AllocStyle(Enum):
-    RWX = "rwx_1"
-    #RW_X = "rw_x"
-    #REUSE = "reuse"
 
 class DecoderStyle(Enum):
     PLAIN_1 = "plain_1"
     XOR_1 = "xor_1"
 
-class ExecStyle(Enum):
-    CALL = "direct_1"
-    #JMP = "jump",
-    #FIBER = "fiber",
 
 class DataRefStyle(Enum):
     APPEND = 1
 
 
-class InjectStyle(Enum):
+class CarrierInvokeStyle(Enum):
     ChangeEntryPoint = "change AddressOfEntryPoint"
     BackdoorCallInstr = "hijack branching instruction in entrypoint"
-    
-class SourceStyle(Enum):
+
+
+class FunctionInvokeStyle(Enum):
     peb_walk = "peb_walk"
     iat_reuse = "iat_reuse"
-
 
     
 class PeRelocEntry():

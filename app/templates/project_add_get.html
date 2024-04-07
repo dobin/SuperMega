@@ -35,13 +35,7 @@
     </select>
 
     <select class="form-select" name="source_style" aria-label="SOURCESTYLE">
-        {% for name, value in sourcestyles %}
-        <option value="{{name}}">{{value}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="alloc_style" aria-label="ALLOCSTYLE">
-        {% for name, value in allocstyles %}
+        {% for name, value in function_invoke_styles %}
         <option value="{{name}}">{{value}}</option>
         {% endfor %}
     </select>
@@ -52,14 +46,8 @@
         {% endfor %}
     </select>
 
-    <select class="form-select" name="exec_style" aria-label="EXECSTYLE">
-        {% for name, value in execstyles %}
-        <option value="{{name}}">{{value}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="inject_mode" aria-label="INJECTSTYLE">
-        {% for name, value in injectstyles %}
+    <select class="form-select" name="carrier_invoke_style" aria-label="INJECTSTYLE">
+        {% for name, value in carrier_invoke_styles %}
         <option value="{{name}}">{{value}}</option>
         {% endfor %}
     </select>
