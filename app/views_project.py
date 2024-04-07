@@ -18,7 +18,7 @@ from supermega import start
 from app.storage import storage, WebProject
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
-from helper import run_process_checkret
+from helper import run_process_checkret, run_exe
 from model.project import prepare_project
 from pe.superpe import SuperPe
 
@@ -224,10 +224,7 @@ def start_project(project_name):
             logger.info("--[ Verify infected exe")
             exit_code = verify_injected_exe(project.settings.inject_exe_out)
         elif no_exec == False:
-            logger.info("--[ Start infected exe: {}".format(project.settings.inject_exe_out))
-            run_process_checkret([
-                project.settings.inject_exe_out,
-            ], check=False)
+            run_exe(project.settings.inject_exe_out)
         elif no_exec == True:
             dirname = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
             logger.info("--[ Open folder: {}".format(dirname))

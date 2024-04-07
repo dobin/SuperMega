@@ -34,6 +34,7 @@ class SuperPe():
 
 
     def __init__(self, infile: str):
+        self.filepath: str = infile
         self.pe_sections: List[PeSection] = []
         self.pe = pefile.PE(infile, fast_load=False)
         for section in self.pe.sections:
@@ -46,6 +47,10 @@ class SuperPe():
         if self.arch == 'x64': 
             self.ptrSize = 8
 
+
+    def is_dll(self):
+        return self.filepath.endswith(".dll")
+    
 
     def is_64(self) -> bool:
         return self.arch == 'x64'

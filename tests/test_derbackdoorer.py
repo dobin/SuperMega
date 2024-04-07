@@ -38,8 +38,8 @@ class DerBackdoorerTest(unittest.TestCase):
 
         shutil.copyfile(exe_path, exe_out_path)
 
-        peinj = PeBackdoor()
-        result = peinj.backdoor(
+        pe_backdoorer = PeBackdoor()
+        result = pe_backdoorer.backdoor(
             1, # always overwrite .text section
             1, # EntryPoint change
             shellcode_path, 
@@ -49,7 +49,7 @@ class DerBackdoorerTest(unittest.TestCase):
 
         self.assertTrue(result)
         code = extract_code_from_exe_file(exe_out_path)
-        extracted_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+len(shellcode)]
+        extracted_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+len(shellcode)]
         self.assertEqual(shellcode, extracted_code)
 
         os.remove(exe_out_path)
@@ -68,8 +68,8 @@ class DerBackdoorerTest(unittest.TestCase):
 
         shutil.copyfile(exe_path, exe_out_path)
 
-        peinj = PeBackdoor()
-        result = peinj.backdoor(
+        pe_backdoorer = PeBackdoor()
+        result = pe_backdoorer.backdoor(
             1, # always overwrite .text section
             2, # Hijack
             shellcode_path, 
@@ -81,13 +81,13 @@ class DerBackdoorerTest(unittest.TestCase):
 
         # code
         code = extract_code_from_exe_file(exe_out_path)
-        extracted_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+len(shellcode)]
+        extracted_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+len(shellcode)]
         self.assertEqual(shellcode, extracted_code)
 
         # jmp
         #  48 c7 c2 d7 fb 42 00 ff d2 5b 0f b7
         #  48 c7 c6 d7 fb 42 00 ff d6 5b 0f b7
-        jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
+        jmp_code = code[pe_backdoorer.backdoorOffsetRel:pe_backdoorer.backdoorOffsetRel+12]
         self.assertEqual(jmp_code[0], 0x48)
         self.assertEqual(jmp_code[1], 0xc7)
         #self.assertEqual(jmp_code[2], 0x??)  # variable

