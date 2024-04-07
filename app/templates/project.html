@@ -12,7 +12,7 @@
 
 
         <div class="row">
-            <!-- Buttons -->
+            <!-- Row 1: Buttons -->
             <div class="col-3">
                 <div class="row">
                     <div class="col-6">
@@ -46,7 +46,7 @@
                 {% endif %}
             </div>
 
-            <!-- Input files -->
+            <!-- Row 2: Input files -->
             <div class="col-3">
                 <!-- leave this here or it will fuck up layout -->
                 <form method="POST" enctype="multipart/form-data" action="/project_add">
@@ -74,14 +74,24 @@
                     >
                     {{exe}}</option>
                     {% endfor %}
-
                 </select>
+
+                {% if exports != None %}
+                <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
+                    {% for export in exports %}
+                    <option value="{{export}}"
+                        {% if export in project.settings.dllfunc %} selected {% endif %}
+                    >
+                    {{export}}</option>
+                    {% endfor %}
+                </select>  
+                {% endif %}
                 
                 Is x64: {{ is_64}} <br>
                 Is Dotnet: {{ is_dotnet}}
             </div>
 
-            <!-- row 3 -->
+            <!-- Row 3: settings -->
             <div class="col-3">
                 <select class="form-select" name="source_style" aria-label="SOURCESTYLE" onchange="this.form.submit()">
                     {% for name, value in function_invoke_styles %}
@@ -100,6 +110,8 @@
                 </select>
             
             </div>
+
+            <!-- Row 4: more settings -->
             <div class="col-3">
                 <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE" onchange="this.form.submit()">
                     {% for name, value in decoderstyles %}

@@ -48,20 +48,28 @@ def project(name):
     if os.path.exists(exe_path):
         is_built = True
 
-    superpe = SuperPe(project.settings.inject_exe_in)
-    is_64 = superpe.is_64()
-    is_dotnet = superpe.is_dotnet()
+    exports = None
+    is_64 = False
+    is_dotnet = False
+
+    # Only when we selected an input file
+    if project.settings.inject_exe_in != "":
+        superpe = SuperPe(project.settings.inject_exe_in)
+        is_64 = superpe.is_64()
+        is_dotnet = superpe.is_dotnet()
+        if superpe.is_dll():
+            exports = [ "", "BZ2_blockSort" ]
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)
 
-    exes = []
+    exes = [ "" ]
     for file in os.listdir(PATH_EXES):
         exes.append(PATH_EXES + file)
     for file in os.listdir(PATH_EXES_MORE):
         exes.append(PATH_EXES_MORE + file)
 
-    shellcodes = []
+    shellcodes = [ "" ]
     for file in os.listdir(PATH_SHELLCODES):
         shellcodes.append(file)
 
@@ -80,6 +88,7 @@ def project(name):
         function_invoke_styles=function_invoke_styles,
         decoderstyles=decoderstyles,
         carrier_invoke_styles=carrier_invoke_styles,
+        exports=exports,
 
         log_files=log_files,
         is_64=is_64,
@@ -95,62 +104,47 @@ def add_project():
         project_name = request.form['project_name']
         comment = request.form['comment']
 
-        settings.payload_path = PATH_SHELLCODES + request.form['shellcode']
-        if request.form['shellcode'] == "createfile.bin":
-            settings.verify = True
-            settings.try_start_final_infected_exe = False
+        # new project?
+        if storage.get_project(project_name) == None:
+            # add new project
+            project = WebProject(project_name, settings)
+            project.comment = comment
+            storage.add_project(project)
+        
+        # update project
         else:
-            settings.cleanup_files_on_exit = False
+            settings.payload_path = PATH_SHELLCODES + request.form['shellcode']
+            if request.form['shellcode'] == "createfile.bin":
+                settings.verify = True
+                settings.try_start_final_infected_exe = False
+            else:
+                settings.cleanup_files_on_exit = False
 
-        settings.inject_exe_in = request.form['exe']
-        settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
+            if 'dllfunc' in request.form:
+                settings.dllfunc = request.form['dllfunc']
 
-        source_style = request.form['source_style']
-        settings.source_style = FunctionInvokeStyle[source_style]
+            settings.inject_exe_in = request.form['exe']
+            settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
 
-        carrier_invoke_style = request.form['carrier_invoke_style']
-        settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
+            source_style = request.form['source_style']
+            settings.source_style = FunctionInvokeStyle[source_style]
 
-        decoder_style = request.form['decoder_style']
-        settings.decoder_style = DecoderStyle[decoder_style]
+            carrier_invoke_style = request.form['carrier_invoke_style']
+            settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
 
-        if storage.get_project(project_name) != None:
+            decoder_style = request.form['decoder_style']
+            settings.decoder_style = DecoderStyle[decoder_style]
+
             # overwrite project
             project = storage.get_project(project_name)
             project.settings = settings
             project.comment = comment
             storage.save_project(project)
-        else:
-            # add new project
-            project = WebProject(project_name, settings)
-            project.comment = comment
-            storage.add_project(project)
 
         return redirect("/project/{}".format(project_name), code=302)
     
     else: # GET
-        exes = []
-        for file in os.listdir(PATH_EXES):
-            exes.append(PATH_EXES + file)
-            
-        for file in os.listdir(PATH_EXES_MORE):
-            exes.append(PATH_EXES_MORE + file)
-
-        shellcodes = []
-        for file in os.listdir(PATH_SHELLCODES):
-            shellcodes.append(file)
-
-        function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
-        decoderstyles = [(color.name, color.value) for color in DecoderStyle]
-        carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
-
-        return render_template('project_add_get.html', 
-            exes=exes,
-            shellcodes=shellcodes,
-            function_invoke_styles=function_invoke_styles,
-            decoderstyles=decoderstyles,
-            carrier_invoke_styles=carrier_invoke_styles,
-        )
+        return render_template('project_add_get.html')
 
 
 def supermega_thread(settings: Settings):
@@ -164,6 +158,12 @@ def build_project(project_name):
     global thread_running
 
     project = storage.get_project(project_name)
+
+    if project.settings.inject_exe_in.endswith(".dll"):
+        if project.settings.dllfunc == "":
+            logger.error("DLL injection requires a DLL function name")
+            return redirect("/project/{}".format(project_name), code=302)
+
     project.settings.try_start_final_infected_exe = False
     prepare_project(project_name, project.settings)
     thread = Thread(target=supermega_thread, args=(project.settings, ))
@@ -224,7 +224,7 @@ def start_project(project_name):
             logger.info("--[ Verify infected exe")
             exit_code = verify_injected_exe(project.settings.inject_exe_out)
         elif no_exec == False:
-            run_exe(project.settings.inject_exe_out)
+            run_exe(project.settings.inject_exe_out, dllfunc=project.settings.dllfunc, check=False)
         elif no_exec == True:
             dirname = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
             logger.info("--[ Open folder: {}".format(dirname))

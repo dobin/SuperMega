@@ -14,6 +14,8 @@ class Settings():
         self.dataref_style: DataRefStyle = DataRefStyle.APPEND
         self.short_call_patching: bool = False
 
+        self.dllfunc: str = ""  # For DLL injection
+
         # Injectable
         self.carrier_invoke_style: CarrierInvokeStyle = CarrierInvokeStyle.BackdoorCallInstr
         self.inject_exe_in: FilePath = ""

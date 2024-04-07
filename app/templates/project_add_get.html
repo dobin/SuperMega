@@ -19,38 +19,8 @@
     <input type="text" name="project_name" class="form-control" placeholder="Projekt name" aria-label="PROJECTNAME" aria-describedby="basic-addon1">
 
     <input type="text" name="comment" class="hidden form-control" 
-    placeholder="Comment" value=""
-    aria-label="PROJECTNAME" aria-describedby="basic-addon1">
-
-    <select class="form-select" name="shellcode" aria-label="SHELLCODE">
-        {% for shellcode in shellcodes %}
-        <option value="{{shellcode}}">{{shellcode}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="exe" aria-label="EXE">
-        {% for exe in exes %}
-        <option value="{{exe}}">{{exe}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="source_style" aria-label="SOURCESTYLE">
-        {% for name, value in function_invoke_styles %}
-        <option value="{{name}}">{{value}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE">
-        {% for name, value in decoderstyles %}
-        <option value="{{name}}">{{value}}</option>
-        {% endfor %}
-    </select>
-
-    <select class="form-select" name="carrier_invoke_style" aria-label="INJECTSTYLE">
-        {% for name, value in carrier_invoke_styles %}
-        <option value="{{name}}">{{value}}</option>
-        {% endfor %}
-    </select>
+        placeholder="Comment" value=""
+        aria-label="PROJECTNAME" aria-describedby="basic-addon1">
 
     <button class="btn btn-primary" type="submit" value="save">Save</button>
 

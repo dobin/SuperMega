@@ -195,7 +195,7 @@ def start_real(settings: Settings):
             if payload_exit_code != 0:
                 raise Exception("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
-            run_exe(settings.inject_exe_out)
+            run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc)
 
 
 def obfuscate_shc_loader(file_shc_in, file_shc_out):
