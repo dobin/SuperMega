@@ -159,10 +159,10 @@ def build_project(project_name):
 
     project = storage.get_project(project_name)
 
-    if project.settings.inject_exe_in.endswith(".dll"):
-        if project.settings.dllfunc == "":
-            logger.error("DLL injection requires a DLL function name")
-            return redirect("/project/{}".format(project_name), code=302)
+    #if project.settings.inject_exe_in.endswith(".dll"):
+    #    if project.settings.dllfunc == "":
+    #        logger.error("DLL injection requires a DLL function name")
+    #        return redirect("/project/{}".format(project_name), code=302)
 
     project.settings.try_start_final_infected_exe = False
     prepare_project(project_name, project.settings)

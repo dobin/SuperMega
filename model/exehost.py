@@ -40,7 +40,7 @@ class ExeHost():
         if self.superpe.arch != "x64":
             raise Exception("Binary is not 64bit: {}".format(self.filepath))
 
-        self.ep = self.superpe.get_entyrpoint()
+        self.ep = self.superpe.get_entrypoint()
         self.ep_raw = self.superpe.get_physical_address(self.ep)
 
         # image base

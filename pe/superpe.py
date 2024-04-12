@@ -237,7 +237,7 @@ class SuperPe():
 
     ## Helpers
 
-    def get_entyrpoint(self) -> int:
+    def get_entrypoint(self) -> int:
         return self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
 
     def set_entrypoint(self, entrypoint: int):

@@ -54,7 +54,8 @@ def run_exe(exefile, dllfunc="", check=True):
 
     if exefile.endswith(".dll"):
         if dllfunc == "":
-            raise Exception("---[ No DLL function specified")
+            dllfunc = "dllMain"
+            #raise Exception("---[ No DLL function specified")
         args = [ "rundll32.exe", "{},{}".format(exefile, dllfunc) ]
     elif exefile.endswith(".exe"):
         args = [ exefile ]
@@ -65,6 +66,8 @@ def run_exe(exefile, dllfunc="", check=True):
 
 
 def run_process_checkret(args, check=True):
+    logger.info("--[ Run process: {}".format(" ".join(args)))
+
     ret = subprocess.CompletedProcess("", 666)
     try:
         ret = subprocess.run(args, capture_output=True)
