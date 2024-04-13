@@ -48,17 +48,17 @@ def project(name):
     if os.path.exists(exe_path):
         is_built = True
 
-    exports = None
+    exports = []
     is_64 = False
     is_dotnet = False
 
-    # Only when we selected an input file
+    # when we selected an input file
     if project.settings.inject_exe_in != "":
         superpe = SuperPe(project.settings.inject_exe_in)
         is_64 = superpe.is_64()
         is_dotnet = superpe.is_dotnet()
         if superpe.is_dll():
-            exports = [ "", "BZ2_blockSort" ]
+            exports = superpe.get_exports()
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)

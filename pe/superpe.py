@@ -48,7 +48,7 @@ class SuperPe():
             self.ptrSize = 8
 
 
-    def is_dll(self):
+    def is_dll(self) -> bool:
         return self.filepath.endswith(".dll")
     
 
@@ -57,7 +57,6 @@ class SuperPe():
     
 
     def is_dotnet(self) -> bool:
-        # DotNet or not
         # https://stackoverflow.com/questions/45574925/is-there-a-way-to-check-if-an-exe-is-dot-net-with-python-pefile
         entry = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[14]
         if entry.VirtualAddress != 0 and entry.Size != 0:
@@ -234,6 +233,18 @@ class SuperPe():
             logger.info(f'\tReloc{i} for addr 0x{reloc:X}: 0x{relocWord:X} - 0x{reloc_offset:X} - type: {imageBaseRelocType}')
             i += 1
 
+
+    def get_exports(self) -> List[str]:
+        """Return a list of exported functions (names) from the PE file"""
+        d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
+        self.pe.parse_data_directories(directories=d)
+        if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+            return []
+        res = []
+        for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            res.append(e.name.decode())
+        return res
+    
 
     ## Helpers
 
