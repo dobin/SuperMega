@@ -37,7 +37,7 @@ class ExeHost():
         logger.info("--[ Analyzing: {}".format(self.filepath))
         self.superpe = SuperPe(self.filepath)
 
-        if self.superpe.arch != "x64":
+        if not self.superpe.is_64():
             raise Exception("Binary is not 64bit: {}".format(self.filepath))
 
         self.ep = self.superpe.get_entrypoint()

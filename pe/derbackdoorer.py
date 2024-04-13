@@ -114,9 +114,10 @@ class PeBackdoor:
         trampoline = ''
         addrOffset = -1
 
-        registers = ['rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi']
-
-        if self.superpe.arch == 'x86':
+        if self.superpe.is_64():
+            registers = ['rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi']
+        else:
+            # Not really used
             registers = ['eax', 'ebx', 'ecx', 'edx', 'esi', 'edi'] 
 
         reg = random.choice(registers).upper()
