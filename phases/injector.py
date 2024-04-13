@@ -79,8 +79,9 @@ def inject_exe(
         logger.info("---( Rewire: DLL function: {} ".format(settings.dllfunc))
 
         if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            raise Exception("--( Inject DLL: Change Entry Point unsupported when set ".format(
-                settings.dllfunc))
+            #raise Exception("--( Inject DLL: Change Entry Point unsupported when set ".format(
+            #    settings.dllfunc))
+            pass
 
         elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
             addr = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
@@ -103,11 +104,9 @@ def inject_exe(
                 addr))
             pe_backdoorer.backdoor_function(addr, shellcode_rva)
 
-    if False:
-        if source_style == FunctionInvokeStyle.iat_reuse:
-            injected_fix_iat(superpe, project.carrier, project.exe_host)
-        if True:
-            injected_fix_data(superpe, project.carrier, project.exe_host)
+    if source_style == FunctionInvokeStyle.iat_reuse:
+        injected_fix_iat(superpe, project.carrier, project.exe_host)
+        injected_fix_data(superpe, project.carrier, project.exe_host)
 
     # We done
     superpe.write_pe_to_file(exe_out)

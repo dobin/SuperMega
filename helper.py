@@ -55,6 +55,7 @@ def run_exe(exefile, dllfunc="", check=True):
     if exefile.endswith(".dll"):
         if dllfunc == "":
             dllfunc = "dllMain"
+            logger.info("----[ No DLL function specified, using default: {}".format(dllfunc))
             #raise Exception("---[ No DLL function specified")
         args = [ "rundll32.exe", "{},{}".format(exefile, dllfunc) ]
     elif exefile.endswith(".exe"):

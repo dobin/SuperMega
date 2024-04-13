@@ -190,7 +190,9 @@ def start_real(settings: Settings):
         # Start/verify it at the end
         if settings.verify:
             logger.info("--[ Verify infected exe")
-            payload_exit_code = phases.injector.verify_injected_exe(settings.inject_exe_out)
+            payload_exit_code = phases.injector.verify_injected_exe(
+                settings.inject_exe_out,
+                dllfunc=settings.dllfunc)
             logging.info("Payload exit code: {}".format(payload_exit_code))
             if payload_exit_code != 0:
                 raise Exception("Payload exit code: {}".format(payload_exit_code))
