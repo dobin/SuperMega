@@ -29,10 +29,6 @@ class DecoderStyle(Enum):
     XOR_1 = "xor_1"
 
 
-class DataRefStyle(Enum):
-    APPEND = 1
-
-
 class CarrierInvokeStyle(Enum):
     ChangeEntryPoint = "change AddressOfEntryPoint"
     BackdoorCallInstr = "hijack branching instruction in entrypoint"

@@ -160,7 +160,7 @@ def start_real(settings: Settings):
             shellcode_out = settings.main_shc_path)
     
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
-    if settings.dataref_style == DataRefStyle.APPEND:
+    if True:
         phases.assembler.merge_loader_payload(
             shellcode_in = settings.main_shc_path,
             shellcode_out = settings.main_shc_path,

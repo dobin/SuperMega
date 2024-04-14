@@ -225,7 +225,7 @@ class SuperPe():
         return res
     
 
-    def get_exports_full(self):
+    def get_exports_full(self) -> List[Dict]:
         """Return a list of exported functions (names) from the PE file"""
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
         self.pe.parse_data_directories(directories=d)
