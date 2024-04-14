@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from helper import *
 from config import config
@@ -14,7 +14,7 @@ def main():
     logger.info("Super Mega Tester")
     config.load()
 
-    #test_exe()
+    test_exe()
     test_dll()
 
 

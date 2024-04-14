@@ -29,9 +29,6 @@ class ExeHost():
         self.code_section = None
         self.rwx_section = None
 
-        self.ep = None
-        self.ep_raw = None
-
 
     def init(self):
         logger.info("--[ Analyzing: {}".format(self.filepath))
@@ -39,9 +36,6 @@ class ExeHost():
 
         if not self.superpe.is_64():
             raise Exception("Binary is not 64bit: {}".format(self.filepath))
-
-        self.ep = self.superpe.get_entrypoint()
-        self.ep_raw = self.superpe.get_physical_address(self.ep)
 
         # image base
         self.image_base = self.superpe.pe.OPTIONAL_HEADER.ImageBase

@@ -49,7 +49,7 @@ def inject_exe(
         # Special case. put it at the beginning of the exported DLL function
         logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
         rva = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
-        shellcode_offset = superpe.get_physical_address2(rva)
+        shellcode_offset = superpe.get_physical_address(rva)
         logger.info(f'---[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 

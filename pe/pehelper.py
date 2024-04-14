@@ -20,28 +20,19 @@ def extract_code_from_exe_file_ep(exe_file: FilePath, len: int) -> bytes:
     section = get_code_section(pe)
     data: bytes = section.get_data()
     data = remove_trailing_null_bytes(data)
-
     ep = pe.OPTIONAL_HEADER.AddressOfEntryPoint
-    ep_raw = get_physical_address(pe, ep)
-
+    ep_raw = get_physical_address_tmp(pe, ep)
     data = data[ep_raw:ep_raw+len]
-
     pe.close()
-
     return data
 
 
-def get_physical_address(pe, virtual_address):
-    # Iterate through the section headers to find which section contains the VA
+def get_physical_address_tmp(pe, virtual_address):
     for section in pe.sections:
-        # Check if the VA is within the range of this section
         if section.VirtualAddress <= virtual_address < section.VirtualAddress + section.Misc_VirtualSize:
-            # Calculate the difference between the VA and the section's virtual address
             virtual_offset = virtual_address - section.VirtualAddress
-            # Add the difference to the section's pointer to raw data
-            return virtual_offset
-            #physical_address = section.PointerToRawData + virtual_offset
-            #return physical_address
+            physical_address = section.PointerToRawData + virtual_offset
+            return physical_address
     return None
 
 

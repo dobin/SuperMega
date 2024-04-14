@@ -73,7 +73,8 @@ class SuperPe():
 
     ## Section Access
 
-    def get_code_section(self):
+    def get_code_section(self) -> pefile.SectionStructure:
+        """Return the section that contains the entrypoint and is executable"""
         entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         for sect in self.pe.sections:
             if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
@@ -87,7 +88,7 @@ class SuperPe():
         return bytes(sect.get_data())
     
 
-    def get_rwx_section(self):
+    def get_rwx_section(self) -> pefile.SectionStructure:
         # rwx section
         entrypoint = self.pe.OPTIONAL_HEADER.AddressOfEntryPoint
         for section in self.pe.sections:
@@ -223,7 +224,7 @@ class SuperPe():
             res.append(e.name.decode())
         return res
     
-    
+
     def get_exports_full(self):
         """Return a list of exported functions (names) from the PE file"""
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
@@ -262,28 +263,8 @@ class SuperPe():
                 # Calculate the difference between the VA and the section's virtual address
                 virtual_offset = virtual_address - section.VirtualAddress
                 # Add the difference to the section's pointer to raw data
-
-                #print("0x{:X}  0x{:X}  -> 0x{:X}".format(virtual_offset, section.PointerToRawData, virtual_offset + section.PointerToRawData ))
-                return virtual_offset
-                #physical_address = section.PointerToRawData + virtual_offset
-                #return physical_address
-        return None
-    
-
-    def get_physical_address2(self, virtual_address) -> int:
-        """Convert a virtual address to a physical address in the PE file"""
-        # Iterate through the section headers to find which section contains the VA
-        for section in self.pe.sections:
-            # Check if the VA is within the range of this section
-            if section.VirtualAddress <= virtual_address < section.VirtualAddress + section.Misc_VirtualSize:
-                # Calculate the difference between the VA and the section's virtual address
-                virtual_offset = virtual_address - section.VirtualAddress
-                # Add the difference to the section's pointer to raw data
-
-                logger.info("0x{:X}  0x{:X}  -> 0x{:X}".format(virtual_offset, section.PointerToRawData, virtual_offset + section.PointerToRawData ))
-                return virtual_offset + section.PointerToRawData
-                #physical_address = section.PointerToRawData + virtual_offset
-                #return physical_address
+                physical_address = section.PointerToRawData + virtual_offset
+                return physical_address
         return None
     
 

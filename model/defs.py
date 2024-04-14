@@ -51,8 +51,17 @@ class PeRelocEntry():
         self.type: str = type
 
 
+    def __str__(self):
+        return "PeRelocEntry: rva: 0x{:X} base_rva: 0x{:X} offset: 0x{:X} type: {}".format(
+            self.rva, self.base_rva, self.offset, self.type)
+
+
 class IatEntry():
     def __init__(self, dll_name: str, func_name: str, iat_vaddr: int):
         self.dll_name: str = dll_name
         self.func_name: str = func_name
         self.iat_vaddr: int = iat_vaddr
+
+    def __str__(self):
+        return "IatEntry: dll_name: {} func_name: {} iat_vaddr: 0x{:X}".format(
+            self.dll_name, self.func_name, self.iat_vaddr)
