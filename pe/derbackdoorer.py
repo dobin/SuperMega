@@ -57,9 +57,6 @@ class PeBackdoor:
             if exp.name.decode() == name:
                 #print(hex(exp.address), exp.name.decode())
                 addr = exp.address
-            
-        logger.info(f'Using DLL Export "{name}" at RVA 0x{addr:X} . Attempting to hijack it...')
-
         return addr
     
 

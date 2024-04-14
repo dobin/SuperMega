@@ -20,7 +20,11 @@ def index():
 def exe_view(exe_name):
     path = "{}/{}".format(PATH_EXES, exe_name)
     superpe = SuperPe(path)
-    return render_template('exe.html', superpe=superpe, iat=superpe.get_iat_entries())
+    return render_template('exe.html', 
+                           superpe=superpe, 
+                           iat=superpe.get_iat_entries(),
+                           exports=superpe.get_exports_full(),
+    )
 
 
 @views.route("/exes")
@@ -30,3 +34,7 @@ def exes_view():
         exes.append(file)
     return render_template('exes.html', exes=exes)
 
+
+@views.app_template_filter('hexint')
+def hex_filter(s):
+    return hex(s)

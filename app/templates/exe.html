@@ -1,12 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+{% include 'header.html' %}
+</head>
+<body>
+{% include 'navigation.html' %}
 
-<h1> IAT </h1>
+<div class="indent">
+
+
+<h2> Exports </h2>
+
+<table class="table">
+    <tr>
+        <th>Name</th>
+        <th>Address</th>
+        <th>Size (Approx)</th>
+    </tr>
+    {% for export in exports %}
+    <tr>
+        <td>{{export["name"]}}</td>
+        <td>{{export["addr"] | hexint}}</td>
+        <td>{{export["size"]}}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+<h2> IAT </h2>
 
 {% for dll in iat %}
-<h2>DLL: {{dll}}</h2>
+<h3>DLL: {{dll}}</h3>
 <ul>
     {% for entry in iat[dll] %}
-    <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr }})</li>
+    <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr | hexint }})</li>
     {% endfor%}
 </ul>
 {% endfor %}
 
+
+</div>
+</body>
+</html>

@@ -28,7 +28,7 @@ def test_exe():
     prepare_project("unittest", settings)
     
     # 7z, peb-walk, change-entrypoint
-    print("Test: 7z, peb-walk, change-entrypoint")
+    print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "7z.exe"
@@ -37,7 +37,7 @@ def test_exe():
         print("Error")
 
     # 7z, peb-walk, hijack
-    print("Test: 7z, peb-walk, hijack main")
+    print("Test EXE 2/4: 7z, peb-walk, hijack main")
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "7z.exe"
@@ -46,7 +46,7 @@ def test_exe():
         print("Error")
 
     # procexp, iat-reuse, change-entrypoint
-    print("Test: procexp, iat-reuse, change-entrypoint")
+    print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
     settings.source_style = FunctionInvokeStyle.iat_reuse
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
@@ -55,7 +55,7 @@ def test_exe():
         print("Error")
 
     # procexp, iat-reuse, backdoor
-    print("Test: procexp, iat-reuse, backdoor")
+    print("Test EXE 4/4: procexp, iat-reuse, backdoor")
     settings.source_style = FunctionInvokeStyle.iat_reuse
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
@@ -73,7 +73,7 @@ def test_dll():
     settings.prep_web("unittest")
     prepare_project("unittest", settings)
     
-    print("Test: libbz2-1.dll, peb-walk, change-entrypoint dllMain (func=None)")
+    print("Test DLL 1/6: libbz2-1.dll, peb-walk, change-entrypoint dllMain (func=None)")
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
@@ -81,7 +81,7 @@ def test_dll():
     if start(settings) != 0:
         print("Error")
 
-    print("Test: libbz2-1.dll, peb-walk, hijack dllMain (func=None)")
+    print("Test DLL 2/6: libbz2-1.dll, peb-walk, hijack dllMain (func=None)")
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
@@ -89,8 +89,8 @@ def test_dll():
     if start(settings) != 0:
         print("Error")
 
-    print("Test: libbz2-1.dll, peb-walk, change-entrypoint, func=BZ2_bzdopen")
-    settings.dllfunc = "BZ2_bzdopen"
+    print("Test DLL 3/6: libbz2-1.dll, peb-walk, change-entrypoint, func=BZ2_bzDecompress")
+    settings.dllfunc = "BZ2_bzDecompress"
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
@@ -98,7 +98,7 @@ def test_dll():
     if start(settings) != 0:
         print("Error")
 
-    print("Test: libbz2-1.dll, peb-walk, hijack main, func=BZ2_bzdopen")
+    print("Test DLL 4/6: libbz2-1.dll, peb-walk, hijack main, func=BZ2_bzdopen")
     settings.dllfunc = "BZ2_bzdopen"
     settings.source_style = FunctionInvokeStyle.peb_walk
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr

