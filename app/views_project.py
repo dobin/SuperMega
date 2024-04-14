@@ -58,7 +58,7 @@ def project(name):
         is_64 = superpe.is_64()
         is_dotnet = superpe.is_dotnet()
         if superpe.is_dll():
-            exports = superpe.get_exports()
+            exports = superpe.get_exports_full()
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)

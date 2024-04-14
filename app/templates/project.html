@@ -79,10 +79,10 @@
                 {% if exports != None %}
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
                     {% for export in exports %}
-                    <option value="{{export}}"
-                        {% if export in project.settings.dllfunc %} selected {% endif %}
+                    <option value="{{export['name']}}"
+                        {% if export["name"] in project.settings.dllfunc %} selected {% endif %}
                     >
-                    {{export}}</option>
+                    {{export['name']}} ({{export['size']}})</option>
                     {% endfor %}
                 </select>  
                 {% endif %}
