@@ -21,6 +21,7 @@ from phases.injector import verify_injected_exe
 from helper import run_process_checkret, run_exe
 from model.project import prepare_project
 from pe.superpe import SuperPe
+from model.exehost import ExeHost
 
 logger = logging.getLogger("ViewsProjects")
 
@@ -51,6 +52,9 @@ def project(name):
     exports = []
     is_64 = False
     is_dotnet = False
+    code_sect_size = 0
+    data_sect_size = 0
+    data_sect_largest_gap_size = 0
 
     # when we selected an input file
     if project.settings.inject_exe_in != "":
@@ -59,6 +63,12 @@ def project(name):
         is_dotnet = superpe.is_dotnet()
         if superpe.is_dll():
             exports = superpe.get_exports_full()
+        code_sect_size = superpe.get_code_section().Misc_VirtualSize
+        data_sect_size = superpe.get_section_by_name(".rdata").virt_size
+        exehost = ExeHost(project.settings.inject_exe_in)
+        exehost.init()
+        data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
+
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)
@@ -93,6 +103,9 @@ def project(name):
         log_files=log_files,
         is_64=is_64,
         is_dotnet=is_dotnet,
+        code_sect_size=code_sect_size,
+        data_sect_size=data_sect_size,
+        data_sect_largest_gap_size=data_sect_largest_gap_size,
     )
 
 

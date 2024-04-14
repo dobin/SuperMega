@@ -7,10 +7,30 @@
 {% include 'navigation.html' %}
 
 <div class="indent">
+<div class="row">
+
+<h2>Sections</h2>
 
 
-<h2> Exports </h2>
+<div class="col-6">
+    {% if iat|length > 0 %}
+    <h2> Imports - IAT </h2>
+    {% for dll in iat %}
+    <ul>
+        {% for entry in iat[dll] %}
+        <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr | hexint }})</li>
+        {% endfor%}
+    </ul>
+    {% endfor %}
+    {% endif %}
+</div>
+    
 
+
+<div class="col-6">
+
+{% if exports|length > 0 %}
+<h2> DLL Exports </h2>
 <table class="table">
     <tr>
         <th>Name</th>
@@ -25,19 +45,12 @@
     </tr>
     {% endfor %}
 </table>
+{% endif %}
 
-<h2> IAT </h2>
-
-{% for dll in iat %}
-<h3>DLL: {{dll}}</h3>
-<ul>
-    {% for entry in iat[dll] %}
-    <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr | hexint }})</li>
-    {% endfor%}
-</ul>
-{% endfor %}
+</div>
 
 
+</div>
 </div>
 </body>
 </html>

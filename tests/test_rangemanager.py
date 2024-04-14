@@ -21,6 +21,9 @@ class RangeManagerTest(unittest.TestCase):
         holes = rm.find_holes(20)
         self.assertEqual([(31, 49), (61, 100)], holes)
 
+        largest = rm.find_largest_gap()
+        self.assertEqual(40, largest)
+
 
     def test_relocmanager(self):
         exehost = ExeHost(PATH_EXES + "procexp64.exe")

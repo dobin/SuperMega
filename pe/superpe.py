@@ -229,7 +229,11 @@ class SuperPe():
         """Return a list of exported functions (names) from the PE file"""
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
         self.pe.parse_data_directories(directories=d)
-        if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+        try:
+            if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+                return []
+        except Exception as e:
+            logger.warn("No exports found")
             return []
         res = []
         for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:

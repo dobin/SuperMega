@@ -10,7 +10,6 @@
 
         <h2> {{project_name}} </h2>
 
-
         <div class="row">
             <!-- Row 1: Buttons -->
             <div class="col-3">
@@ -72,7 +71,7 @@
                     <option value="{{exe}}"
                         {% if exe in project.settings.inject_exe_in %} selected {% endif %}
                     >
-                    {{exe}}</option>
+                    {{exe | basename}}</option>
                     {% endfor %}
                 </select>
 
@@ -84,11 +83,10 @@
                     >
                     {{export['name']}} ({{export['size']}})</option>
                     {% endfor %}
-                </select>  
+                </select>
+                <a href="/exes/{{project.settings.inject_exe_in | basename}}">INFO</a>
                 {% endif %}
-                
-                Is x64: {{ is_64}} <br>
-                Is Dotnet: {{ is_dotnet}}
+
             </div>
 
             <!-- Row 3: settings -->
@@ -109,10 +107,6 @@
                     {% endfor %}
                 </select>
             
-            </div>
-
-            <!-- Row 4: more settings -->
-            <div class="col-3">
                 <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE" onchange="this.form.submit()">
                     {% for name, value in decoderstyles %}
                     <option value="{{name}}"
@@ -121,12 +115,22 @@
                     {% endfor %}
                 </select>
             </div>
+
+            <!-- Row 4: more settings -->
+            <div class="col-3">
+                EXE/DLL Is: <br>
+                Is x64: {{ is_64}} <br>
+                Is Dotnet: {{ is_dotnet}} <br>
+                Code Section size: {{ code_sect_size}} <br>
+                Data Section size: {{ data_sect_size}} <br>
+                Data Section largest: {{ data_sect_largest_gap_size}} <br>
+                {{ project_dir }} <br>
+            </div>
         </div>
         </form>
 
         <div class="row">
             <div class="col">
-              {{ project_dir }}
               <div class="custom-line"></div>
             </div>
         </div>

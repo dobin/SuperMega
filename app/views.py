@@ -38,3 +38,7 @@ def exes_view():
 @views.app_template_filter('hexint')
 def hex_filter(s):
     return hex(s)
+
+@views.app_template_filter('basename')
+def basename(s):
+    return os.path.basename(s)
