@@ -55,6 +55,11 @@ def project(name):
     code_sect_size = 0
     data_sect_size = 0
     data_sect_largest_gap_size = 0
+    payload_len = 0
+
+    # when we select a shellcode
+    if project.settings.payload_path != "":
+        payload_len = os.path.getsize(project.settings.payload_path)
 
     # when we selected an input file
     if project.settings.inject_exe_in != "":
@@ -69,19 +74,16 @@ def project(name):
         exehost.init()
         data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
 
-
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)
 
-    exes = [ "" ]
-    for file in os.listdir(PATH_EXES):
-        exes.append(PATH_EXES + file)
-    for file in os.listdir(PATH_EXES_MORE):
-        exes.append(PATH_EXES_MORE + file)
+    exes = list_files_and_sizes(PATH_EXES, prepend=PATH_EXES)
+    #for file in 
+    #    exes.append(PATH_EXES + file)
+    #for file in os.listdir(PATH_EXES_MORE):
+    #    exes.append(PATH_EXES_MORE + file)
 
-    shellcodes = [ "" ]
-    for file in os.listdir(PATH_SHELLCODES):
-        shellcodes.append(file)
+    shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
     decoderstyles = [(color.name, color.value) for color in DecoderStyle]
@@ -106,8 +108,21 @@ def project(name):
         code_sect_size=code_sect_size,
         data_sect_size=data_sect_size,
         data_sect_largest_gap_size=data_sect_largest_gap_size,
+        payload_len=payload_len,
     )
 
+def list_files_and_sizes(directory, prepend=""):
+    # List all files in the directory and get their sizes
+    files_and_sizes = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            size = os.path.getsize(filepath)
+            files_and_sizes.append({
+                "filename": prepend + filename,
+                "size": size,
+            })
+    return files_and_sizes
 
 @views_project.route("/project_add", methods=['POST', 'GET'])
 def add_project():

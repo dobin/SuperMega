@@ -50,7 +50,7 @@
                 <!-- leave this here or it will fuck up layout -->
                 <form method="POST" enctype="multipart/form-data" action="/project_add">
                 <input type="hidden" name="project_name" value="{{project_name}}">
-                    
+                
                 <input type="text" name="comment" class="hidden form-control" 
                        placeholder="Comment" value="{{project.comment}}"
                        aria-label="PROJECTNAME" aria-describedby="basic-addon1"
@@ -58,20 +58,20 @@
             
                 <select class="form-select" name="shellcode" aria-label="SHELLCODE" onchange="this.form.submit()">
                     {% for shellcode in shellcodes %}
-                    <option value="{{shellcode}}" 
-                            {% if shellcode in project.settings.payload_path %} selected {% endif %}
+                    <option value="{{shellcode['filename']}}" 
+                            {% if shellcode["filename"] in project.settings.payload_path %} selected {% endif %}
                     >
-                        {{shellcode}}
+                        {{shellcode['filename']}} ({{shellcode['size']}})
                     </option>
                     {% endfor %}
                 </select>
             
                 <select class="form-select" name="exe" aria-label="EXE" onchange="this.form.submit()">
                     {% for exe in exes %}
-                    <option value="{{exe}}"
-                        {% if exe in project.settings.inject_exe_in %} selected {% endif %}
+                    <option value="{{exe['filename']}}"
+                        {% if exe['filename'] in project.settings.inject_exe_in %} selected {% endif %}
                     >
-                    {{exe | basename}}</option>
+                    {{exe['filename'] | basename}} ({{exe['size']}})</option>
                     {% endfor %}
                 </select>
 
@@ -84,7 +84,6 @@
                     {{export['name']}} ({{export['size']}})</option>
                     {% endfor %}
                 </select>
-                <a href="/exes/{{project.settings.inject_exe_in | basename}}">INFO</a>
                 {% endif %}
 
             </div>
@@ -106,7 +105,7 @@
                     >{{value}}</option>
                     {% endfor %}
                 </select>
-            
+
                 <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE" onchange="this.form.submit()">
                     {% for name, value in decoderstyles %}
                     <option value="{{name}}"
@@ -124,7 +123,9 @@
                 Code Section size: {{ code_sect_size}} <br>
                 Data Section size: {{ data_sect_size}} <br>
                 Data Section largest: {{ data_sect_largest_gap_size}} <br>
+                -> Payload len: {{ payload_len}} <br>
                 {{ project_dir }} <br>
+                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE INFO</a>
             </div>
         </div>
         </form>
