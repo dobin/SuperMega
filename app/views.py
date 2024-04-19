@@ -31,7 +31,21 @@ def exe_view(exe_name):
 def exes_view():
     exes = []
     for file in os.listdir(PATH_EXES):
-        exes.append(file)
+        if not file.endswith(".dll") and not file.endswith(".exe"):
+            continue
+        if '.verify' in file or '.test' in file:
+            continue
+
+        superpe = SuperPe("{}/{}".format(PATH_EXES, file))
+
+        e = {
+            'name': file,
+            #'exports': superpe.get_exports_full(),
+            #'iat': superpe.get_iat_entries(),
+            'sections': superpe.pe_sections,
+        }
+        exes.append(e)
+        #break
     return render_template('exes.html', exes=exes)
 
 

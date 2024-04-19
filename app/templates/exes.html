@@ -1,6 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    {% include 'header.html' %}
+  </head>
+  <body>
+    {% include 'navigation.html' %}
 
-<ul>
-    {% for exe in exes %}
-    <li><a href="/exes/{{exe}}">{{exe}}</a></li>
-    {% endfor %}
-</ul>
+    <div class="indent">
+
+    <h1> Exes </h1>
+
+    <table class="table">
+        <tr>
+            <th>Exe</th>
+            <th>Sections</th>
+        </tr>
+        {% for exe in exes %}
+        <tr>
+            <td><a href="/exes/{{exe['name']}}">{{exe['name']}}</a></td>
+            <td>
+                <table class="table">
+                    <tr>
+                        <th>name</th>
+                        <th>raw size</th>
+                        <th>virt size</th>
+                        <th> diff </th>
+                    </tr>
+                    {% for section in exe['sections'] %}
+                    <tr>
+                        <td>{{section['name']}}</td>
+                        <td>{{section['raw_size']}}</td>
+                        <td>{{section['virt_size']}}</td>
+                        <td>{{section['raw_size'] - section['virt_size']}}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
