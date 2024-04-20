@@ -9,96 +9,33 @@ from pe.pehelper import extract_code_from_exe_file
 from utils import hexdump
 from observer import observer
 from model.defs import *
-from pe.derbackdoorer import PeBackdoor
+from pe.derbackdoorer import FunctionBackdoorer
+from pe.superpe import SuperPe
 
-
-# What to make sure of: 
-# 1: Change of AddressEntryPoint
-#   * Shellcode is at the location given
-#   * EP points to the shellcode
-#
-# 2: Hijack
-#   * Shellcode is at the location given
-#   * The call has been patched
 
 class DerBackdoorerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         observer.active = False
 
-    def test_backdoor_ep(self):
-        # Write example shellcode
-        shellcode_path = PATH_EXES + "shellcode.test"
+
+    def test_function_backdoorer_exe(self):
         shellcode = b"\x90" * 200
-        with open(shellcode_path, "wb") as f:
-            f.write(shellcode)
+        superpe = SuperPe(PATH_EXES + "iattest-full.exe")
+        function_backdoorer = FunctionBackdoorer(superpe, shellcode)
 
-        exe_path = PATH_EXES + "iattest-full.exe"
-        exe_out_path = PATH_EXES + "iattest-full.test.exe"
-
-        shutil.copyfile(exe_path, exe_out_path)
-
-        pe_backdoorer = PeBackdoor()
-        result = pe_backdoorer.backdoor(
-            1, # always overwrite .text section
-            1, # EntryPoint change
-            shellcode_path, 
-            exe_path,
-            exe_out_path,
-        )
-
-        self.assertTrue(result)
-        code = extract_code_from_exe_file(exe_out_path)
-        extracted_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+len(shellcode)]
-        self.assertEqual(shellcode, extracted_code)
-
-        os.remove(exe_out_path)
-        os.remove(shellcode_path)
+        instr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint(), 128, 5)
+        self.assertIsNotNone(instr)
+        self.assertEqual(instr.mnemonic, "jne")
+        self.assertEqual(instr.address, 0x1701)
 
 
-    def test_backdoor_hijack(self):
-        # Write example shellcode
+    def test_function_backdoorer_dll(self):
         shellcode = b"\x90" * 200
-        with open(PATH_EXES + "shellcode.test", "wb") as f:
-            f.write(shellcode)
+        superpe = SuperPe(PATH_EXES + "libbz2-1.dll")
+        function_backdoorer = FunctionBackdoorer(superpe, shellcode)
 
-        shellcode_path = PATH_EXES + "shellcode.test"
-        exe_path = PATH_EXES + "7z.exe"
-        exe_out_path = PATH_EXES + "7z.test.exe"
-
-        shutil.copyfile(exe_path, exe_out_path)
-
-        pe_backdoorer = PeBackdoor()
-        result = pe_backdoorer.backdoor(
-            1, # always overwrite .text section
-            2, # Hijack
-            shellcode_path, 
-            exe_path,
-            exe_out_path,
-        )
-
-        self.assertTrue(result)
-
-        # code
-        code = extract_code_from_exe_file(exe_out_path)
-        extracted_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+len(shellcode)]
-        self.assertEqual(shellcode, extracted_code)
-
-        # jmp
-        #  48 c7 c2 d7 fb 42 00 ff d2 5b 0f b7
-        #  48 c7 c6 d7 fb 42 00 ff d6 5b 0f b7
-        jmp_code = code[pe_backdoorer.backdoorOffsetRel:pe_backdoorer.backdoorOffsetRel+12]
-        self.assertEqual(jmp_code[0], 0x48)
-        self.assertEqual(jmp_code[1], 0xc7)
-        #self.assertEqual(jmp_code[2], 0x??)  # variable
-        self.assertEqual(jmp_code[3], 0xd7)
-        self.assertEqual(jmp_code[4], 0xfb)
-        self.assertEqual(jmp_code[5], 0x42)
-        self.assertEqual(jmp_code[6], 0x00)
-        self.assertEqual(jmp_code[7], 0xff)
-        #self.assertEqual(jmp_code[8], 0x??) # variable
-        self.assertEqual(jmp_code[9], 0x5b)
-        self.assertEqual(jmp_code[10], 0x0f)
-        self.assertEqual(jmp_code[11], 0xb7)
-
-        os.remove(exe_out_path)
+        instr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint(), 128, 5)
+        self.assertIsNotNone(instr)
+        self.assertEqual(instr.mnemonic, "jne")
+        self.assertEqual(instr.address, 0x1220)

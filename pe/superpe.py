@@ -213,6 +213,28 @@ class SuperPe():
             i += 1
 
 
+    def getExportEntryPoint(self, exportName: str):
+        dec = lambda x: '???' if x is None else x.decode() 
+        d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
+        self.pe.parse_data_directories(directories=d)
+
+        if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
+            raise Exception('No DLL exports found!')
+        
+        exports = [(e.ordinal, dec(e.name)) for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols]
+        chosen_export = None
+        for export in exports:
+            if export[1].lower() == exportName.lower():
+                chosen_export = export
+                break
+        logger.debug("Export: {} {}".format(chosen_export[0], chosen_export[1]))
+        name = chosen_export[1]
+        for exp in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
+            if exp.name.decode() == name:
+                addr = exp.address
+        return addr
+    
+
     def get_exports(self) -> List[str]:
         """Return a list of exported functions (names) from the PE file"""
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
@@ -276,47 +298,12 @@ class SuperPe():
         self.pe.write(outfile)
 
 
-    ## Disassembly / Output
-    
-    def disasmBytes(self, cs, ks, disasmData, startOffset, length, callback = None, maxDepth = 5):
-        return self._disasmBytes(cs, ks, disasmData, startOffset, length, callback, maxDepth, 1)
+    def removeSignature(self):
+        logger.info('PE executable Authenticode signature remove')
+        addr = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress
+        size = self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].Size
 
+        self.pe.set_bytes_at_rva(addr, b'\x00' * size)
 
-    def printInstr(self, instr, depth):
-        _bytes = [f'{x:02x}' for x in instr.bytes[:8]]
-        if len(instr.bytes) < 8:
-            _bytes.extend(['  ',] * (8 - len(instr.bytes)))
-
-        instrBytes = ' '.join([f'{x}' for x in _bytes])
-        logger.debug('\t' * 1 + f'[{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')
-
-
-    def _disasmBytes(self, cs, ks, disasmData, startOffset, length, callback, maxDepth, depth):
-        if depth > maxDepth:
-            return 0
-
-        data = disasmData[startOffset:startOffset + length]
-
-        for instr in cs.disasm(data, startOffset):
-            self.printInstr(instr, depth)
-
-            if len(instr.operands) == 1:
-                operand = instr.operands[0]
-
-                if operand.type == capstone.CS_OP_IMM:
-                    logger.debug('\t' * (depth+1) + f' -> OP_IMM: 0x{operand.value.imm:X}')
-                    logger.debug('')
-
-                    if callback:
-                        out = callback(cs, ks, disasmData, startOffset, instr, operand, depth)
-                        if out != 0:
-                            return out
-
-                    if depth + 1 <= maxDepth:
-                        out = self._disasmBytes(cs, ks, disasmData, operand.value.imm, length, callback, maxDepth, depth + 1)
-                        return out
-
-        if not callback:
-            return 1
-
-        return 0
+        self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0
+        self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0
