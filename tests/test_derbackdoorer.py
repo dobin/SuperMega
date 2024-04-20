@@ -29,6 +29,15 @@ class DerBackdoorerTest(unittest.TestCase):
         self.assertEqual(instr.mnemonic, "jne")
         self.assertEqual(instr.address, 0x1701)
 
+        trampoline_compiled, trampoline_reloc_offset = function_backdoorer.get_trampoline(instr)
+        print(hexdump(trampoline_compiled))
+        self.assertEqual(trampoline_compiled[0], 0x48)
+        self.assertEqual(trampoline_compiled[2], 0x00)
+        self.assertEqual(trampoline_compiled[5], 0x40)
+        self.assertEqual(trampoline_compiled[6], 0x01)
+        self.assertEqual(trampoline_compiled[10], 0xff)
+        self.assertEqual(trampoline_reloc_offset, 2)
+
 
     def test_function_backdoorer_dll(self):
         shellcode = b"\x90" * 200
@@ -39,3 +48,12 @@ class DerBackdoorerTest(unittest.TestCase):
         self.assertIsNotNone(instr)
         self.assertEqual(instr.mnemonic, "jne")
         self.assertEqual(instr.address, 0x1220)
+
+        trampoline_compiled, trampoline_reloc_offset = function_backdoorer.get_trampoline(instr)
+        print(hexdump(trampoline_compiled))
+        self.assertEqual(trampoline_compiled[0], 0x48)
+        self.assertEqual(trampoline_compiled[2], 0x00)
+        self.assertEqual(trampoline_compiled[5], 0xf1)
+        self.assertEqual(trampoline_compiled[6], 0x01)
+        self.assertEqual(trampoline_compiled[10], 0xff)
+        self.assertEqual(trampoline_reloc_offset, 2)
