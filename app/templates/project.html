@@ -75,7 +75,7 @@
                     {% endfor %}
                 </select>
 
-                {% if exports != None %}
+                {% if exports != [] %}
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
                     {% for export in exports %}
                     <option value="{{export['name']}}"
