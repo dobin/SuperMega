@@ -14,17 +14,24 @@
 
 <div class="col-6">
     {% if iat|length > 0 %}
-    <h2> Imports - IAT </h2>
+    
+    <h2> IAT Imports DLLs</h2>
+    <ul>
+        {% for dll_resolve in resolved_dlls %}
+        <li> {{ dll_resolve.dllname }}: {{ dll_resolve.cdll_res }} : {{ dll_resolve.path_res }}</li>
+        {% endfor%}
+    </ul>
+
+    <h2> IAT Imports functions</h2>
     {% for dll in iat %}
     <ul>
         {% for entry in iat[dll] %}
-        <li> {{ entry.dll_name }}: {{ entry.func_name }} ({{ entry.iat_vaddr | hexint }})</li>
+        <li> {{ entry.dll_name }}: {{ entry.func_name }} </li>
         {% endfor%}
     </ul>
     {% endfor %}
     {% endif %}
 </div>
-    
 
 
 <div class="col-6">

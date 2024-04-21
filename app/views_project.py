@@ -20,8 +20,10 @@ from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
 from helper import run_process_checkret, run_exe
 from model.project import prepare_project
-from pe.superpe import SuperPe
+from pe.superpe import SuperPe 
 from model.exehost import ExeHost
+import pe.dllresolver
+
 
 logger = logging.getLogger("ViewsProjects")
 
@@ -56,6 +58,7 @@ def project(name):
     data_sect_size = 0
     data_sect_largest_gap_size = 0
     payload_len = 0
+    unresolved_dlls = []
 
     # when we select a shellcode
     if project.settings.payload_path != "":
@@ -73,6 +76,8 @@ def project(name):
         exehost = ExeHost(project.settings.inject_exe_in)
         exehost.init()
         data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
+        unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
+
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)
@@ -109,6 +114,7 @@ def project(name):
         data_sect_size=data_sect_size,
         data_sect_largest_gap_size=data_sect_largest_gap_size,
         payload_len=payload_len,
+        unresolved_dlls=unresolved_dlls,
     )
 
 def list_files_and_sizes(directory, prepend=""):

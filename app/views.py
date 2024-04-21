@@ -6,6 +6,7 @@ from typing import List, Tuple
 
 from pe.superpe import SuperPe
 from model.defs import *
+from pe.dllresolver import resolve_dlls
 
 views = Blueprint('views', __name__)
 logger = logging.getLogger("Views")
@@ -20,8 +21,10 @@ def index():
 def exe_view(exe_name):
     path = "{}/{}".format(PATH_EXES, exe_name)
     superpe = SuperPe(path)
+
     return render_template('exe.html', 
                            superpe=superpe, 
+                           resolved_dlls=resolve_dlls(superpe),
                            iat=superpe.get_iat_entries(),
                            exports=superpe.get_exports_full(),
     )

@@ -125,6 +125,10 @@
                 Data Section largest: {{ data_sect_largest_gap_size}} <br>
                 -> Payload len: {{ payload_len}} <br>
                 {{ project_dir }} <br>
+                Unresolved dlls: <br>
+                {% for dll in unresolved_dlls %}
+                    {{ dll }} <br>
+                {% endfor %}
                 <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE INFO</a>
             </div>
         </div>
