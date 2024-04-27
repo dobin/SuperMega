@@ -12,7 +12,7 @@ import logging
 from utils import hexdump
 from pe.superpe import SuperPe
 from model.defs import *
-
+from intervaltree import *
 logger = logging.getLogger("DerBackdoorer")
 
 
@@ -33,17 +33,25 @@ class FunctionBackdoorer:
         self.depth_option: DEPTH_OPTIONS = depth_option
 
 
-    def backdoor_function(self, function_addr: int, shellcode_addr: int):
+    def backdoor_function(self, function_addr: int, shellcode_addr: int, shellcode_len: int):
         logger.info("Backdooring function at 0x{:X} (to shellcode 0x{:X})".format(function_addr, shellcode_addr))
         
         addr = self.find_suitable_instruction_addr(function_addr)
         if addr is None:
             raise Exception("Couldn't find a suitable instruction to backdoor")
-        #logger.info("--[ Choosen addr to overwrite: 0x{:X}".format(addr))
 
         compiled_trampoline, text_trampoline, trampoline_reloc_offset = self.get_trampoline(addr, shellcode_addr)
         logger.info("--[ Backdoor 0x{:X}: {}".format(
             addr, text_trampoline))
+        
+        it = IntervalTree()
+        it.addi(addr, addr+len(compiled_trampoline))
+        if it.overlap(shellcode_addr, shellcode_addr+shellcode_len):
+            logger.warn("Attempt to patch jump (0x{:X}-0x{:X}) to shellcode (0x{:X}-0x{:X}) but they overlap and probably dont work".format(
+                addr, addr+len(compiled_trampoline), shellcode_addr, shellcode_addr+shellcode_len
+            ))
+            logger.warn("Text section too small?")
+
         # write
         self.superpe.pe.set_bytes_at_rva(addr, bytes(compiled_trampoline))
 
