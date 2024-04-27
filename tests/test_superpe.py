@@ -64,5 +64,5 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(export["size"], 416)
 
         # VRA/Virt to Phys/Raw
-        raw = superpe.get_physical_address(0xD690)  # BZ2_bzdopen export
+        raw = superpe.get_offset_from_rva(0xD690)  # BZ2_bzdopen export
         self.assertEqual(raw, 0xCA90)

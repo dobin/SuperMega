@@ -276,11 +276,17 @@ class SuperPe():
                 entry["size"] = next_entry["addr"] - entry["addr"]
 
         return res
-
+    
+    def get_size_of_exported_function(self, dllfunc):
+        exports = self.get_exports_full()
+        for exp in exports:
+            if exp["name"] == dllfunc:
+                return exp["size"]
+        return None
 
     ## Helpers
 
-    def get_physical_address(self, virtual_address) -> int:
+    def get_offset_from_rva(self, virtual_address) -> int:
         """Convert a virtual address to a physical address in the PE file"""
         # Iterate through the section headers to find which section contains the VA
         for section in self.pe.sections:

