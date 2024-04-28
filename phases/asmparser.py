@@ -8,10 +8,9 @@ from model.carrier import Carrier, DataReuseEntry, IatRequest
 logger = logging.getLogger("AsmParser")
 
 
-def parse_asm_file(carrier, filename):
+def parse_asm_file(carrier: Carrier, asm_text: str) -> List[str]:
     lines_out = []
-    with open(filename, 'r', encoding='utf-8') as asmfile:
-        lines = asmfile.readlines()
+    lines = asm_text.split("\n")
 
     current_segment = None
     current_datareuse_entry= None
@@ -143,9 +142,7 @@ def parse_asm_file(carrier, filename):
         
         lines_out.append(line)
 
-    with open(filename, "w") as f:
-        for line in lines_out:
-            f.write(line + "\n")
+    return lines_out
 
 
 def convert_asm_db_to_bytes(line: str) -> bytes:

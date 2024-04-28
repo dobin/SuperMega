@@ -1,10 +1,13 @@
 import re
 import os
 import logging
+import io
+from typing import List
 
 logger = logging.getLogger("masmshc")
 
-g_is32bit = False
+# original source: https://github.com/hasherezade/masm_shc/blob/master/masm_shc/main.cpp
+# Converted to python by chatgpt, with some manual fixups
 
 
 class Params:
@@ -71,121 +74,115 @@ _TEXT ENDS
 """
     ofile.write(stub)
 
-def process_file(params):
-    global g_is32bit
-    try:
-        with open(params.infile, "r") as file, open(params.outfile, "w") as ofile:
-            consts_lines = {}
-            seg_name = ""
-            const_name = ""
-            code_start = False
+def masm_shc(asm_text_lines: List[str]) -> str:
+    g_is32bit = False
+    consts_lines = {}
+    seg_name = ""
+    const_name = ""
+    code_start = False
 
-            line_count = 0
-            for line in file.readlines():
-            #for line_count, line in enumerate(file):
-                tokens = split_to_tokens(line)
+    params = Params("", "", 
+        inline_strings=False,  # not for DATA_REUSE
+        remove_crt=True, 
+        append_rsp_stub=True)  # required atm
+    ofile = io.StringIO()
 
-                #print("Tokens: {}".format(" ".join(tokens)))
+    line_count = 0
+    for line in asm_text_lines:
+        line = line + "\n"  # lol
+        tokens = split_to_tokens(line)
 
-                if not tokens:
-                    ofile.write(line)
+        if not tokens:
+            ofile.write(line)
+            continue
+
+        if tokens[0] == ".686P":
+            g_is32bit = True
+
+        if tokens[0] == "EXTRN":
+            print(f"[ERROR] Line {line_count + 1}: External dependency detected:\n{line}")
+
+        in_skipped = False
+        in_const = False
+
+        if len(tokens) >= 2:
+            # TMP better stack alignment
+            #if tokens[0] == "sub" and tokens[1] == "rsp,":
+            #    ofile.write(line)
+            #    #ofile.write("\tand\trsp, 0FFFFFFFFFFFFFFF0h; Align RSP to 16 bytes\n")
+            #    #ofile.write("\tsub\trsp, 8")
+            #    continue
+
+            if tokens[1] == "SEGMENT":
+                seg_name = tokens[0]
+                if not code_start and seg_name == "_TEXT":
+                    code_start = True
+                    if g_is32bit:
+                        ofile.write("assume fs:nothing\n")
+                    # TMP better stack alignment alternative
+                    #else:
+                    #    ofile.write("\tjmp\tmain\n")
+                    elif params.append_rsp_stub:
+                        append_align_rsp(ofile)
+                        logger.debug("[INFO] Entry Point: AlignRSP")
+
+                if seg_name == "_BSS":
+                    logger.error(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
+
+            if seg_name in ("pdata", "xdata", "voltbl"):
+                in_skipped = True
+            elif seg_name in ("CONST", "_DATA"):
+                in_const = True
+            elif tokens[1] == "ENDS" and tokens[0] == seg_name:
+                seg_name = ""
+                if in_const:
                     continue
 
-                if tokens[0] == ".686P":
-                    g_is32bit = True
+        if in_skipped:
+            continue
 
-                if tokens[0] == "EXTRN":
-                    print(f"[ERROR] Line {line_count + 1}: External dependency detected:\n{line}")
+        if params.remove_crt and tokens[0] == "INCLUDELIB":
+            if tokens[1] in ("LIBCMT", "OLDNAMES"):
+                ofile.write(f"; {line}\n")  # copy commented out line
+                continue
+            print(f"[ERROR] Line {line_count + 1}: INCLUDELIB detected! Remove all external dependencies!\n")
 
-                in_skipped = False
-                in_const = False
+        if params.inline_strings and in_const:
+            if tokens[1] == "DB":
+                const_name = tokens[0]
+            if const_name != "":
+                if const_name not in consts_lines:
+                    consts_lines[const_name] = line
+                else:
+                    consts_lines[const_name] += "\n" + line
+            continue
 
-                if len(tokens) >= 2:
-                    # TMP better stack alignment
-                    #if tokens[0] == "sub" and tokens[1] == "rsp,":
-                    #    ofile.write(line)
-                    #    #ofile.write("\tand\trsp, 0FFFFFFFFFFFFFFF0h; Align RSP to 16 bytes\n")
-                    #    #ofile.write("\tsub\trsp, 8")
-                    #    continue
+        if tokens[0] == "rex_jmp":
+            line = re.sub(r"rex_jmp", "JMP", line)
 
-                    if tokens[1] == "SEGMENT":
-                        seg_name = tokens[0]
-                        if not code_start and seg_name == "_TEXT":
-                            code_start = True
-                            if g_is32bit:
-                                ofile.write("assume fs:nothing\n")
-                            # TMP better stack alignment alternative
-                            #else:
-                            #    ofile.write("\tjmp\tmain\n")
-                            elif params.append_rsp_stub:
-                                append_align_rsp(ofile)
-                                logger.debug("[INFO] Entry Point: AlignRSP")
+        curr_const = get_constant(consts_lines, tokens)
+        if params.inline_strings and curr_const != "":
+            label_after = f"after_{curr_const}"
+            ofile.write(f"\tCALL {label_after}\n")
+            ofile.write(consts_lines[curr_const] + "\n")
+            ofile.write(f"{label_after}:\n")
+            if len(tokens) > 2 and (tokens[0] in ("lea", "mov")):
+                offset_index = tokens.index("OFFSET", 1)
+                instructions = tokens[1]
+                if offset_index == 4:
+                    instructions = f"{tokens[1]} {tokens[2]} {tokens[3]}"
+                ofile.write(f"\tPOP  {instructions}\n")
+            ofile.write("\n")
+            ofile.write(f"; {line}\n")  # copy commented out line
+            continue
 
-                        if seg_name == "_BSS":
-                            logger.error(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
+        if not g_is32bit and any(token in tokens for token in ["gs:96"]):
+            #line = re.sub(r"gs:96", "gs[96]\r\n", line)
+            line = line.replace("gs:96", "gs:[96]")
 
-                    if seg_name in ("pdata", "xdata", "voltbl"):
-                        in_skipped = True
-                    elif seg_name in ("CONST", "_DATA"):
-                        in_const = True
-                    elif tokens[1] == "ENDS" and tokens[0] == seg_name:
-                        seg_name = ""
-                        if in_const:
-                            continue
-
-                if in_skipped:
-                    continue
-
-                if params.remove_crt and tokens[0] == "INCLUDELIB":
-                    if tokens[1] in ("LIBCMT", "OLDNAMES"):
-                        ofile.write(f"; {line}\n")  # copy commented out line
-                        continue
-                    print(f"[ERROR] Line {line_count + 1}: INCLUDELIB detected! Remove all external dependencies!\n")
-
-                if params.inline_strings and in_const:
-                    if tokens[1] == "DB":
-                        const_name = tokens[0]
-                    if const_name != "":
-                        if const_name not in consts_lines:
-                            consts_lines[const_name] = line
-                        else:
-                            consts_lines[const_name] += "\n" + line
-                    continue
-
-                if tokens[0] == "rex_jmp":
-                    line = re.sub(r"rex_jmp", "JMP", line)
-
-                curr_const = get_constant(consts_lines, tokens)
-                if params.inline_strings and curr_const != "":
-                    label_after = f"after_{curr_const}"
-                    ofile.write(f"\tCALL {label_after}\n")
-                    ofile.write(consts_lines[curr_const] + "\n")
-                    ofile.write(f"{label_after}:\n")
-                    if len(tokens) > 2 and (tokens[0] in ("lea", "mov")):
-                        offset_index = tokens.index("OFFSET", 1)
-                        instructions = tokens[1]
-                        if offset_index == 4:
-                            instructions = f"{tokens[1]} {tokens[2]} {tokens[3]}"
-                        ofile.write(f"\tPOP  {instructions}\n")
-                    ofile.write("\n")
-                    ofile.write(f"; {line}\n")  # copy commented out line
-                    continue
-
-                if not g_is32bit and any(token in tokens for token in ["gs:96"]):
-                    #line = re.sub(r"gs:96", "gs[96]\r\n", line)
-                    line = line.replace("gs:96", "gs:[96]")
-
-                ofile.write(line)  # copy line
-
-    except FileNotFoundError as e:
-        print(f"[ERROR] {e}")
-        return False
+        ofile.write(line)  # copy line
 
     if params.inline_strings:
         print("[INFO] Strings have been inlined. It may require to change some short jumps (jmp SHORT) into jumps (jmp)")
-    return True
 
-if __name__ == "__main__":
-    # Example usage
-    params = Params("test.asm", "testout.asm", True, True, True)
-    process_file(params)
+    return ofile.getvalue()

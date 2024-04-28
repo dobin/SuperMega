@@ -109,12 +109,15 @@ def start(settings: Settings) -> int:
     prepare_project("default", settings)
 
     # Do the thing and catch the errors
-    try:
+    if False:
         start_real(settings)
-    except Exception as e:
-        logger.error(f'Error compiling: {e}')
-        observer.write_logs(settings.main_dir)
-        return 1
+    else:
+        try:
+            start_real(settings)
+        except Exception as e:
+            logger.error(f'Error compiling: {e}')
+            observer.write_logs(settings.main_dir)
+            return 1
     
     # Cleanup files
     clean_tmp_files()
@@ -146,11 +149,7 @@ def start_real(settings: Settings):
         phases.compiler.compile(
             c_in = settings.main_c_path, 
             asm_out = settings.main_asm_path, 
-            payload_len = project.payload.len,
-            carrier = project.carrier,
-            source_style = project.settings.source_style,
-            exe_host = project.exe_host,
-            short_call_patching = project.settings.short_call_patching)
+            carrier = project.carrier)
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:

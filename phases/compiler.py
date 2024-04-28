@@ -8,7 +8,7 @@ from helper import *
 from config import config
 from observer import observer
 from model import *
-from phases.masmshc import process_file, Params
+from phases.masmshc import masm_shc, Params
 from model.carrier import Carrier
 from model.exehost import ExeHost
 from phases.asmparser import parse_asm_file
@@ -35,37 +35,23 @@ def compile_dev(
     ])
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
-    file_to_lf(asm_out)
-    observer.add_text_file("carrier_asm_orig", file_readall_text(asm_out))
-
-    # Assembly cleanup (masm_shc)
-    asm_clean_file = asm_out + ".clean"
-    logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    params = Params(asm_out, asm_clean_file, 
-        inline_strings=False,  # not for DATA_REUSE
-        remove_crt=True, 
-        append_rsp_stub=True)  # required atm
-    process_file(params)
-
-    if not os.path.isfile(asm_clean_file):
-        raise Exception("Error: Cleaned up ASM file {} was not created".format(
-            asm_clean_file
-        ))
     
-    # Move to destination we expect
-    shutil.move(asm_clean_file, asm_out)
-    if config.debug:
-        observer.add_text_file("carrier_asm_cleanup", file_readall_text(asm_out))
+    asm_text: str = file_readall_text(asm_out)
+    observer.add_text_file("carrier_asm_orig", asm_text)
+
+    logger.info("---[ ASM masm_shc: {} ".format(asm_out))
+    asm_text_lines: List[str] = parse_asm_file(Carrier(), asm_text)
+    asm_text = masm_shc(asm_text_lines)
+    observer.add_text_file("carrier_asm_cleanup", asm_text)
+
+    with open(asm_out, "w") as f:
+        f.write(asm_text)
 
 
 def compile(
     c_in: FilePath, 
     asm_out: FilePath,
-    payload_len: int,
     carrier: Carrier,
-    source_style: FunctionInvokeStyle,
-    exe_host: ExeHost,
-    short_call_patching: bool = False,
 ):
     logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
@@ -80,26 +66,13 @@ def compile(
     ])
     if not os.path.isfile(asm_out):
         raise Exception("Error: Compiling failed")
-    file_to_lf(asm_out)
-    observer.add_text_file("carrier_asm_orig", file_readall_text(asm_out))
+    asm_text = file_readall_text(asm_out)
+    observer.add_text_file("carrier_asm_orig", asm_text)
 
-    # Fixup assembly file
-    parse_asm_file(carrier, asm_out)
+    asm_text_lines = parse_asm_file(carrier, asm_text) # Fixup assembly file
+    asm_text = masm_shc(asm_text_lines) # Cleanup assembly file
+    observer.add_text_file("carrier_asm_final", asm_text)
 
-    # Cleanup assembly file
-    asm_clean_file = asm_out + ".clean"
-    logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    params = Params(asm_out, asm_clean_file, 
-        inline_strings=False,  # not for DATA_REUSE
-        remove_crt=True, 
-        append_rsp_stub=True)  # required atm
-    process_file(params)
-    if not os.path.isfile(asm_clean_file):
-        raise Exception("Error: Cleaned up ASM file {} was not created".format(
-            asm_clean_file
-        ))
-    # Move to destination we expect
-    shutil.move(asm_clean_file, asm_out)
-
-    # Log result
-    observer.add_text_file("carrier_asm_cleanup", file_readall_text(asm_out))
+    # write back. Next step would be compiling this file
+    with open(asm_out, "w") as f:
+        f.write(asm_text)
