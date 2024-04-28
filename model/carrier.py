@@ -12,10 +12,11 @@ class IatRequest():
 
 
 class DataReuseEntry():
-    def __init__(self, string_ref: str, register: str, randbytes: bytes):
-        self.string_ref = string_ref
-        self.register = register
-        self.randbytes = randbytes
+    def __init__(self, string_ref: str):
+        self.string_ref = string_ref  # "$SG72513"
+
+        self.register = ""  # "rcx"
+        self.randbytes = b""  # placeholder
         self.data = b''
         self.addr = 0
 
@@ -30,6 +31,8 @@ class Carrier():
         pass
 
 
+    # IAT
+
     def add_iat_request(self, func_name: str, placeholder: bytes):
         self.iat_requests.append(IatRequest(func_name, placeholder))
 
@@ -37,8 +40,17 @@ class Carrier():
         return self.iat_requests
 
 
-    def set_datareuse_fixups(self, fixups: List[DataReuseEntry]):
-        self.reusedata_fixups = fixups
+    # Data Reuse
+
+    def add_datareuse_fixup(self, fixup: DataReuseEntry):
+        self.reusedata_fixups.append(fixup)
 
     def get_all_reusedata_fixups(self) -> List[DataReuseEntry]:
         return self.reusedata_fixups
+
+    def get_all_reusedata_fixup(self, string_ref) -> DataReuseEntry:
+        for entry in self.reusedata_fixups:
+            if entry.string_ref == string_ref:
+                return entry
+        return None
+        

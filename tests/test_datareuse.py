@@ -5,7 +5,9 @@ import logging
 import os
 from model.defs import *
 from model.exehost import ExeHost
-from phases.datareuse import ReusedataAsmFileParser
+from model.carrier import Carrier
+from phases.asmparser import parse_asm_file
+
 
 class DataReuseTest(unittest.TestCase):
     def test_relocation_list(self):
@@ -40,12 +42,12 @@ class DataReuseTest(unittest.TestCase):
 
     def test_data_reuse_entries(self):
         asm_in = "tests/data/data_reuse_pre_fixup.asm"
-        data_reuse_entries = []
-
-        asmFileParser = ReusedataAsmFileParser(asm_in)
-        asmFileParser.init()
-        asmFileParser.process()
-        data_reuse_entries = asmFileParser.get_reusedata_fixups()
+        asm_working = "tests/data/data_reuse_pre_fixup.asm.test"
+        
+        shutil.copy(asm_in, asm_working)
+        carrier = Carrier()
+        parse_asm_file(carrier, asm_working)
+        data_reuse_entries = carrier.get_all_reusedata_fixups()
 
         self.assertEqual(2, len(data_reuse_entries))
 
@@ -59,16 +61,20 @@ class DataReuseTest(unittest.TestCase):
         entry = data_reuse_entries[1]
         self.assertTrue('$SG72514' in entry.string_ref)
 
+        os.remove(asm_working)
+
 
     def test_data_reuse_fixup(self):
         asm_in = "tests/data/data_reuse_pre_fixup.asm"
-        asm_out = asm_in + ".test"
-        asmFileParser = ReusedataAsmFileParser(asm_in)
-        asmFileParser.init()
-        asmFileParser.process()
-        asmFileParser.write_lines_to(asm_out + ".test")
-        with open(asm_out + ".test", "r") as f:
+        asm_working = asm_in + ".test"
+        
+        shutil.copy(asm_in, asm_working)
+        carrier = Carrier()
+        parse_asm_file(carrier, asm_working)
+
+        with open(asm_working, "r") as f:
             lines = f.readlines()
         self.assertTrue("\tDB " in lines[108-1])
         self.assertFalse("OFFSET FLAT:$SG" in lines[108-1])
-        os.remove(asm_out + ".test")
+        
+        os.remove(asm_working)

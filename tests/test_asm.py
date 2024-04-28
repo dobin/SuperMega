@@ -3,7 +3,7 @@ from typing import List
 import unittest
 import logging
 
-from phases.compiler import fixup_asm_file, fixup_iat_reuse
+from phases.asmparser import parse_asm_file
 from model.exehost import ExeHost
 from model.defs import *
 from model.carrier import Carrier
@@ -18,9 +18,10 @@ class AsmTest(unittest.TestCase):
     def test_asm_fixup(self):
         path_in: FilePath = "tests/data/peb_walk_pre_fixup.asm"
         path_working: FilePath = "tests/data/peb_walk_pre_fixup.asm.test"
+        carrier = Carrier()
 
         shutil.copy(path_in, path_working)
-        fixup_asm_file(path_working, 272)
+        parse_asm_file(carrier, path_working)
         with open(path_working, "r") as f:
             lines = f.readlines()
 
@@ -35,7 +36,7 @@ class AsmTest(unittest.TestCase):
         self.assertTrue("supermega_payload" not in lines[198-1])
 
         # shcstart:
-        self.assertTrue("shcstart:" in lines[213-1])
+        self.assertTrue("shcstart:" in lines[212-1])
 
         os.remove(path_working)
 
@@ -46,7 +47,7 @@ class AsmTest(unittest.TestCase):
         shutil.copy(path_in, path_working)
 
         carrier = Carrier()
-        fixup_iat_reuse(path_working, carrier)
+        parse_asm_file(carrier, path_working)
 
         self.assertEqual(len(carrier.iat_requests), 2)
 
