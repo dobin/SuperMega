@@ -11,3 +11,5 @@ log-*
 *.verify.exe
 *.infected.exe
 projects/*
+*.test.exe
+data/binary/exes/*

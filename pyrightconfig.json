@@ -1,0 +1,19 @@
+{
+    "include": [
+        "."
+    ],
+    "exclude": [
+        "**/node_modules",
+        "bak/",
+        "data/",
+        "doc/",
+        "tools/",
+        "projects/",
+        "**/.pytest_cache",
+        "**/build",
+        "**/dist",
+        "**/.vscode",
+        "**/__pycache__"
+    ],
+    "reportMissingImports": true
+}
