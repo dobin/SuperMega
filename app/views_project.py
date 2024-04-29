@@ -59,6 +59,10 @@ def project(name):
     data_sect_largest_gap_size = 0
     payload_len = 0
     unresolved_dlls = []
+    has_remote = False
+
+    if config.get("avred_server") != "":
+        has_remote = True
 
     # when we select a shellcode
     if project.settings.payload_path != "":
@@ -83,6 +87,7 @@ def project(name):
     log_files = get_logfiles(project.settings.main_dir)
 
     exes = list_files_and_sizes(PATH_EXES, prepend=PATH_EXES)
+    exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
     #for file in 
     #    exes.append(PATH_EXES + file)
     #for file in os.listdir(PATH_EXES_MORE):
@@ -115,6 +120,8 @@ def project(name):
         data_sect_largest_gap_size=data_sect_largest_gap_size,
         payload_len=payload_len,
         unresolved_dlls=unresolved_dlls,
+
+        has_remote=has_remote,
     )
 
 def list_files_and_sizes(directory, prepend=""):

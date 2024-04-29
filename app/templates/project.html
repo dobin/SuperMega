@@ -12,7 +12,7 @@
 
         <div class="row">
             <!-- Row 1: Buttons -->
-            <div class="col-3">
+            <div class="col-1">
                 <div class="row">
                     <div class="col-6">
                     <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
@@ -23,7 +23,6 @@
                 
                 {% if is_built %}
                 <div class="row">
-                    <div class="col-6">
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec">
                             <button class="btn btn-primary" type="submit" value="start">Start Local</button>
                         </form>
@@ -31,22 +30,21 @@
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
                             <button class="btn btn-primary" type="submit" value="start">File Local</button>
                         </form>
-                    </div>
-                    <div class="col-6">
+
+                        {% if has_remote %}
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?remote=true">
                             <button class="btn btn-primary" type="submit" value="start">Start Remote</button>
                         </form>
-
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?remote=true&no_exec=true">
                             <button class="btn btn-primary" type="submit" value="start">File Remote</button>
                         </form>
-                    </div>
+                        {% endif %}
                 </div>
                 {% endif %}
             </div>
 
             <!-- Row 2: Input files -->
-            <div class="col-3">
+            <div class="col-2">
                 <!-- leave this here or it will fuck up layout -->
                 <form method="POST" enctype="multipart/form-data" action="/project_add">
                 <input type="hidden" name="project_name" value="{{project_name}}">
@@ -85,11 +83,29 @@
                     {% endfor %}
                 </select>
                 {% endif %}
-
+                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE INFO</a>
             </div>
 
-            <!-- Row 3: settings -->
-            <div class="col-3">
+            <!-- Row 3: exe and shellcode info -->
+            <div class="col-2">
+                x64: {{ is_64 }} / Dotnet: {{ is_dotnet}} <br>
+                .text: {{ code_sect_size}}  <br>
+                .rodata: {{ data_sect_size}} 
+                (max: {{ data_sect_largest_gap_size}}) <br>
+
+                {% if unresolved_dlls|length > 0 %}
+                <br>
+                <span class="text-danger">Unresolved dlls:</span>
+                <ul>
+                {% for dll in unresolved_dlls %}
+                    <li>{{ dll }} </li>
+                {% endfor %}
+                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Row 4: leet settings -->
+            <div class="col-2">
                 <select class="form-select" name="source_style" aria-label="SOURCESTYLE" onchange="this.form.submit()">
                     {% for name, value in function_invoke_styles %}
                     <option value="{{name}}"
@@ -115,27 +131,13 @@
                 </select>
             </div>
 
-            <!-- Row 4: more settings -->
-            <div class="col-3">
-                EXE/DLL Is: <br>
-                Is x64: {{ is_64}} <br>
-                Is Dotnet: {{ is_dotnet}} <br>
-                Code Section size: {{ code_sect_size}} <br>
-                Data Section size: {{ data_sect_size}} <br>
-                Data Section largest: {{ data_sect_largest_gap_size}} <br>
-                -> Payload len: {{ payload_len}} <br>
-                {{ project_dir }} <br>
-                Unresolved dlls: <br>
-                {% for dll in unresolved_dlls %}
-                    {{ dll }} <br>
-                {% endfor %}
-                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE INFO</a>
-            </div>
+
         </div>
         </form>
 
         <div class="row">
             <div class="col">
+             {{ project_dir }} <br>
               <div class="custom-line"></div>
             </div>
         </div>
