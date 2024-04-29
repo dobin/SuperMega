@@ -46,6 +46,15 @@ def prepare_project(project_name, settings):
             continue
         if file.startswith("."):
             continue
+        if file.endswith(".exe"):
+            # keep all exes except:
+            if file != "main.exe" and not file.endswith(".infected.exe"):
+                continue
+        if file.endswith(".dll"):
+            # keep all dlls except:
+            if not file.endswith(".infected.dll"):
+                continue
+
         os.remove(dst + file)
 
     # copy *.c *.h files from src directory to dst directory

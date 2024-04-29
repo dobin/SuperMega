@@ -86,7 +86,7 @@ def main():
             logger.info("Could not find: {}".format(args.inject))
             return
         settings.inject_exe_in = args.inject
-        settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe")
+        settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe").replace(".dll", ".infected.dll")
 
     settings.prep_web("default")
     write_webproject("default", settings)
