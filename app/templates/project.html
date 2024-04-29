@@ -69,7 +69,7 @@
                 <select class="form-select" name="exe" aria-label="EXE" onchange="this.form.submit()">
                     {% for exe in exes %}
                     <option value="{{exe['filename']}}"
-                        {% if exe['filename'] in project.settings.inject_exe_in %} selected {% endif %}
+                        {% if exe['filename'] == project.settings.inject_exe_in %} selected {% endif %}
                     >
                     {{exe['filename'] | basename}} ({{exe['size']}})</option>
                     {% endfor %}
@@ -79,7 +79,7 @@
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
                     {% for export in exports %}
                     <option value="{{export['name']}}"
-                        {% if export["name"] in project.settings.dllfunc %} selected {% endif %}
+                        {% if export["name"] == project.settings.dllfunc %} selected {% endif %}
                     >
                     {{export['name']}} ({{export['size']}})</option>
                     {% endfor %}
