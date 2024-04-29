@@ -14,21 +14,19 @@
             <!-- Row 1: Buttons -->
             <div class="col-1">
                 <div class="row">
-                    <div class="col-6">
+                    <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
+                        <button class="btn btn-primary" type="submit" value="start">Open Dir</button>
+                    </form>
+
                     <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
                         <button class="btn btn-primary" type="submit" value="start">Build</button>
                     </form>
-                    </div>
                 </div>
                 
                 {% if is_built %}
                 <div class="row">
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec">
-                            <button class="btn btn-primary" type="submit" value="start">Start Local</button>
-                        </form>
-
-                        <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
-                            <button class="btn btn-primary" type="submit" value="start">File Local</button>
+                            <button class="btn btn-primary" type="submit" value="start">Start</button>
                         </form>
 
                         {% if has_remote %}

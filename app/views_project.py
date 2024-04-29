@@ -69,7 +69,7 @@ def project(name):
         payload_len = os.path.getsize(project.settings.payload_path)
 
     # when we selected an input file
-    if project.settings.inject_exe_in != "":
+    if project.settings.inject_exe_in != "" and os.path.exists(project.settings.inject_exe_in):
         superpe = SuperPe(project.settings.inject_exe_in)
         is_64 = superpe.is_64()
         is_dotnet = superpe.is_dotnet()
