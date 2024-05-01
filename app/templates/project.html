@@ -86,10 +86,18 @@
 
             <!-- Row 3: exe and shellcode info -->
             <div class="col-2">
-                x64: {{ is_64 }} / Dotnet: {{ is_dotnet}} <br>
+                {% if is_64 %}
+                x64: {{ is_64 }}
+                {% else %}
+                <span class="text-danger">x64: {{ is_64 }}</span>
+                {% endif %}
+                    / Dotnet: {{ is_dotnet}} <br>
                 .text: {{ code_sect_size}}  <br>
                 .rodata: {{ data_sect_size}} 
                 (max: {{ data_sect_largest_gap_size}}) <br>
+                {% if not has_rodata_section %}
+                <span class="text-danger">No .rodata section</span> <br>
+                {% endif %}
 
                 {% if unresolved_dlls|length > 0 %}
                 <br>
@@ -128,7 +136,6 @@
                     {% endfor %}
                 </select>
             </div>
-
 
         </div>
         </form>

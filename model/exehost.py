@@ -35,7 +35,9 @@ class ExeHost():
         self.superpe = SuperPe(self.filepath)
 
         if not self.superpe.is_64():
-            raise Exception("Binary is not 64bit: {}".format(self.filepath))
+            logger.warn("Binary is not 64bit: {}".format(self.filepath))
+            return
+            #raise Exception("Binary is not 64bit: {}".format(self.filepath))
 
         # image base
         self.image_base = self.superpe.pe.OPTIONAL_HEADER.ImageBase

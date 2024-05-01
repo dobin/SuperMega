@@ -71,15 +71,25 @@ def project(name):
     # when we selected an input file
     if project.settings.inject_exe_in != "" and os.path.exists(project.settings.inject_exe_in):
         superpe = SuperPe(project.settings.inject_exe_in)
+        #if not superpe.is_64():
+        #    # return 500
+        #    return "Error: Binary {} is not 64bit".format(project.settings.inject_exe_in), 500
+
         is_64 = superpe.is_64()
         is_dotnet = superpe.is_dotnet()
         if superpe.is_dll():
             exports = superpe.get_exports_full()
         code_sect_size = superpe.get_code_section().Misc_VirtualSize
-        data_sect_size = superpe.get_section_by_name(".rdata").virt_size
-        exehost = ExeHost(project.settings.inject_exe_in)
-        exehost.init()
-        data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
+        if superpe.get_section_by_name(".rdata") != None:
+            data_sect_size = superpe.get_section_by_name(".rdata").virt_size
+        else:
+            logger.warn("No .rdata section found in {}".format(project.settings.inject_exe_in))
+        
+        has_rodata_section = superpe.has_rodata_section()
+        if has_rodata_section:
+            exehost = ExeHost(project.settings.inject_exe_in)
+            exehost.init()
+            data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
 
@@ -120,6 +130,7 @@ def project(name):
         data_sect_largest_gap_size=data_sect_largest_gap_size,
         payload_len=payload_len,
         unresolved_dlls=unresolved_dlls,
+        has_rodata_section=has_rodata_section,
 
         has_remote=has_remote,
     )

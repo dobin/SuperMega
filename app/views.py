@@ -19,8 +19,14 @@ def index():
 
 @views.route("/exes/<exe_name>")
 def exe_view(exe_name):
-    path = "{}/{}".format(PATH_EXES, exe_name)
-    superpe = SuperPe(path)
+    # TODO
+    filepath = "{}{}".format(PATH_EXES, exe_name)
+    if not os.path.exists(filepath):
+        filepath = "{}{}".format(PATH_EXES_MORE, exe_name)
+        if not os.path.exists(filepath):
+            return "File not found: {}".format(exe_name)
+
+    superpe = SuperPe(filepath)
 
     return render_template('exe.html', 
                            superpe=superpe, 

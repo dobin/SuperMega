@@ -107,6 +107,10 @@ class SuperPe():
                 return section
         return None
     
+
+    def has_rodata_section(self) -> bool:
+        return self.get_section_by_name(".rdata")
+    
     
     def write_code_section_data(self, data: bytes):
         sect = self.get_code_section()
@@ -201,7 +205,6 @@ class SuperPe():
         self.pe.set_dword_at_rva(addr + relocsSize + 4, sizeOfReloc)
 
         logger.info(f'Adding {len(relocs)} relocations for Page RVA 0x{pageRva:X} - size of block: 0x{sizeOfReloc:X}')
-
         i = 0
         for reloc in relocs:
             reloc_offset = (reloc - pageRva)

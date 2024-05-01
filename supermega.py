@@ -135,6 +135,9 @@ def start_real(settings: Settings):
     # Load our input
     project = Project(settings)
     project.init()
+    # check if 64 bit
+    if not project.exe_host.superpe.is_64():
+        raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
     logger.warning("--I FunctionInvokeStyle: {}  Inject Mode: {}  DecoderStyle: {}".format(
         project.settings.source_style.value, 
@@ -150,6 +153,16 @@ def start_real(settings: Settings):
             c_in = settings.main_c_path, 
             asm_out = settings.main_asm_path, 
             carrier = project.carrier)
+        
+    # we have the required IAT entries in carrier.iat_requests
+    # Check if all are available, or abort (early check)
+    if settings.source_style == FunctionInvokeStyle.iat_reuse:
+        functions = []
+        for iat in project.carrier.iat_requests:
+            if project.exe_host.get_vaddr_of_iatentry(iat.name) == None:
+                functions.append(iat.name)
+        if len(functions) > 0:
+            raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
