@@ -112,6 +112,9 @@ def inject_exe(
             injected_fix_iat(superpe, project.carrier, project.exe_host)
             injected_fix_data(superpe, project.carrier, project.exe_host)
 
+    # changes from console to UI (no console window) if necessary
+    superpe.patch_subsystem()
+
     # We done
     superpe.write_pe_to_file(exe_out)
 

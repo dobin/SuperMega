@@ -120,6 +120,12 @@ class SuperPe():
         self.pe.set_bytes_at_offset(sect.PointerToRawData, data)
 
 
+    def patch_subsystem(self):
+        if self.pe.OPTIONAL_HEADER.Subsystem != pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']:
+            logger.info("EXE is not a GUI application. Patching subsystem to GUI")
+            self.pe.OPTIONAL_HEADER.Subsystem = pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']
+
+
     ## PE Specific Information
 
     def get_base_relocs(self) -> List[PeRelocEntry]:
