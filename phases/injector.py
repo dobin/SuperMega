@@ -139,10 +139,10 @@ def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         
         offset_from_code = code.index(iatRequest.placeholder)
         instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_section.VirtualAddress
-        logger.info("    Replace {} at VA 0x{:X} with call to IAT at VA 0x{:X}".format(
+        logger.info("    Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X}".format(
             iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
-        jmp = assemble_and_disassemble_jump(
+        jmp = assemble_relative_call(
             instruction_virtual_address, destination_virtual_address
         )
         code = code.replace(iatRequest.placeholder, jmp)

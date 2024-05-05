@@ -77,14 +77,12 @@ def assemble_lea(current_address: int, destination_address: int, reg: str) -> by
     machine_code = bytes(encoding)
     return machine_code
 
-def assemble_and_disassemble_jump(current_address: int, destination_address: int) -> bytes:
-    #logger.info("    Make jmp from 0x{:X} to 0x{:X}".format(
-    #    current_address, destination_address
-    #))
+
+def assemble_relative_call(current_address: int, destination_address: int) -> bytes:
     # Calculate the relative offset
     # For a near jump, the instruction length is typically 5 bytes (E9 xx xx xx xx)
     offset = destination_address - current_address
-    
+
     # Assemble the jump instruction using Keystone
     ks = Ks(KS_ARCH_X86, KS_MODE_64)
     encoding, _ = ks.asm(f"call qword ptr ds:[{offset}]")
@@ -95,6 +93,14 @@ def assemble_and_disassemble_jump(current_address: int, destination_address: int
     #disassembled = next(cs.disasm(machine_code, current_address))
     #logger.info(f"Machine Code: {' '.join(f'{byte:02x}' for byte in machine_code)}")
     #logger.info(f"Disassembled: {disassembled.mnemonic} {disassembled.op_str}")
+    return machine_code
+
+
+def assemble_relative_jmp(current_address: int, destination_address: int) -> bytes:
+    offset = destination_address - current_address
+    ks = Ks(KS_ARCH_X86, KS_MODE_64)
+    encoding, _ = ks.asm(f"jmp {offset}")
+    machine_code = bytes(encoding)
     return machine_code
 
 

