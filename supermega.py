@@ -135,8 +135,9 @@ def start_real(settings: Settings):
     # Load our input
     project = Project(settings)
     project.init()
+
     # check if 64 bit
-    if not project.exe_host.superpe.is_64():
+    if not project.carrier.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
     logger.warning("--I FunctionInvokeStyle: {}  Inject Mode: {}  DecoderStyle: {}".format(
@@ -157,12 +158,11 @@ def start_real(settings: Settings):
     # we have the required IAT entries in carrier.iat_requests
     # Check if all are available, or abort (early check)
     if settings.source_style == FunctionInvokeStyle.iat_reuse:
-        functions = []
-        for iat in project.carrier.iat_requests:
-            if project.exe_host.get_vaddr_of_iatentry(iat.name) == None:
-                functions.append(iat.name)
-        if len(functions) > 0:
-            raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+        functions = project.carrier.get_unresolved_iat()
+        if len(functions) != 0:
+            #raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+            logger.warn("IAT entry not found: {}".format(", ".join(functions)))
+            pass
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
@@ -180,13 +180,13 @@ def start_real(settings: Settings):
             decoder_style = settings.decoder_style)
 
     # RWX Injection (optional): obfuscate loader+payload
-    if project.exe_host.rwx_section != None:
-        logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
-            project.exe_host.rwx_section.Name.decode().rstrip('\x00')
-        ))
-        obfuscate_shc_loader(settings.main_shc_path, settings.main_shc_path + ".sgn")
-        observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
-        shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
+    #if project.exe_host.rwx_section != None:
+    #    logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
+    #        project.exe_host.rwx_section.Name.decode().rstrip('\x00')
+    #    ))
+    #    obfuscate_shc_loader(settings.main_shc_path, settings.main_shc_path + ".sgn")
+    #    observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
+    #    shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
 
     # inject merged loader into an exe
     phases.injector.inject_exe(settings.main_shc_path, settings, project)

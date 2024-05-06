@@ -1,5 +1,9 @@
 from typing import Dict, List
 import logging
+import pefile
+
+from model.defs import *
+from pe.superpe import SuperPe, PeSection
 
 
 logger = logging.getLogger("Carrier")
@@ -13,22 +17,33 @@ class IatRequest():
 
 class DataReuseEntry():
     def __init__(self, string_ref: str):
-        self.string_ref = string_ref  # "$SG72513"
+        self.string_ref: str = string_ref  # "$SG72513"
 
-        self.register = ""  # "rcx"
-        self.randbytes = b""  # placeholder
-        self.data = b''
-        self.addr = 0
+        self.register: str = ""  # "rcx"
+        self.randbytes: bytes = b""  # placeholder
+        self.data: bytes = b''
+        self.addr: int = 0
 
 
 class Carrier():
-    def __init__(self):
+    def __init__(self, exe_file: str):
         self.iat_requests: List[IatRequest] = []
         self.reusedata_fixups: List[DataReuseEntry] = []
+        self.exe_filepath: str = exe_file
+        self.superpe: SuperPe = None
 
 
     def init(self):
-        pass
+        self.superpe = SuperPe(self.exe_filepath)
+
+
+    def get_unresolved_iat(self):
+        """Returns a list of IAT entries not available in the PE file"""
+        functions = []
+        for iat in self.iat_requests:
+            if self.superpe.get_vaddr_of_iatentry(iat.name) == None:
+                functions.append(iat.name)
+        return functions
 
 
     # IAT

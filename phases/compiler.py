@@ -10,7 +10,6 @@ from observer import observer
 from model import *
 from phases.masmshc import masm_shc, Params
 from model.carrier import Carrier
-from model.exehost import ExeHost
 from phases.asmparser import parse_asm_file
 
 logger = logging.getLogger("Compiler")

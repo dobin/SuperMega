@@ -4,6 +4,7 @@ import logging
 from typing import List, Dict
 
 from model.defs import *
+from model.rangemanager import RangeManager
 
 logger = logging.getLogger("superpe")
 
@@ -59,6 +60,18 @@ class SuperPe():
         if entry.VirtualAddress != 0 and entry.Size != 0:
             return True
         return False
+    
+    
+    def get_image_base(self) -> int:
+        return self.pe.OPTIONAL_HEADER.ImageBase
+    
+
+    def is_dynamic_base(self) -> bool:
+        # dynamic base / ASLR
+        if self.pe.OPTIONAL_HEADER.DllCharacteristics & pefile.DLL_CHARACTERISTICS['IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE']:
+            return True
+        else:
+            return False
     
     
     ## Entrypoint 
@@ -122,7 +135,7 @@ class SuperPe():
 
     def patch_subsystem(self):
         if self.pe.OPTIONAL_HEADER.Subsystem != pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']:
-            logger.info("EXE is not a GUI application. Patching subsystem to GUI")
+            logger.info("PE is not a GUI application. Patching subsystem to GUI")
             self.pe.OPTIONAL_HEADER.Subsystem = pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']
 
 
@@ -138,22 +151,6 @@ class SuperPe():
                     reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
                     base_relocs.append(PeRelocEntry(rva, base_rva, reloc_type))
         return base_relocs
-    
-
-    def get_iat_entries(self) -> Dict[str, IatEntry]:
-        iat = {}
-        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
-            for imp in entry.imports:
-                dll_name = entry.dll.decode('utf-8')
-                if imp.name == None:
-                    continue
-                imp_name = imp.name.decode('utf-8')
-                imp_addr = imp.address
-
-                if not dll_name in iat:
-                    iat[dll_name] = []
-                iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
-        return iat
 
 
     def getSectionIndexByDataDir(self, dirIndex):
@@ -292,6 +289,120 @@ class SuperPe():
             if exp["name"] == dllfunc:
                 return exp["size"]
         return None
+    
+
+    ## Relocations
+
+    def get_rdata_relocmanager(self) -> RangeManager:
+        section = self.get_section_by_name(".rdata")
+        relocs = self.get_relocations_for_section(".rdata")
+        rm = RangeManager(section.virt_addr, section.virt_addr + section.virt_size)
+        for reloc in relocs:
+            # Reloc destination is probably 8 bytes
+            # But i add another 8 to skip over small holes (common in .rdata)
+            rm.add_range(reloc.rva, reloc.rva + 8 + 8)
+        rm.merge_overlaps()
+        return rm
+
+
+    def get_relocations_for_section(self, section_name: str) -> List[PeRelocEntry]:
+        section: PeSection = self.get_section_by_name(section_name)
+        ret = []
+        if section is None:
+            return ret
+        for reloc in self.get_base_relocs():
+            reloc_addr = reloc.rva
+            if reloc_addr >= section.virt_addr and reloc_addr < section.virt_addr + section.virt_size:
+                ret.append(reloc)
+        return ret
+    
+
+    ## IAT related
+
+    def get_vaddr_of_iatentry(self, func_name: str) -> int:
+        iat = self.get_iat_entries()
+        for dll_name in iat:
+            for entry in iat[dll_name]:
+                if entry.func_name == func_name:
+                    return entry.iat_vaddr
+        return None
+    
+
+    def get_iat_entries(self) -> Dict[str, IatEntry]:
+        iat = {}
+        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
+            for imp in entry.imports:
+                dll_name = entry.dll.decode('utf-8')
+                if imp.name == None:
+                    continue
+                imp_name = imp.name.decode('utf-8')
+                imp_addr = imp.address
+
+                if not dll_name in iat:
+                    iat[dll_name] = []
+                iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
+        return iat
+    
+
+    def get_iat_name_for(self, dll_name: str, func_name: str) -> str:
+        iat = self.get_iat_entries()
+        for entry in iat[dll_name]:
+            if len(entry.func_name) >= len(func_name):
+                return entry.func_name
+        return None
+    
+
+    def get_iat_offset_by_nr(self, dll_name: str, nr: int) -> int:
+        encoded_dllname = dll_name
+
+        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
+            dllname = entry.dll.decode("ascii").rstrip("\x00").lower()
+            if dllname != encoded_dllname:
+                continue
+            
+            return entry.imports[nr].name_offset
+        return None
+    
+
+    def get_iat_offset_by_name(self, dll_name: str, func_name: str) -> int:
+        # Iterate over the imported modules and their imported functions
+        encoded_dllname = dll_name.lower()
+        encoded_funcname = func_name.lower()
+
+        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
+            dllname = entry.dll.decode("ascii").rstrip("\x00").lower()
+            if dllname != encoded_dllname:
+                continue
+            for imp in entry.imports:
+                # Check if the current import name matches the one we want to change
+                funcname = imp.name.decode("ascii").rstrip("\x00").lower()
+                if funcname == encoded_funcname:
+                    return imp.name_offset
+            break
+        return None
+    
+    
+    def patch_iat_entry(self, dll_name: str, func_name: str, new_func_name: str):
+        offset = self.get_iat_offset_by_name(dll_name, func_name)
+        if offset is None:
+            raise Exception(f"Import {func_name} not found.")
+        
+        # Change the import name
+        # Here we need to ensure the new name fits within the space allocated to the old name
+        if len(new_func_name) > len(func_name):
+            raise ValueError("New import name is longer than the original name.")
+        
+        # Pad the new name with null bytes if it's shorter
+        new_name_bytes = new_func_name.encode("ascii") + b'\x00' * (len(func_name) - len(new_func_name))
+        
+        # Overwrite the name in the file data
+        logger.info("    Patch IAT entry at offset 0x{:X} from {} to {}".format(
+            offset, func_name, new_name_bytes.decode()))
+        self.pe.set_bytes_at_offset(offset, new_name_bytes)
+
+        #res = self.get_iat_offset_by_name(dll_name, new_func_name)
+        #logger.info("-> RES: {}".format(res))
+
 
     ## Helpers
 

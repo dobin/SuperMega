@@ -21,7 +21,6 @@ from phases.injector import verify_injected_exe
 from helper import run_process_checkret, run_exe
 from model.project import prepare_project
 from pe.superpe import SuperPe 
-from model.exehost import ExeHost
 import pe.dllresolver
 
 
@@ -87,22 +86,13 @@ def project(name):
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:
-            exehost = ExeHost(project.settings.inject_exe_in)
-            exehost.init()
-            data_sect_largest_gap_size = exehost.get_rdata_relocmanager().find_largest_gap()
+            superpe.get_rdata_relocmanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
-
 
     project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
     log_files = get_logfiles(project.settings.main_dir)
-
     exes = list_files_and_sizes(PATH_EXES, prepend=PATH_EXES)
     exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
-    #for file in 
-    #    exes.append(PATH_EXES + file)
-    #for file in os.listdir(PATH_EXES_MORE):
-    #    exes.append(PATH_EXES_MORE + file)
-
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
@@ -135,6 +125,7 @@ def project(name):
         has_remote=has_remote,
     )
 
+
 def list_files_and_sizes(directory, prepend=""):
     # List all files in the directory and get their sizes
     files_and_sizes = []
@@ -147,6 +138,7 @@ def list_files_and_sizes(directory, prepend=""):
                 "size": size,
             })
     return files_and_sizes
+
 
 @views_project.route("/project_add", methods=['POST', 'GET'])
 def add_project():
