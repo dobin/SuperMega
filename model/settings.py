@@ -5,7 +5,7 @@ logger = logging.getLogger("Views")
 
 
 class Settings():
-    def __init__(self, web=""):
+    def __init__(self):
         self.payload_path: FilePath = ""
 
         # Settings
@@ -28,6 +28,10 @@ class Settings():
         self.cleanup_files_on_exit: bool = True
         self.generate_asm_from_c: bool = True
         self.generate_shc_from_asm: bool = True
+
+        # More
+        self.fix_missing_iat = False
+        self.payload_location = PayloadLocation.CODE
 
 
     def prep_web(self, project_name):

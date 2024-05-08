@@ -59,6 +59,7 @@ def project(name):
     payload_len = 0
     unresolved_dlls = []
     has_remote = False
+    has_rodata_section = False
 
     if config.get("avred_server") != "":
         has_remote = True
