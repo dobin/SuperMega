@@ -123,6 +123,7 @@ def project(name):
         has_rodata_section=has_rodata_section,
 
         has_remote=has_remote,
+        fix_missing_iat=project.settings.fix_missing_iat,
     )
 
 
@@ -169,6 +170,8 @@ def add_project():
 
             settings.inject_exe_in = request.form['exe']
             settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
+
+            settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
 
             source_style = request.form['source_style']
             settings.source_style = FunctionInvokeStyle[source_style]

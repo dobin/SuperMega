@@ -2,6 +2,7 @@ import pefile
 import capstone
 import logging
 from typing import List, Dict
+import random
 
 from model.defs import *
 from model.rangemanager import RangeManager
@@ -350,10 +351,16 @@ class SuperPe():
         if not dll_name in iat:
             raise Exception("DLL not found in IAT")
 
+        possible = []
         for entry in iat[dll_name]:
             if len(entry.func_name) >= len(func_name):
-                return entry.func_name
-        return None
+                possible.append(entry.func_name)
+
+        if len(possible) == 0:
+            return None
+        else:
+            # Hope there wont be many collisions
+            return random.choice(possible)
 
 
     def get_iat_offset_by_name(self, dll_name: str, func_name: str) -> int:

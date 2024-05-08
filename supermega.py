@@ -160,9 +160,10 @@ def start_real(settings: Settings):
     if settings.source_style == FunctionInvokeStyle.iat_reuse:
         functions = project.carrier.get_unresolved_iat()
         if len(functions) != 0:
-            #raise Exception("IAT entry not found: {}".format(", ".join(functions)))
-            logger.warn("IAT entry not found: {}".format(", ".join(functions)))
-            pass
+            if settings.fix_missing_iat:
+                logger.info("Fixing missing IAT entries: {}".format(", ".join(functions)))
+            else:
+                raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # Assemble: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
