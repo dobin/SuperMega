@@ -332,7 +332,7 @@ class SuperPe():
         iat = {}
         for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
-                dll_name = entry.dll.decode('utf-8')
+                dll_name = entry.dll.decode('utf-8').lower()
                 if imp.name == None:
                     continue
                 imp_name = imp.name.decode('utf-8')
@@ -344,25 +344,17 @@ class SuperPe():
         return iat
     
 
-    def get_iat_name_for(self, dll_name: str, func_name: str) -> str:
+    def get_replacement_iat_for(self, dll_name: str, func_name: str) -> str:
+        dll_name = dll_name.lower()
         iat = self.get_iat_entries()
+        if not dll_name in iat:
+            raise Exception("DLL not found in IAT")
+
         for entry in iat[dll_name]:
             if len(entry.func_name) >= len(func_name):
                 return entry.func_name
         return None
-    
 
-    def get_iat_offset_by_nr(self, dll_name: str, nr: int) -> int:
-        encoded_dllname = dll_name
-
-        for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
-            dllname = entry.dll.decode("ascii").rstrip("\x00").lower()
-            if dllname != encoded_dllname:
-                continue
-            
-            return entry.imports[nr].name_offset
-        return None
-    
 
     def get_iat_offset_by_name(self, dll_name: str, func_name: str) -> int:
         # Iterate over the imported modules and their imported functions
@@ -399,9 +391,6 @@ class SuperPe():
         logger.info("    Patch IAT entry at offset 0x{:X} from {} to {}".format(
             offset, func_name, new_name_bytes.decode()))
         self.pe.set_bytes_at_offset(offset, new_name_bytes)
-
-        #res = self.get_iat_offset_by_name(dll_name, new_func_name)
-        #logger.info("-> RES: {}".format(res))
 
 
     ## Helpers

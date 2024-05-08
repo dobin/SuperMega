@@ -47,15 +47,9 @@ def inject_exe(
     # Patch IAT if necessary
     if source_style == FunctionInvokeStyle.iat_reuse:
         for iatRequest in project.carrier.get_all_iat_requests():
-            iat_name = superpe.get_iat_name_for("KERNEL32.dll", iatRequest.name)
+            iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
             superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
 
-        #iat_name_a = superpe.get_iat_name_for("KERNEL32.dll", "GetEnvironmentVariableW")
-        #iat_name_b = superpe.get_iat_name_for("KERNEL32.dll", "VirtualProtect")
-        #logger.info("Using: {} and {}".format(iat_name_a, iat_name_b))
-
-        #superpe.patch_iat_entry("KERNEL32.dll", iat_name_a, "GetEnvironmentVariableW")
-        #superpe.patch_iat_entry("KERNEL32.dll", iat_name_b, "VirtualProtect")
         superpe.pe.parse_data_directories()
 
     shellcode_offset: int = 0  # file offset

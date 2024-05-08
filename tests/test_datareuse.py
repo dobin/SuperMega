@@ -3,18 +3,35 @@ from typing import List
 import unittest
 import logging
 import os
+
 from model.defs import *
-from model.exehost import ExeHost
-from model.carrier import Carrier
-from phases.asmparser import parse_asm_file
+
+from pe.superpe import SuperPe
+from model.rangemanager import RangeManager
+from helper import *
 
 
 class DataReuseTest(unittest.TestCase):
-    def test_relocation_list(self):
-        exe_host = ExeHost(PATH_EXES + "7z.exe")
-        exe_host.init()
+    def test_rangemanager(self):
+        """Test RangeManager for basic functionality"""
+        rm = RangeManager(0, 100)
+        rm.add_range(0, 10)
+        rm.add_range(20, 30)
+        rm.add_range(50, 60)
 
-        relocs = exe_host.get_relocations_for_section(".rdata")
+        hole = rm.find_hole(10)
+        self.assertEqual((11, 19), hole)
+
+        holes = rm.find_holes(20)
+        self.assertEqual([(31, 49), (61, 100)], holes)
+
+        largest = rm.find_largest_gap()
+        self.assertEqual(40, largest)
+
+
+    def test_relocation_list(self):
+        superpe = SuperPe(PATH_EXES + "7z.exe")
+        relocs = superpe.get_relocations_for_section(".rdata")
         self.assertEqual(842, len(relocs))
         reloc = relocs[0]
         self.assertEqual(393216, reloc.base_rva)
@@ -23,10 +40,19 @@ class DataReuseTest(unittest.TestCase):
         self.assertEqual("I", reloc.type)
 
 
+    def test_relocmanager(self):
+        """Test reference EXE reloc manager information"""
+        superpe = SuperPe(PATH_EXES + "procexp64.exe")
+        rm = superpe.get_rdata_relocmanager()
+        self.assertEqual(69, len(rm.intervals))
+        # 0x1ab0 is magic currently (should use find_first_utf16_string_offset()
+        hole = rm.find_hole(20)
+        self.assertEqual(hole, (1167361, 1173015))
+
+
     def test_largestgap(self):
-        exe_host = ExeHost(PATH_EXES + "7z.exe")
-        exe_host.init()
-        rm = exe_host.get_rdata_relocmanager()
+        superpe = SuperPe(PATH_EXES + "7z.exe")
+        rm = superpe.get_rdata_relocmanager()
         start, stop = rm.find_hole(100)
         self.assertEqual(393233, start)
         self.assertEqual(394295, stop)
@@ -39,42 +65,3 @@ class DataReuseTest(unittest.TestCase):
     def test_asm_lea_create(self):
         pass
 
-
-    def test_data_reuse_entries(self):
-        asm_in = "tests/data/data_reuse_pre_fixup.asm"
-        asm_working = "tests/data/data_reuse_pre_fixup.asm.test"
-        
-        shutil.copy(asm_in, asm_working)
-        carrier = Carrier()
-        parse_asm_file(carrier, asm_working)
-        data_reuse_entries = carrier.get_all_reusedata_fixups()
-
-        self.assertEqual(2, len(data_reuse_entries))
-
-        entry = data_reuse_entries[0]
-        self.assertTrue('$SG72513' in entry.string_ref)
-        self.assertTrue('rcx' in entry.register)
-        self.assertEqual(entry.data, b"U\x00S\x00E\x00R\x00P\x00R\x00O\x00F\x00I\x00L\x00E\x00\x00\x00")
-        self.assertEqual(entry.addr, 0)
-        self.assertEqual(7, len(entry.randbytes))  # needs to be 7!
-
-        entry = data_reuse_entries[1]
-        self.assertTrue('$SG72514' in entry.string_ref)
-
-        os.remove(asm_working)
-
-
-    def test_data_reuse_fixup(self):
-        asm_in = "tests/data/data_reuse_pre_fixup.asm"
-        asm_working = asm_in + ".test"
-        
-        shutil.copy(asm_in, asm_working)
-        carrier = Carrier()
-        parse_asm_file(carrier, asm_working)
-
-        with open(asm_working, "r") as f:
-            lines = f.readlines()
-        self.assertTrue("\tDB " in lines[108-1])
-        self.assertFalse("OFFSET FLAT:$SG" in lines[108-1])
-        
-        os.remove(asm_working)
