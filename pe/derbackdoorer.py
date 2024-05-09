@@ -36,15 +36,14 @@ class FunctionBackdoorer:
 
 
     def backdoor_function(self, function_addr: int, shellcode_addr: int, shellcode_len: int):
-        logger.info("Backdooring function at 0x{:X} (to shellcode 0x{:X})".format(function_addr, shellcode_addr))
+        logger.info("Backdooring function at 0x{:X} (jump to shellcode at 0x{:X})".format(function_addr, shellcode_addr))
         
         addr = self.find_suitable_instruction_addr(function_addr)
         if addr is None:
             raise Exception("Couldn't find a suitable instruction to backdoor")
 
         compiled_trampoline = assemble_relative_jmp(addr, shellcode_addr)
-        logger.info("--[ Backdoor 0x{:X}: {}".format(
-            addr, compiled_trampoline.hex()))
+        logger.info("--[ Backdoor Instruction at 0x{:X} (offset to shellcode: 0x{:X})".format(addr, shellcode_addr - addr))
         
         # Check for overlap
         it = IntervalTree()
@@ -58,10 +57,20 @@ class FunctionBackdoorer:
         # write
         self.superpe.pe.set_bytes_at_rva(addr, bytes(compiled_trampoline))
 
+        # Show Result
+        logger.info("--[ Patched result of function: ".format())
+        data = self.pe_data[function_addr:addr+len(compiled_trampoline)]
+        self.asm_disasm(data, offset=function_addr)
+
+
+    def asm_disasm(self, asm_text, offset=0):
+        for instr in self.cs.disasm(asm_text, offset):
+            self.printInstr(instr, 0)
+
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
         """Find a instruction to backdoor. Recursively."""
-        logger.info("find suitable instr to hijack: off: from 0x{:X} len:{} depthopt:{}".format(
+        logger.info("find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
             startOffset, length, self.depth_option))
 
         if self.depth_option == DEPTH_OPTIONS.LEVEL1:
@@ -79,8 +88,6 @@ class FunctionBackdoorer:
 
 
     def _find_suitable_instruction_addr(self, startOffset, length, option):
-        #logger.info("_find_suitable_instruction_addr: off: 0x{:X} len:{} option:{}".format(startOffset, length, option))
-
         # iterate through every instruction. starting from startOffset
         data = self.pe_data[startOffset:startOffset + length]
         for instr in self.cs.disasm(data, startOffset):

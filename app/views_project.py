@@ -99,6 +99,7 @@ def project(name):
     function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
     decoderstyles = [(color.name, color.value) for color in DecoderStyle]
     carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
+    payload_locations = [(color.name, color.value) for color in PayloadLocation]
 
     return render_template('project.html', 
         project_name = name,
@@ -111,6 +112,7 @@ def project(name):
         function_invoke_styles=function_invoke_styles,
         decoderstyles=decoderstyles,
         carrier_invoke_styles=carrier_invoke_styles,
+        payload_locations=payload_locations,
         exports=exports,
 
         log_files=log_files,
@@ -182,6 +184,9 @@ def add_project():
 
             decoder_style = request.form['decoder_style']
             settings.decoder_style = DecoderStyle[decoder_style]
+
+            payload_location = request.form['payload_location']
+            settings.payload_location = PayloadLocation[payload_location]
 
             # overwrite project
             project = storage.get_project(project_name)

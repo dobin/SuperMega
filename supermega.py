@@ -18,6 +18,7 @@ from model.project import Project, prepare_project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
+from model.carrier import Carrier, DataReuseEntry, IatRequest
 
 
 def main():
@@ -140,23 +141,34 @@ def start_real(settings: Settings):
     if not project.carrier.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
-    logger.warning("--I FunctionInvokeStyle: {}  Inject Mode: {}  DecoderStyle: {}".format(
+    logger.info("--[ Config:  {}  {}  {}  {}".format(
         project.settings.source_style.value, 
-        project.settings.carrier_invoke_style.value,
-        project.settings.decoder_style.value))
+        settings.payload_location.value,
+        project.settings.decoder_style.value,
+        project.settings.carrier_invoke_style.value))
 
     # Create: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, project.payload.len)
+
+    # If we put the payload into .rdata
+    # Prepare DataReuseEntry for usage in Compiler/AsmParser
+    if settings.payload_location == PayloadLocation.DATA:
+        logger.info("--[ Load payload for use in .rdata injection")
+        project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload"))
+        entry = project.carrier.get_reusedata_fixup("supermega_payload")
+        entry.data = phases.assembler.encode_payload(project.payload.payload_data, settings.decoder_style)  # encrypt if selected
+        observer.add_code_file("payload_data", project.payload.payload_data)
 
     # Compile: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
         phases.compiler.compile(
             c_in = settings.main_c_path, 
-            asm_out = settings.main_asm_path, 
-            carrier = project.carrier)
+            asm_out = settings.main_asm_path,
+            carrier = project.carrier,
+            settings = project.settings)
         
-    # we have the required IAT entries in carrier.iat_requests
-    # Check if all are available, or abort (early check)
+    # we have the carrier-required IAT entries in carrier.iat_requests
+    # Check if all are available in infectable, or abort (early check)
     if settings.source_style == FunctionInvokeStyle.iat_reuse:
         functions = project.carrier.get_unresolved_iat()
         if len(functions) != 0:
@@ -170,18 +182,19 @@ def start_real(settings: Settings):
         carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
             asm_in = settings.main_asm_path, 
             build_exe = settings.main_exe_path)
-        observer.add_code_file("carrier_shc", carrier_shellcode) 
+        observer.add_code_file("carrier_shc", carrier_shellcode)
 
     # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.payload_location == PayloadLocation.CODE:
-        logger.info("--[ Merge carrier with payload".format())
+        logger.info("--[ Merge carrier with payload for .text injection".format())
         full_shellcode = phases.assembler.merge_loader_payload(
             shellcode_in = carrier_shellcode,
             payload_data = project.payload.payload_data, 
             decoder_style = settings.decoder_style)
         observer.add_code_file("full_shc", full_shellcode)
-    elif settings.payload_location == PayloadLocation.DATA:
-        logger.error("Not impolemented yet: PayloadLocation.DATA")
+    else:
+        # shellcode is in .rdata, so we dont need to merge
+        full_shellcode = carrier_shellcode
 
     # RWX Injection (optional): obfuscate loader+payload
     #if project.exe_host.rwx_section != None:

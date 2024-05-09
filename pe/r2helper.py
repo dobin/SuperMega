@@ -28,6 +28,7 @@ def r2_disas(data: bytes):
     r2.cmd('aaa')
 
     r2.cmd('e scr.color=0')
+    r2.cmd('e asm.bytes=true')
     ret['text'] = r2.cmd('pD {}'.format(code_len))
     ret['text'] = '\n'.join(ret['text'].splitlines())  # fix newlines
 

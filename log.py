@@ -17,7 +17,7 @@ class LogColors:
 
 class CustomFormatter(logging.Formatter):
     #format = "%(asctime)s - %(name)-12s - [%(levelname)-8s] - %(message)s (%(filename)s:%(lineno)d)"
-    format = "(%(filename)-12s) %(message)s"
+    format = "(%(filename)-16s) %(message)s"
 
     FORMATS = {
         logging.DEBUG: format,

@@ -63,7 +63,7 @@ class Carrier():
     def get_all_reusedata_fixups(self) -> List[DataReuseEntry]:
         return self.reusedata_fixups
 
-    def get_all_reusedata_fixup(self, string_ref) -> DataReuseEntry:
+    def get_reusedata_fixup(self, string_ref) -> DataReuseEntry:
         for entry in self.reusedata_fixups:
             if entry.string_ref == string_ref:
                 return entry

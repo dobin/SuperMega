@@ -146,6 +146,14 @@
                         Add missing IAT entries
                     </label>
                 </div>
+
+                <select class="form-select" name="payload_location" aria-label="PAYLOADLOCATION" onchange="this.form.submit()">
+                    {% for name, value in payload_locations %}
+                    <option value="{{name}}"
+                    {% if value in project.settings.payload_location.value %} selected {% endif %}
+                    >{{value}}</option>
+                    {% endfor %}
+                </select>
             </div>
         </div>
 

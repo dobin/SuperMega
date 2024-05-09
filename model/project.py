@@ -57,5 +57,5 @@ def prepare_project(project_name, settings):
     # copy *.c *.h files from src directory to dst directory
     for file in os.listdir(src):
         if file.endswith(".c") or file.endswith(".h"):
-            logger.info("Copy {} to {}".format(src + file, dst))
+            logger.info("--( Copy {} to {}".format(src + file, dst))
             shutil.copy2(src + file, dst)

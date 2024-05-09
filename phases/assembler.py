@@ -30,15 +30,21 @@ def merge_loader_payload(
         payload_data: bytes, 
         decoder_style: DecoderStyle
 ) -> bytes:
-    if decoder_style == DecoderStyle.PLAIN_1:
-        # Nothing to do
-        pass
-    elif decoder_style == DecoderStyle.XOR_1:
-        xor_key = config.xor_key
-        logger.info("---[ XOR payload with key 0x{:X}".format(xor_key))
-        payload_data = bytes([byte ^ xor_key for byte in payload_data])
+    payload_data = encode_payload(payload_data, decoder_style)
 
     logger.info("---[ Size: Carrier: {} and Payload: {}  Sum: {} ".format(
         len(shellcode_in), len(payload_data), len(shellcode_in)+len(payload_data)))
 
     return shellcode_in + payload_data
+
+
+def encode_payload(payload: bytes, decoder_style: DecoderStyle) -> bytes:
+    if decoder_style == DecoderStyle.PLAIN_1:
+        return payload
+    elif decoder_style == DecoderStyle.XOR_1:
+        xor_key = config.xor_key
+        logger.info("---[ XOR payload with key 0x{:X}".format(xor_key))
+        xored = bytes([byte ^ xor_key for byte in payload])
+        return xored
+    else:
+        raise Exception("Unknown decoder style")

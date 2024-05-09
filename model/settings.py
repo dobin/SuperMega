@@ -31,7 +31,7 @@ class Settings():
 
         # More
         self.fix_missing_iat = False
-        self.payload_location = PayloadLocation.CODE
+        self.payload_location = PayloadLocation.DATA
 
 
     def prep_web(self, project_name):

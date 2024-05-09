@@ -2,13 +2,13 @@ import os
 from typing import List, Dict
 
 from helper import *
-from model import *
 from model.carrier import Carrier, DataReuseEntry, IatRequest
+from model.settings import Settings
 
 logger = logging.getLogger("AsmParser")
 
 
-def parse_asm_file(carrier: Carrier, asm_text: str) -> List[str]:
+def parse_asm_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[str]:
     lines_out = []
     lines = asm_text.split("\n")
 
@@ -34,6 +34,11 @@ def parse_asm_file(carrier: Carrier, asm_text: str) -> List[str]:
             lines_out.append(line)
             continue
 
+        if tokens[0] == "COMM":
+            # HACK atm. Will be handled by masm_shc
+            # gives false positives for supermega_payload
+            continue
+
         # PATCH SHORT
         if "jmp\tSHORT" in line:
             updated_line = line.replace("SHORT", "")
@@ -53,23 +58,42 @@ def parse_asm_file(carrier: Carrier, asm_text: str) -> List[str]:
         ## mov	rdi, QWORD PTR supermega_payload
         ## to
         ## lea	rdi, [shcstart]  ; get payload shellcode address
-        if "supermega_payload" in line:
-            updated_line = line
-            updated_line = updated_line.replace(
-                "mov	",
-                "lea	"
-            )
-            updated_line = updated_line.replace(
-                "QWORD PTR supermega_payload",
-                "[shcstart]  ; get payload shellcode address"
-            )
-            lines_out.append(updated_line)
-            continue
+        if settings.payload_location == PayloadLocation.CODE:
+            if "supermega_payload" in line:
+                updated_line = line
+                updated_line = updated_line.replace(
+                    "mov	",
+                    "lea	"
+                )
+                updated_line = updated_line.replace(
+                    "QWORD PTR supermega_payload",
+                    "[shcstart]  ; get payload shellcode address"
+                )
+                lines_out.append(updated_line)
+                continue
+        elif settings.payload_location == PayloadLocation.DATA:
+            if "supermega_payload" in line:
+                randbytes: bytes = os.urandom(7)  # LEA is 7 bytes
+                string_ref = "supermega_payload"
+
+                datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
+                if datareuse_fixup == None:
+                    raise Exception("Data reuse entry not found: {}".format(string_ref))
+                register = line.split("mov\t")[1].split(",")[0]
+
+                datareuse_fixup.register = register
+                datareuse_fixup.randbytes = randbytes
+
+                line = bytes_to_asm_db(randbytes) + " ; .rdata Payload".format()
+                lines_out.append(line)
+                continue
+        else: 
+            raise Exception("Unknown payload location: {}".format(settings.payload_location))
 
         # ADD label at end of code
         # we cant reliably identify in which function, so we just add it at the end
         ## get_time_raw ENDP
-        ## <---- add here
+        ##   -> add here
         ## _TEXT	ENDS
         ## END
         if line_idx > len(lines) - 5 and tokens[1] == "ENDP":
@@ -128,7 +152,7 @@ def parse_asm_file(carrier: Carrier, asm_text: str) -> List[str]:
             register = line.split("lea\t")[1].split(",")[0]
             randbytes: bytes = os.urandom(7)
 
-            datareuse_fixup = carrier.get_all_reusedata_fixup(string_ref)
+            datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
             if datareuse_fixup == None:
                 raise("Data reuse entry not found: {}".format(string_ref))
 
