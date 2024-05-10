@@ -11,6 +11,7 @@ from pe.derbackdoorer import FunctionBackdoorer
 from pe.superpe import SuperPe
 from model.project import Project
 from model.settings import Settings
+from pe.asmdisasm import *
 
 logger = logging.getLogger("Injector")
 

@@ -13,7 +13,7 @@ from intervaltree import *
 from utils import hexdump
 from pe.superpe import SuperPe
 from model.defs import *
-from pe.pehelper import assemble_relative_call, assemble_relative_jmp
+from pe.asmdisasm import assemble_relative_jmp, asm_disasm, cs, ks, printInstr
 
 logger = logging.getLogger("DerBackdoorer")
 
@@ -28,10 +28,6 @@ class FunctionBackdoorer:
     def __init__(self, superpe: SuperPe, depth_option=DEPTH_OPTIONS.LEVEL1):
         self.superpe: SuperPe = superpe
         self.pe_data = self.superpe.pe.get_memory_mapped_image()
-
-        self.cs = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_64 + capstone.CS_MODE_LITTLE_ENDIAN)
-        self.ks = keystone.Ks(keystone.KS_ARCH_X86, keystone.KS_MODE_64 + keystone.KS_MODE_LITTLE_ENDIAN)
-        self.cs.detail = True
         self.depth_option: DEPTH_OPTIONS = depth_option
 
 
@@ -60,12 +56,7 @@ class FunctionBackdoorer:
         # Show Result
         logger.info("--[ Patched result of function: ".format())
         data = self.pe_data[function_addr:addr+len(compiled_trampoline)]
-        self.asm_disasm(data, offset=function_addr)
-
-
-    def asm_disasm(self, asm_text, offset=0):
-        for instr in self.cs.disasm(asm_text, offset):
-            self.printInstr(instr, 0)
+        asm_disasm(data, offset=function_addr)
 
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
@@ -90,8 +81,8 @@ class FunctionBackdoorer:
     def _find_suitable_instruction_addr(self, startOffset, length, option):
         # iterate through every instruction. starting from startOffset
         data = self.pe_data[startOffset:startOffset + length]
-        for instr in self.cs.disasm(data, startOffset):
-            self.printInstr(instr, 0)
+        for instr in cs.disasm(data, startOffset):
+            printInstr(instr, 0)
             
             if instr.mnemonic.lower() in ['ret']:
                 return None
@@ -124,7 +115,7 @@ class FunctionBackdoorer:
         full_shellcode_addr = shellcode_addr + self.superpe.pe.OPTIONAL_HEADER.ImageBase 
 
         enc, count = self.ks.asm(f'MOV {reg}, 0x{full_shellcode_addr:X}')
-        for instr2 in self.cs.disasm(bytes(enc), 0):
+        for instr2 in cs.disasm(bytes(enc), 0):
             addrOffset = len(instr2.bytes) - instr2.addr_size
             break
 
@@ -141,16 +132,7 @@ class FunctionBackdoorer:
         ])
 
         trampoline_text = f'MOV {reg}, 0x{full_shellcode_addr:X} ; {jump}'
-        trampoline_compiled, count = self.ks.asm(trampoline_text)
+        trampoline_compiled, count = ks.asm(trampoline_text)
 
         return trampoline_compiled, trampoline_text, addrOffset
     
-
-    def printInstr(self, instr, depth=0):
-        _bytes = [f'{x:02x}' for x in instr.bytes[:8]]
-        if len(instr.bytes) < 8:
-            _bytes.extend(['  ',] * (8 - len(instr.bytes)))
-
-        instrBytes = ' '.join([f'{x}' for x in _bytes])
-        logger.info('\t' * 1 + f'[{instr.address:08x}]\t{instrBytes}' + '\t' * depth + f'{instr.mnemonic}\t{instr.op_str}')
-
