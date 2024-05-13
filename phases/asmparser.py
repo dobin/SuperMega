@@ -55,10 +55,10 @@ def parse_asm_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[
             continue
 
         # PATCH external shellcode reference
-        ## mov	rdi, QWORD PTR supermega_payload
-        ## to
-        ## lea	rdi, [shcstart]  ; get payload shellcode address
         if settings.payload_location == PayloadLocation.CODE:
+            ## mov	rdi, QWORD PTR supermega_payload
+            ## to
+            ## lea	rdi, [shcstart]  ; get payload shellcode address
             if "supermega_payload" in line:
                 updated_line = line
                 updated_line = updated_line.replace(
@@ -72,6 +72,9 @@ def parse_asm_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[
                 lines_out.append(updated_line)
                 continue
         elif settings.payload_location == PayloadLocation.DATA:
+            ## mov	rdi, QWORD PTR supermega_payload
+            ## to
+            ## lea  rdi, XXX
             if "supermega_payload" in line:
                 randbytes: bytes = os.urandom(7)  # LEA is 7 bytes
                 string_ref = "supermega_payload"

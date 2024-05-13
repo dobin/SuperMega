@@ -64,3 +64,7 @@ class IatEntry():
     def __str__(self):
         return "IatEntry: dll_name: {} func_name: {} iat_vaddr: 0x{:X}".format(
             self.dll_name, self.func_name, self.iat_vaddr)
+    
+
+
+CODE_INJECT_SIZE_CHECK_ADD = 128
