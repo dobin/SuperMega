@@ -51,11 +51,14 @@ class FunctionBackdoorer:
             logger.warn("Text section too small?")
 
         # write
+        #logger.info("Trampoline: {}".format(compiled_trampoline))
+        #asm_disasm(compiled_trampoline, offset=function_addr)
         self.superpe.pe.set_bytes_at_rva(addr, bytes(compiled_trampoline))
 
         # Show Result
         logger.info("--[ Patched result of function: ".format())
-        data = self.pe_data[function_addr:addr+len(compiled_trampoline)]
+        #data = self.pe_data[function_addr:addr+len(compiled_trampoline)]
+        data = self.superpe.pe.get_data(function_addr, addr+len(compiled_trampoline)-function_addr)
         asm_disasm(data, offset=function_addr)
 
 

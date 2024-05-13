@@ -67,7 +67,7 @@ def run_exe(exefile, dllfunc="", check=True):
 
 
 def run_process_checkret(args, check=True):
-    logger.debug("   > Run process: {}".format(" ".join(args)))
+    logger.info("   > Run process: {}".format(" ".join(args)))
 
     ret = subprocess.CompletedProcess("", 666)
     try:

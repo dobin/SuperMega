@@ -14,16 +14,19 @@ def main():
     logger.info("Super Mega Tester")
     config.load()
 
-    test_exe()
-    test_dll()
+    test_exe_code()
+    test_exe_data()
+    test_dll_code()
+    test_dll_data()
 
 
-def test_exe():
-    print("Testing: EXEs")
+def test_exe_code():
+    print("Testing: EXEs: Inject payload into .text")
     settings = Settings()
     settings.payload_path = PATH_SHELLCODES + "createfile.bin"
     settings.verify = True
     settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.CODE
     settings.prep_web("unittest")
     prepare_project("unittest", settings)
     
@@ -64,12 +67,106 @@ def test_exe():
         print("Error")
 
 
-def test_dll():
-    print("Testing: DLLs")
+def test_exe_data():
+    print("Testing: EXEs: Inject into .data")
     settings = Settings()
     settings.payload_path = PATH_SHELLCODES + "createfile.bin"
     settings.verify = True
     settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.DATA
+    settings.prep_web("unittest")
+    prepare_project("unittest", settings)
+    
+    # 7z, peb-walk, change-entrypoint
+    print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "7z.exe"
+    settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
+    if start(settings) != 0:
+        print("Error")
+
+    # 7z, peb-walk, hijack
+    print("Test EXE 2/4: 7z, peb-walk, hijack main")
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+    settings.inject_exe_in = PATH_EXES + "7z.exe"
+    settings.inject_exe_out = PATH_EXES + "7z.verify.exe"
+    if start(settings) != 0:
+        print("Error")
+
+    # procexp, iat-reuse, change-entrypoint
+    print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
+    settings.source_style = FunctionInvokeStyle.iat_reuse
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    if start(settings) != 0:
+        print("Error")
+
+    # procexp, iat-reuse, backdoor
+    print("Test EXE 4/4: procexp, iat-reuse, backdoor")
+    settings.source_style = FunctionInvokeStyle.iat_reuse
+    settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    if start(settings) != 0:
+        print("Error")
+
+
+def test_dll_code():
+    print("Testing: DLLs code")
+    settings = Settings()
+    settings.payload_path = PATH_SHELLCODES + "createfile.bin"
+    settings.verify = True
+    settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.CODE
+    settings.prep_web("unittest")
+    prepare_project("unittest", settings)
+    
+    print("Test DLL 1/6: libbz2-1.dll, peb-walk, change-entrypoint dllMain (func=None)")
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
+    settings.inject_exe_out = PATH_EXES + "libbz2-1.verify.dll"
+    if start(settings) != 0:
+        print("Error")
+
+    print("Test DLL 2/6: libbz2-1.dll, peb-walk, hijack dllMain (func=None)")
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+    settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
+    settings.inject_exe_out = PATH_EXES + "libbz2-1.verify.dll"
+    if start(settings) != 0:
+        print("Error")
+
+    print("Test DLL 3/6: libbz2-1.dll, peb-walk, change-entrypoint, func=BZ2_bzDecompress")
+    settings.dllfunc = "BZ2_bzDecompress"
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
+    settings.inject_exe_out = PATH_EXES + "libbz2-1.verify.dll"
+    if start(settings) != 0:
+        print("Error")
+
+    print("Test DLL 4/6: libbz2-1.dll, peb-walk, hijack main, func=BZ2_bzdopen")
+    settings.dllfunc = "BZ2_bzdopen"
+    settings.source_style = FunctionInvokeStyle.peb_walk
+    settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+    settings.inject_exe_in = PATH_EXES + "libbz2-1.dll"
+    settings.inject_exe_out = PATH_EXES + "libbz2-1.verify.dll"
+    if start(settings) != 0:
+        print("Error")
+
+
+
+def test_dll_data():
+    print("Testing: DLLs data")
+    settings = Settings()
+    settings.payload_path = PATH_SHELLCODES + "createfile.bin"
+    settings.verify = True
+    settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.DATA
     settings.prep_web("unittest")
     prepare_project("unittest", settings)
     
