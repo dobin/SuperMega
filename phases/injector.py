@@ -53,8 +53,10 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
                 ))
             # do the patch
             superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
+
         # we modify the IAT raw, so reparsing is required
         superpe.pe.parse_data_directories()
+        superpe.init_iat_entries()
 
     shellcode_offset: int = 0  # file offset
 

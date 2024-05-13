@@ -40,7 +40,12 @@ class SuperPe():
         for section in self.pe.sections:
             self.pe_sections.append(PeSection(section))
 
+        self.iat_entries: Dict[str, IatEntry] = {}
+        self.init_iat_entries()
+        
+    def init_iat_entries(self):
         self.pe.parse_data_directories()
+        self.make_iat_entries()
 
 
     ## PE Properties
@@ -330,6 +335,9 @@ class SuperPe():
     
 
     def get_iat_entries(self) -> Dict[str, IatEntry]:
+        return self.iat_entries
+
+    def make_iat_entries(self) -> Dict[str, IatEntry]:
         iat = {}
         for entry in self.pe.DIRECTORY_ENTRY_IMPORT:
             for imp in entry.imports:
@@ -342,7 +350,7 @@ class SuperPe():
                 if not dll_name in iat:
                     iat[dll_name] = []
                 iat[dll_name].append(IatEntry(dll_name, imp_name, imp_addr))
-        return iat
+        self.iat_entries = iat
     
 
     def get_replacement_iat_for(self, dll_name: str, func_name: str) -> str:
