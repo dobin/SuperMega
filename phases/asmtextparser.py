@@ -5,10 +5,10 @@ from helper import *
 from model.carrier import Carrier, DataReuseEntry, IatRequest
 from model.settings import Settings
 
-logger = logging.getLogger("AsmParser")
+logger = logging.getLogger("AsmTextParser")
 
 
-def parse_asm_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[str]:
+def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[str]:
     lines_out = []
     lines = asm_text.split("\n")
 

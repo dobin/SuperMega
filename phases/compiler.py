@@ -10,7 +10,7 @@ from observer import observer
 from model import *
 from phases.masmshc import masm_shc, Params
 from model.carrier import Carrier
-from phases.asmparser import parse_asm_file
+from phases.asmtextparser import parse_asm_text_file
 from model.settings import Settings
 
 logger = logging.getLogger("Compiler")
@@ -40,7 +40,7 @@ def compile_dev(
     observer.add_text_file("carrier_asm_orig", asm_text)
 
     logger.info("---[ ASM masm_shc: {} ".format(asm_out))
-    asm_text_lines: List[str] = parse_asm_file(Carrier(), asm_text)
+    asm_text_lines: List[str] = parse_asm_text_file(Carrier(), asm_text)
     asm_text = masm_shc(asm_text_lines)
     observer.add_text_file("carrier_asm_cleanup", asm_text)
 
@@ -70,7 +70,7 @@ def compile(
     asm_text = file_readall_text(asm_out)
     observer.add_text_file("carrier_asm_orig", asm_text)
 
-    asm_text_lines = parse_asm_file(carrier, asm_text, settings) # Fixup assembly file
+    asm_text_lines = parse_asm_text_file(carrier, asm_text, settings) # Fixup assembly file
     asm_text = masm_shc(asm_text_lines) # Cleanup assembly file
     observer.add_text_file("carrier_asm_final", asm_text)
 

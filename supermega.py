@@ -151,7 +151,7 @@ def start_real(settings: Settings):
     phases.templater.create_c_from_template(settings, project.payload.len)
 
     # If we put the payload into .rdata
-    # PREPARE DataReuseEntry for usage in Compiler/AsmParser
+    # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
     if settings.payload_location == PayloadLocation.DATA:
         logger.info("--[ Load payload for use in .rdata injection")
         project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload"))

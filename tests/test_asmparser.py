@@ -6,7 +6,7 @@ from model.defs import *
 from model.carrier import Carrier
 from observer import observer
 from helper import *
-from phases.asmparser import parse_asm_file
+from phases.asmtextparser import parse_asm_text_file
 from phases.masmshc import masm_shc
 
 
@@ -25,7 +25,7 @@ class AsmTest(unittest.TestCase):
         asm_in: FilePath = "tests/data/peb_walk_pre_fixup.asm"
         asm_text = file_readall_text(asm_in)
         carrier = Carrier("fake.exe")
-        asm_text_lines = parse_asm_file(carrier, asm_text)
+        asm_text_lines = parse_asm_text_file(carrier, asm_text)
 
         # cmp     DWORD PTR n$1[rsp], 11223344            ; 00ab4130H
         # cmp     DWORD PTR n$1[rsp], 272         ; 00ab4130H
@@ -45,7 +45,7 @@ class AsmTest(unittest.TestCase):
         asm_in: FilePath = "tests/data/iat_reuse_pre_fixup.asm"
         asm_text = file_readall_text(asm_in)
         carrier = Carrier("fake.exe")
-        asm_text_lines = parse_asm_file(carrier, asm_text)
+        asm_text_lines = parse_asm_text_file(carrier, asm_text)
 
         self.assertEqual(len(carrier.iat_requests), 2)
 
@@ -74,7 +74,7 @@ class AsmTest(unittest.TestCase):
         asm_in = "tests/data/data_reuse_pre_fixup.asm"
         asm_text = file_readall_text(asm_in)
         carrier = Carrier("fake.exe")
-        asm_text_lines = parse_asm_file(carrier, asm_text)
+        asm_text_lines = parse_asm_text_file(carrier, asm_text)
         asm_text = masm_shc(asm_text_lines)  # optional here
 
         data_reuse_entries = carrier.get_all_reusedata_fixups()
@@ -96,7 +96,7 @@ class AsmTest(unittest.TestCase):
         asm_text = file_readall_text(asm_in)
 
         carrier = Carrier("fake.exe")
-        asm_text_lines = parse_asm_file(carrier, asm_text)
+        asm_text_lines = parse_asm_text_file(carrier, asm_text)
 
         self.assertTrue("\tDB " in asm_text_lines[108-1])
         self.assertFalse("OFFSET FLAT:$SG" in asm_text_lines[108-1])
