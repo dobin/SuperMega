@@ -5,11 +5,12 @@ logger = logging.getLogger("Views")
 
 
 class Settings():
-    def __init__(self):
+    def __init__(self, project_name: str = "default"):
+        self.project_name = project_name
         self.payload_path: FilePath = ""
 
         # Settings
-        self.source_style: FunctionInvokeStyle = FunctionInvokeStyle.peb_walk
+        self.carrier_name: str = ""
         self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
         self.short_call_patching: bool = False
 
@@ -34,9 +35,8 @@ class Settings():
         self.payload_location = PayloadLocation.DATA
 
 
-    def prep_web(self, project_name):
-        self.main_dir = "{}{}/".format(PATH_WEB_PROJECT, project_name)
-        self.template_path = self.main_dir + "template.c"
+    def prep_web(self):
+        self.main_dir = "{}{}/".format(PATH_WEB_PROJECT, self.project_name)
         self.main_c_path = self.main_dir + "main.c"
         self.main_asm_path = self.main_dir + "main.asm"
         self.main_exe_path = self.main_dir + "main.exe"

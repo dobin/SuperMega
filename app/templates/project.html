@@ -112,11 +112,11 @@
 
             <!-- Row 4: leet settings -->
             <div class="col-2">
-                <select class="form-select" name="source_style" aria-label="SOURCESTYLE" onchange="this.form.submit()">
-                    {% for name, value in function_invoke_styles %}
+                <select class="form-select" name="carrier_name" aria-label="CARRIERNAME" onchange="this.form.submit()">
+                    {% for name in carrier_names %}
                     <option value="{{name}}"
-                        {% if name in project.settings.source_style.value %} selected {% endif %}
-                    >{{value}}</option>
+                        {% if name in project.settings.carrier_name %} selected {% endif %}
+                    >{{name}}</option>
                     {% endfor %}
                 </select>
             

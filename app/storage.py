@@ -2,11 +2,14 @@ import pickle
 import os
 import yaml
 import pickle
+import logging
 
 from typing import List, Tuple
 from model.defs import *
 from model.project import WebProject
 
+
+logger = logging.getLogger("Storage")
 
 class Storage():
     def __init__(self):
@@ -19,19 +22,20 @@ class Storage():
             project = self.get_project(project_name)
             if project is None:
                 continue
-            project.settings.prep_web(project_name)
+            project.settings.prep_web()
             projects.append(project)
         return projects
     
 
     def get_project(self, project_name: str) -> WebProject:
+        logger.debug("Load project: {}".format(project_name))
         path = "{}/{}".format(PATH_WEB_PROJECT, project_name)
         json_path = "{}/project.pickle".format(path)
         if not os.path.exists(json_path):
             return None
         with open(json_path, "rb") as f:
             project = pickle.load(f)
-            project.settings.prep_web(project_name)
+            project.settings.prep_web()
         return project
 
 

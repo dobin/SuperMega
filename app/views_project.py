@@ -18,6 +18,7 @@ from supermega import start
 from app.storage import storage, WebProject
 from sender import scannerDetectsBytes
 from phases.injector import verify_injected_exe
+from phases.templater import get_template_names
 from helper import run_process_checkret, run_exe
 from model.project import prepare_project
 from pe.superpe import SuperPe 
@@ -90,13 +91,13 @@ def project(name):
             superpe.get_rdata_relocmanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
-    project_dir = os.path.dirname(os.path.abspath(project.settings.inject_exe_out))
+    project_dir = os.path.dirname(os.getcwd() + "\\" + project.settings.main_dir)
     log_files = get_logfiles(project.settings.main_dir)
     exes = list_files_and_sizes(PATH_EXES, prepend=PATH_EXES)
     exes += list_files_and_sizes(PATH_EXES_MORE, prepend=PATH_EXES_MORE)
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
-    function_invoke_styles = [(color.name, color.value) for color in FunctionInvokeStyle]
+    carrier_names = get_template_names()
     decoderstyles = [(color.name, color.value) for color in DecoderStyle]
     carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
     payload_locations = [(color.name, color.value) for color in PayloadLocation]
@@ -109,7 +110,7 @@ def project(name):
         
         exes=exes,
         shellcodes=shellcodes,
-        function_invoke_styles=function_invoke_styles,
+        carrier_names=carrier_names,
         decoderstyles=decoderstyles,
         carrier_invoke_styles=carrier_invoke_styles,
         payload_locations=payload_locations,
@@ -147,9 +148,9 @@ def list_files_and_sizes(directory, prepend=""):
 @views_project.route("/project_add", methods=['POST', 'GET'])
 def add_project():
     if request.method == 'POST':
-        settings = Settings()
-
         project_name = request.form['project_name']
+
+        settings = Settings(project_name)
         comment = request.form['comment']
 
         # new project?
@@ -176,8 +177,8 @@ def add_project():
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
 
-            source_style = request.form['source_style']
-            settings.source_style = FunctionInvokeStyle[source_style]
+            carrier_name = request.form['carrier_name']
+            settings.carrier_name = carrier_name
 
             carrier_invoke_style = request.form['carrier_invoke_style']
             settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]

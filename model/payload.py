@@ -5,6 +5,7 @@ from model.defs import *
 
 logger = logging.getLogger("Payload")
 
+
 class Payload():
     def __init__(self, filepath: FilePath):
         self.payload_path: FilePath = filepath

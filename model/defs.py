@@ -12,8 +12,6 @@ PATH_EXES = "data/binary/exes/"
 PATH_EXES_MORE = "data/binary/exes_more/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
-PATH_PEB_WALK = "data/source/carrier/peb_walk/"
-PATH_IAT_REUSE = "data/source/carrier/iat_reuse/"
 PATH_PAYLOAD = "data/source/payload/"
 PATH_DECODER = "data/source/carrier/decoder/"
 

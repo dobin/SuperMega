@@ -34,8 +34,11 @@ class Project():
 
 
 def prepare_project(project_name, settings):
-    src = "{}{}/".format(PATH_CARRIER, settings.source_style.value)
+    src = "{}{}/".format(PATH_CARRIER, settings.carrier_name)
     dst = "{}{}/".format(PATH_WEB_PROJECT, project_name)
+
+    if not os.path.exists(dst):
+        os.makedirs(dst)
 
     # delete all files in dst directory
     for file in os.listdir(dst):
