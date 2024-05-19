@@ -134,7 +134,7 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
     # Log
     code = file_readall_binary(exe_out)
     in_code = code[shellcode_offset:shellcode_offset+shellcode_len]
-    observer.add_code_file("exe_extracted_carrier", in_code)
+    observer.add_code_file("carrier_exe", in_code)
 
 
 def injected_fix_iat(superpe: SuperPe, carrier: Carrier):

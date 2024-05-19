@@ -155,7 +155,7 @@ def start_real(settings: Settings):
         entry = project.carrier.get_reusedata_fixup("supermega_payload")
         entry.data = phases.assembler.encode_payload(
             project.payload.payload_data, settings.decoder_style)  # encrypt
-        observer.add_code_file("payload_data", project.payload.payload_data)
+    observer.add_code_file("payload", project.payload.payload_data)
 
     # COMPILE: Carrier to .asm (C -> ASM)
     if settings.generate_asm_from_c:
@@ -188,7 +188,7 @@ def start_real(settings: Settings):
             shellcode_in = carrier_shellcode,
             payload_data = project.payload.payload_data, 
             decoder_style = settings.decoder_style)
-        observer.add_code_file("full_shc", full_shellcode)
+        #observer.add_code_file("full_shc", full_shellcode)
     else:
         # shellcode is in .rdata, so we dont need to merge
         full_shellcode = carrier_shellcode
@@ -204,7 +204,7 @@ def start_real(settings: Settings):
 
     # inject (merged) loader into an exe. Big task.
     phases.injector.inject_exe(full_shellcode, settings, project.carrier)
-    observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
+    #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred
     if config.get("avred_server") != "":
