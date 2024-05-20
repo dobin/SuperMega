@@ -46,5 +46,12 @@ def encode_payload(payload: bytes, decoder_style: DecoderStyle) -> bytes:
         logger.info("---[ XOR payload with key 0x{:X}".format(xor_key))
         xored = bytes([byte ^ xor_key for byte in payload])
         return xored
+    elif decoder_style == DecoderStyle.XOR_2:
+        xor_key = config.xor_key2
+        logger.info("---[ XOR2 payload with key {}".format(xor_key))
+        xored = bytearray(payload)
+        for i in range(len(xored)):
+            xored[i] ^= xor_key[i % 2]
+        return xored
     else:
         raise Exception("Unknown decoder style")

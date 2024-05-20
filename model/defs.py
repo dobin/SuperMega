@@ -23,6 +23,7 @@ PATH_WEB_PROJECT = "projects/"
 class DecoderStyle(Enum):
     PLAIN_1 = "plain_1"
     XOR_1 = "xor_1"
+    XOR_2 = "xor_2"
 
 
 class PayloadLocation(Enum):

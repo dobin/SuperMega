@@ -59,6 +59,8 @@ def main():
             settings.decoder_style = DecoderStyle.PLAIN_1
         elif args.decoder == "xor_1":
             settings.decoder_style = DecoderStyle.XOR_1
+        elif args.decoder == "xor_2":
+            settings.decoder_style = DecoderStyle.XOR_2
     if args.inject:
         if args.carrier_invoke == "eop":
             settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint

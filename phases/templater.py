@@ -34,6 +34,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         plugin_decoder = Template(plugin_decoder).render({
             'PAYLOAD_LEN': payload_len,
             'XOR_KEY': config.xor_key,
+            'XOR_KEY2': ascii_to_hex_bytes(config.xor_key2),
         })
 
     # Choose correct template

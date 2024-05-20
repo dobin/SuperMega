@@ -176,3 +176,8 @@ def ui_string_decode(data):
         return "(utf16) " + data.decode("utf-16le")
     else:
         return "(utf8) " + data.decode("utf-8")
+
+
+def ascii_to_hex_bytes(ascii_bytes):
+    hex_escaped = ''.join(f'\\x{byte:02x}' for byte in ascii_bytes)
+    return hex_escaped

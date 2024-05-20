@@ -11,6 +11,7 @@ class Config(object):
         self.debug: bool = False
 
         self.xor_key: int = 0x31
+        self.xor_key2: bytes = b"\x31\x32"
         self.data_fixups = None
         self.data_fixup_entries = None
 
