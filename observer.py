@@ -1,6 +1,9 @@
 from typing import List, Dict
+import logging
 
 from pe.r2helper import r2_disas
+
+logger = logging.getLogger("Observer")
 
 
 class Observer():
@@ -53,7 +56,10 @@ class Observer():
         # Our log output
         with open(f"{working_dir}log-supermega.log", "w") as f:
             for line in observer.get_logs():
-                f.write(line + "\n")
+                try:
+                    f.write(line + "\n")
+                except Exception as e:
+                    logger.warn("Error: {}".format(e))
 
         # Stdout of executed commands
         with open(f"{working_dir}log-cmdoutput.log", "w") as f:

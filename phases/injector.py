@@ -86,6 +86,7 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
                 shellcode_len, CODE_INJECT_SIZE_CHECK_ADD, sect_size
             ))
         shellcode_offset = int((sect_size - shellcode_len) / 2)  # centered in the .text section
+        #shellcode_offset = round_up_to_multiple_of_8(shellcode_offset)
         shellcode_offset += sect.PointerToRawData
         shellcode_rva = superpe.pe.get_rva_from_offset(shellcode_offset)
 
@@ -206,12 +207,8 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier):
         data_rva = hole_rva[0]
         superpe.pe.set_bytes_at_rva(data_rva, var_data)
         datareuse_fixup.addr = data_rva + carrier.superpe.get_image_base()
-        if len(var_data) <= 32:  # show strings (hope they are less than that, and shellcode is larger)
-            logging.info("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
-                datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, var_data.decode("utf-16le")))
-        else:
-            logging.info("       Add to .rdata at 0x{:X} ({}): {}: Data with len {}".format(
-                datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, len(var_data)))
+        logging.info("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
+            datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
     # patch code section
     # replace the placeholder with a LEA instruction to the data we written above

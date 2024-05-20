@@ -4,6 +4,7 @@ import pathlib
 import glob
 import logging
 import pickle
+import math
 
 from model.project import WebProject
 from config import config
@@ -163,3 +164,15 @@ def find_first_utf16_string_offset(data, min_len=8):
 
     return None  # No string found that meets the criteria
 
+
+def round_up_to_multiple_of_8(x):
+    return math.ceil(x / 8) * 8
+
+
+def ui_string_decode(data):
+    if len(data) > 32:
+        return "Data with len {}".format(len(data))
+    elif b"\x00\x00" in data:
+        return "(utf16) " + data.decode("utf-16le")
+    else:
+        return "(utf8) " + data.decode("utf-8")
