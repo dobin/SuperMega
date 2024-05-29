@@ -28,7 +28,7 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
     shellcode_len = len(main_shc)
     code_sect_size = carrier.superpe.get_code_section().Misc_VirtualSize
     if shellcode_len + CODE_INJECT_SIZE_CHECK_ADD > code_sect_size:
-        raise Exception("Error: Shellcode size {}+{} too small for target code section {}".format(
+        raise Exception("Error: Shellcode size {}+{} too big for target code section {}".format(
             shellcode_len, CODE_INJECT_SIZE_CHECK_ADD, code_sect_size
         ))
 

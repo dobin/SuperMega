@@ -180,6 +180,9 @@ def convert_asm_db_to_bytes(line: str) -> bytes:
             value += str.encode(part.split('\'')[1])
         elif part.endswith('H') or part.endswith('H,'):
             hex = part.split('H')[0]
+            if len(hex) == 3:
+                # 09cH,
+                hex = hex[1:]
             value += bytes.fromhex(hex)
     return value
 

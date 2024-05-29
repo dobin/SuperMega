@@ -170,13 +170,15 @@ def round_up_to_multiple_of_8(x):
 
 
 def ui_string_decode(data):
-    if len(data) > 32:
-        return "Data with len {}".format(len(data))
-    elif b"\x00\x00" in data:
-        return "(utf16) " + data.decode("utf-16le")
-    else:
-        return "(utf8) " + data.decode("utf-8")
-
+    try:
+        if len(data) > 32:
+            return "Data with len {}".format(len(data))
+        elif b"\x00\x00" in data:
+            return "(utf16) " + data.decode("utf-16le")
+        else:
+            return "(utf8) " + data.decode("utf-8")
+    except Exception as e:
+        logger.warn("ui_string_decode: {}".format(e))
 
 def ascii_to_hex_bytes(ascii_bytes):
     hex_escaped = ''.join(f'\\x{byte:02x}' for byte in ascii_bytes)

@@ -269,7 +269,7 @@ class SuperPe():
             if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
                 return []
         except Exception as e:
-            logger.warn("No exports found")
+            logger.warn("get_exports_full(): No exports found in PE")
             return []
         res = []
         for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:
