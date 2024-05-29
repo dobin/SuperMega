@@ -6,3 +6,9 @@ jinja2
 Pygments
 ansi2html
 requests
+pyyaml
+flask
+setuptools
+intervaltree
+r2pipe
+brotli

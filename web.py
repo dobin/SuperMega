@@ -19,6 +19,8 @@ if __name__ == "__main__":
 	parser.add_argument('--debug', action='store_true', help='Debug', default=False)
 	args = parser.parse_args()
 
+	print("Listen on: {} {}".format(args.listenip, args.listenport))
+
 	root_folder = os.path.dirname(__file__)
 	app_folder = os.path.join(root_folder, 'app')
 

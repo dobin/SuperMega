@@ -1,4 +1,4 @@
-from flask import Flask, Blueprint, current_app, request, redirect, url_for, render_template, send_file, make_response, session, escape, jsonify
+from flask import Flask, Blueprint, current_app, request, redirect, url_for, render_template, send_file, make_response, session, jsonify
 from werkzeug.utils import secure_filename
 import os
 import logging
