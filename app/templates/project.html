@@ -93,10 +93,10 @@
                 {% endif %}
                     / Dotnet: {{ is_dotnet}} <br>
                 .text: {{ code_sect_size}}  <br>
-                .rodata: {{ data_sect_size}} 
+                .rdata: {{ data_sect_size}} 
                 (max: {{ data_sect_largest_gap_size}}) <br>
                 {% if not has_rodata_section %}
-                <span class="text-danger">No .rodata section</span> <br>
+                <span class="text-danger">No .rdata section</span> <br>
                 {% endif %}
 
                 {% if unresolved_dlls|length > 0 %}
