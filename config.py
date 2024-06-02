@@ -13,6 +13,7 @@ class Config(object):
         self.data = {}
         self.ShowCommandOutput: bool = False
         self.debug: bool = False
+        self.has_r2: bool = True
 
         self.data_fixups = None
         self.data_fixup_entries = None

@@ -2,6 +2,7 @@ from typing import List, Dict
 import logging
 
 from pe.r2helper import r2_disas
+from config import config
 
 logger = logging.getLogger("Observer")
 
@@ -44,6 +45,9 @@ class Observer():
 
 
     def add_code_file(self, name, data: bytes):
+        if not config.has_r2:
+            return
+            
         ret = r2_disas(data)
         self.files.append((name + ".disas.ascii", ret['color']))
         #self.write_to_file(name + ".disas.txt", ret['text'])
