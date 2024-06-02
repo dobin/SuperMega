@@ -24,7 +24,7 @@ class RangeManager:
 
     def add_range(self, start, end):
         if start < self.min or end > self.max:
-            raise ValueError("Ranges must be within 0x{:X} and 0x{:X}, not 0x{:X}/0x{:X}".format(
+            raise ValueError("Ranges must be within 0x{:X} - 0x{:X}, not: 0x{:X}-0x{:X}".format(
                 self.min, self.max, start, end
             ))
         self.intervals.add(Interval(start, end))
@@ -41,7 +41,7 @@ class RangeManager:
 
         # at the end
         if last_end < self.max:
-            return last_end
+            return last_end, self.max-1
         
         return None
     
