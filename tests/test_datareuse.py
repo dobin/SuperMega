@@ -29,6 +29,12 @@ class DataReuseTest(unittest.TestCase):
         self.assertEqual(40, largest)
 
 
+    def test_rangemanager_2(self):
+        rm = RangeManager(0, 100)
+        rm.add_range(0, 90)
+        hole = rm.find_hole(5)
+        self.assertIsNotNone(hole)
+
     def test_relocation_list(self):
         superpe = SuperPe(PATH_EXES + "7z.exe")
         relocs = superpe.get_relocations_for_section(".rdata")

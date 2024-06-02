@@ -20,5 +20,3 @@ class DllResolverTest(unittest.TestCase):
 
         dlls = unresolved_dlls(superpe)
         self.assertEqual(len(dlls), 0)
-
-        

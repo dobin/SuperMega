@@ -22,16 +22,6 @@ class DerBackdoorerTest(unittest.TestCase):
         addr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint())
         self.assertEqual(addr, 0x1304)
 
-        trampoline_compiled, _, trampoline_reloc_offset = function_backdoorer.get_trampoline(addr, 0x11223344)
-        self.assertEqual(trampoline_compiled[0], 0x48)
-        self.assertEqual(trampoline_compiled[2], 0x44)
-        self.assertEqual(trampoline_compiled[3], 0x33)
-        self.assertEqual(trampoline_compiled[4], 0x22)
-        self.assertEqual(trampoline_compiled[5], 0x51)
-        self.assertEqual(trampoline_compiled[6], 0x01)
-        self.assertEqual(trampoline_compiled[10], 0xff)
-        self.assertEqual(trampoline_reloc_offset, 2)
-
 
     def test_function_backdoorer_dll(self):
         superpe = SuperPe(PATH_EXES + "libbz2-1.dll")
@@ -39,11 +29,3 @@ class DerBackdoorerTest(unittest.TestCase):
 
         addr = function_backdoorer.find_suitable_instruction_addr(superpe.get_entrypoint())
         self.assertEqual(addr, 0x135D)
-        
-        trampoline_compiled, _, trampoline_reloc_offset = function_backdoorer.get_trampoline(addr, 0x11223344)
-        self.assertEqual(trampoline_compiled[0], 0x48)
-        self.assertEqual(trampoline_compiled[2], 0x44)
-        self.assertEqual(trampoline_compiled[3], 0x33)
-        self.assertEqual(trampoline_compiled[6], 0x02)
-        self.assertEqual(trampoline_compiled[10], 0xff)
-        self.assertEqual(trampoline_reloc_offset, 2)

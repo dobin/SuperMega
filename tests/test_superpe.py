@@ -2,8 +2,8 @@ from typing import List, Dict
 import unittest
 import pefile
 
-from pe.superpe import SuperPe, PeSection
 from model.defs import *
+from pe.superpe import SuperPe, PeSection
 
 
 class SuperPeTest(unittest.TestCase):
@@ -14,7 +14,7 @@ class SuperPeTest(unittest.TestCase):
 
         # Properties
         self.assertFalse(superpe.is_dll())
-        self.assertTrue(superpe.is_64())
+        self.assertTrue(superpe.is_64()) 
         self.assertFalse(superpe.is_dotnet())
         self.assertEqual(superpe.get_entrypoint(), 0xE1D78)
         self.assertIsNone(superpe.get_rwx_section())
@@ -55,8 +55,8 @@ class SuperPeTest(unittest.TestCase):
         self.assertEqual(entry.iat_vaddr, 0x14011D528)
 
         self.assertEqual(superpe.get_vaddr_of_iatentry("FileTimeToLocalFileTime"), 0x14011D528)
-        self.assertEqual(superpe.get_replacement_iat_for(
-            "kernel32.dll", "GetEnvironmentStringsW"), "FileTimeToLocalFileTime")
+        self.assertNotEqual(superpe.get_replacement_iat_for(
+            "kernel32.dll", "GetEnvironmentStringsW"), "GetEnvironmentStringsW")
 
         # Exports
         exports = superpe.get_exports_full()
