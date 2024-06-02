@@ -105,6 +105,9 @@ def start(settings: Settings) -> int:
     # And logs
     observer.reset()
 
+    # Set new keys
+    config.make_encryption_keys()
+
     # Prepare the project: copy all files to projects/<project_name>/
     prepare_project(settings.project_name, settings)
 

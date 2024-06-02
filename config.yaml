@@ -9,3 +9,9 @@ path_sgn: 'C:\tools\sgn2.1\sgn.exe'
 
 #avred_server: "http://192.168.88.65:8001"
 avred_server: ""
+
+# leave empty for random on each build
+xor_key: ""
+xor_key2: ""
+#xor_key: "\x42"
+#xor_key2: "\x13\x37"
