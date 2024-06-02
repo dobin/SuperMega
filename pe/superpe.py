@@ -199,8 +199,8 @@ class SuperPe():
         sizeOfReloc = 2 * len(relocs) + 2 * 4
 
         if sizeOfReloc >= self.getRemainingRelocsDirectorySize():
-            self.logger.warn('WARNING! Cannot add any more relocations to this file. Probably TLS Callback execution technique wont work.')
-            self.logger.warn('         Will try disabling relocations on output file. Expect corrupted executable though!')
+            self.logger.warning('WARNING! Cannot add any more relocations to this file. Probably TLS Callback execution technique wont work.')
+            self.logger.warning('         Will try disabling relocations on output file. Expect corrupted executable though!')
 
             self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress = 0
             self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_BASERELOC].Size = 0
@@ -269,7 +269,7 @@ class SuperPe():
             if self.pe.DIRECTORY_ENTRY_EXPORT.symbols == 0:
                 return []
         except Exception as e:
-            logger.warn("get_exports_full(): No exports found in PE")
+            logger.debug("get_exports_full(): No exports found in PE")
             return []
         res = []
         for e in self.pe.DIRECTORY_ENTRY_EXPORT.symbols:

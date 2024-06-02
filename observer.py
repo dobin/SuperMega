@@ -59,7 +59,7 @@ class Observer():
                 try:
                     f.write(line + "\n")
                 except Exception as e:
-                    logger.warn("Error: {}".format(e))
+                    logger.warning("Error: {}".format(e))
 
         # Stdout of executed commands
         with open(f"{working_dir}log-cmdoutput.log", "w") as f:

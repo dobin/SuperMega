@@ -16,6 +16,12 @@ class RangeManager:
         self.intervals.merge_overlaps(strict=False)
 
 
+    def print_all(self):
+        logger.info("Min: {}  Max: {}".format(self.min, self.max))
+        for i in self.intervals:
+            logger.info("Interval: {}-{}".format(i.begin, i.end))
+
+
     def add_range(self, start, end):
         if start < self.min or end > self.max:
             raise ValueError("Ranges must be within 0x{:X} and 0x{:X}, not 0x{:X}/0x{:X}".format(
@@ -32,6 +38,12 @@ class RangeManager:
             if start - last_end >= hole_size:
                 return (last_end + 1, start - 1)
             last_end = max(last_end, end)
+
+        # at the end
+        if last_end < self.max:
+            return last_end
+        
+        return None
     
     
     def find_holes(self, hole_size):

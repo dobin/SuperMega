@@ -60,13 +60,13 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier):
 
     # Special case: DLL exported function direct overwrite
     if superpe.is_dll() and settings.dllfunc != "" and carrier_invoke_style == CarrierInvokeStyle.ChangeEntryPoint:
-        logger.warn("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
+        logger.warning("---[ Inject DLL: Overwrite exported function {} with shellcode".format(settings.dllfunc))
         rva = superpe.getExportEntryPoint(settings.dllfunc)
 
         # Size and sanity checks
         function_size = superpe.get_size_of_exported_function(settings.dllfunc)
         if shellcode_len >= function_size:
-            logger.warn("Shellcode larger than function: {} > {} exported function {}".format(
+            logger.warning("Shellcode larger than function: {} > {} exported function {}".format(
                 shellcode_len, function_size, settings.dllfunc
             ))
 

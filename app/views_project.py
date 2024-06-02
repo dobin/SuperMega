@@ -84,7 +84,7 @@ def project(name):
         if superpe.get_section_by_name(".rdata") != None:
             data_sect_size = superpe.get_section_by_name(".rdata").virt_size
         else:
-            logger.warn("No .rdata section found in {}".format(project.settings.inject_exe_in))
+            logger.warning("No .rdata section found in {}".format(project.settings.inject_exe_in))
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:

