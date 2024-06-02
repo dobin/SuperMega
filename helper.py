@@ -74,11 +74,11 @@ def run_process_checkret(args, check=True):
     try:
         ret = subprocess.run(args, capture_output=True)
     except KeyboardInterrupt:
-        logger.warn("Caught KeyboardInterrupt, exiting gracefully...")
+        logger.warning("Caught KeyboardInterrupt, exiting gracefully...")
     except subprocess.CalledProcessError as e:
-        logger.warn(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
+        logger.warning(f"Command '{e.cmd}' returned non-zero exit status {e.returncode}.")
     except Exception as e:
-        logger.warn(f"An error occurred executing {e}")
+        logger.warning(f"An error occurred executing {e}")
         
     # handle output
     stdout_s = ""
@@ -178,7 +178,7 @@ def ui_string_decode(data):
         else:
             return "(utf8) " + data.decode("utf-8")
     except Exception as e:
-        logger.warn("ui_string_decode: {}".format(e))
+        logger.warning("ui_string_decode: {}".format(e))
 
 def ascii_to_hex_bytes(ascii_bytes):
     hex_escaped = ''.join(f'\\x{byte:02x}' for byte in ascii_bytes)
