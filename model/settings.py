@@ -34,8 +34,7 @@ class Settings():
         self.fix_missing_iat = False
         self.payload_location = PayloadLocation.DATA
 
-
-    def prep_web(self):
+        # directories and filenames
         self.main_dir = "{}{}/".format(PATH_WEB_PROJECT, self.project_name)
         self.main_c_path = self.main_dir + "main.c"
         self.main_asm_path = self.main_dir + "main.asm"

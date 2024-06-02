@@ -22,7 +22,6 @@ class Storage():
             project = self.get_project(project_name)
             if project is None:
                 continue
-            project.settings.prep_web()
             projects.append(project)
         return projects
     
@@ -35,7 +34,6 @@ class Storage():
             return None
         with open(json_path, "rb") as f:
             project = pickle.load(f)
-            project.settings.prep_web()
         return project
 
 

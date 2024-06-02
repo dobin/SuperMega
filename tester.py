@@ -27,7 +27,6 @@ def test_exe_code():
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE
-    settings.prep_web()
     
     # 7z, peb-walk, change-entrypoint
     print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
@@ -73,7 +72,6 @@ def test_exe_data():
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.DATA
-    settings.prep_web()
     
     # 7z, peb-walk, change-entrypoint
     print("Test EXE 1/4: 7z, peb-walk, change-entrypoint")
@@ -119,7 +117,6 @@ def test_dll_code():
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.CODE
-    settings.prep_web()
     
     print("Test DLL 1/6: libbz2-1.dll, peb-walk, change-entrypoint dllMain (func=None)")
     settings.carrier_name = "peb_walk"
@@ -163,7 +160,6 @@ def test_dll_data():
     settings.verify = True
     settings.try_start_final_infected_exe = False
     settings.payload_location = PayloadLocation.DATA
-    settings.prep_web()
     
     print("Test DLL 1/6: libbz2-1.dll, peb-walk, change-entrypoint dllMain (func=None)")
     settings.carrier_name = "peb_walk"
