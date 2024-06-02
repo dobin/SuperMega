@@ -154,6 +154,9 @@ class SuperPe():
         if hasattr(self.pe, 'DIRECTORY_ENTRY_BASERELOC'):
             for base_reloc in self.pe.DIRECTORY_ENTRY_BASERELOC:
                 for entry in base_reloc.entries:
+                    if entry.rva == entry.base_rva:
+                        # offset = 0 means end of list. do not add.
+                        continue
                     rva = entry.rva
                     base_rva = entry.base_rva
                     reloc_type = pefile.RELOCATION_TYPE[entry.type][0]
