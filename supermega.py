@@ -67,9 +67,7 @@ def main():
         elif args.carrier_invoke == "backdoor":
             settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
         else:
-            logging.error("Invalid carrier_invoke, use one of:")
-            for i in ["eop", "backdoor"]:
-                logging.error("  {}  {}".format(i, carrier_invoke_style_str(i)))
+            logging.error("Invalid carrier_invoke, use: eop, backdoor")
             return
 
     if not args.shellcode or not args.inject:

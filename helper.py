@@ -127,17 +127,6 @@ def file_readall_binary(filepath) -> bytes:
     return data
 
 
-def carrier_invoke_style_str(carrier_invoke_style):
-    carrier_invoke_style = str(carrier_invoke_style)
-    if carrier_invoke_style == "1":
-        return "change address of entrypoint"
-    elif carrier_invoke_style == "2":
-        return "hijack branching instruction in entrypoint"
-    else:
-        return "Invalid: {}".format(carrier_invoke_style)
-
-
-
 def file_to_lf(filename):
     with open(filename, 'rb') as f:
         data = f.read()
