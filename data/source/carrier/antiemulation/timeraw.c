@@ -1,4 +1,14 @@
 
+
+/* Busy sleep with time register
+
+    This function will busy sleep for the given amount of time.
+    It uses the kernel time register, which is not affected by
+    the sleep function (memory address 0x7ffe0004).
+
+    This may defeat the AV emulator (maximum time).
+*/
+
 int get_time_raw() {
     ULONG* PUserSharedData_TickCountMultiplier = (PULONG)0x7ffe0004;
     LONG* PUserSharedData_High1Time = (PLONG)0x7ffe0324;

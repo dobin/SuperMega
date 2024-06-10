@@ -13,6 +13,7 @@ class Settings():
         self.carrier_name: str = ""
         self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
         self.short_call_patching: bool = False
+        self.antiemulation = "timeraw"
 
         self.dllfunc: str = ""  # For DLL injection
 

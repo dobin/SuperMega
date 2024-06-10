@@ -28,7 +28,8 @@ def create_c_from_template(settings: Settings, payload_len: int):
     plugin_decoder = ""
 
     # Decoder
-    filepath_decoder = PATH_DECODER + "{}.c".format(settings.decoder_style.value)
+    filepath_decoder = PATH_DECODER + "{}.c".format(
+        settings.decoder_style.value)
     with open(filepath_decoder, "r", encoding='utf-8') as file:
         plugin_decoder = file.read()
         plugin_decoder = Template(plugin_decoder).render({
@@ -38,7 +39,8 @@ def create_c_from_template(settings: Settings, payload_len: int):
         })
 
     # Anti-Emulation
-    filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format("timeraw")
+    filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format(
+        settings.antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
         plugin_antiemualation = file.read()
 
