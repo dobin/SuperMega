@@ -13,7 +13,9 @@ PATH_EXES_MORE = "data/binary/exes_more/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
 PATH_PAYLOAD = "data/source/payload/"
+
 PATH_DECODER = "data/source/carrier/decoder/"
+PATH_ANTIEMULATION = "data/source/carrier/antiemulation/"
 
 PATH_WEB_PROJECT = "projects/"
 

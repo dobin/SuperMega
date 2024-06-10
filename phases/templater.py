@@ -37,15 +37,22 @@ def create_c_from_template(settings: Settings, payload_len: int):
             'XOR_KEY2': ascii_to_hex_bytes(config.xor_key2),
         })
 
+    # Anti-Emulation
+    filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format("timeraw")
+    with open(filepath_antiemulation, "r", encoding='utf-8') as file:
+        plugin_antiemualation = file.read()
+
     # Choose correct template
     dirpath = PATH_CARRIER + settings.carrier_name + "/template.c"
     with open(dirpath, 'r', encoding='utf-8') as file:
         template_content = file.read()
         observer.add_text_file("main_c_template", template_content)
 
+    # Render main template
     template = Template(template_content)
     rendered_template = template.render({
         'plugin_decoder': plugin_decoder,
+        'plugin_antiemulation': plugin_antiemualation,
         'PAYLOAD_LEN': payload_len,
     })
     with open(settings.main_c_path, "w", encoding='utf-8') as file:
