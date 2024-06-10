@@ -146,6 +146,11 @@ def start_real(settings: Settings):
         project.settings.decoder_style.value,
         project.settings.carrier_invoke_style.value))
 
+    logger.info("---[ Plugins: AntiEmulation={}  Decoy={}".format(
+        project.settings.plugin_antiemulation,
+        project.settings.plugin_decoy)
+    )
+
     # CREATE: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, project.payload.len)
 

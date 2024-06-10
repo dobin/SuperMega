@@ -38,23 +38,29 @@ def create_c_from_template(settings: Settings, payload_len: int):
             'XOR_KEY2': ascii_to_hex_bytes(config.xor_key2),
         })
 
-    # Anti-Emulation
+    # Plugin: Anti-Emulation
     filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format(
-        settings.antiemulation)
+        settings.plugin_antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
         plugin_antiemualation = file.read()
 
-    # Choose correct template
+    # Plugin: Decoy
+    filepath_decoy = PATH_DECOY + "{}.c".format(
+        settings.plugin_decoy)
+    with open(filepath_decoy, "r", encoding='utf-8') as file:
+        plugin_decoy = file.read()   
+
+    # Choose template
     dirpath = PATH_CARRIER + settings.carrier_name + "/template.c"
     with open(dirpath, 'r', encoding='utf-8') as file:
         template_content = file.read()
         observer.add_text_file("main_c_template", template_content)
-
-    # Render main template
+    # Render template
     template = Template(template_content)
     rendered_template = template.render({
         'plugin_decoder': plugin_decoder,
         'plugin_antiemulation': plugin_antiemualation,
+        'plugin_decoy': plugin_decoy,
         'PAYLOAD_LEN': payload_len,
     })
     with open(settings.main_c_path, "w", encoding='utf-8') as file:

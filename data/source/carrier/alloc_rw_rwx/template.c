@@ -36,6 +36,8 @@ int main()
 	antiemulation();
 
 	// Decoy
+	{{plugin_decoy}}
+
 	//WinExec("C:\\windows\\system32\\notepad.exe", 1);
 
 	// Allocate 1

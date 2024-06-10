@@ -16,6 +16,7 @@ PATH_PAYLOAD = "data/source/payload/"
 
 PATH_DECODER = "data/source/carrier/decoder/"
 PATH_ANTIEMULATION = "data/source/carrier/antiemulation/"
+PATH_DECOY = "data/source/carrier/decoy/"
 
 PATH_WEB_PROJECT = "projects/"
 
