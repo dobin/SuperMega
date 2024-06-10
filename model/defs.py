@@ -34,8 +34,8 @@ class PayloadLocation(Enum):
     
 
 class CarrierInvokeStyle(Enum):
-    ChangeEntryPoint = "change AddressOfEntryPoint"
-    BackdoorCallInstr = "hijack branching instruction in entrypoint"
+    ChangeEntryPoint = "change EntryPoint"
+    BackdoorCallInstr = "hijack Main"
 
 
 class FunctionInvokeStyle(Enum):
