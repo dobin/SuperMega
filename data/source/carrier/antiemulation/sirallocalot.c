@@ -17,31 +17,38 @@ void antiemulation() {
     void* allocs[ALLOC_NUM];
     DWORD result;
 
-    for(int n=0; n<ALLOC_NUM; n++) {
-        allocs[n] = VirtualAlloc(
-            NULL, 
-            0x1000, 
-            0x3000, 
-            p_RW
-        );
-    }
+    for(int i=0; i<4; i++) {
+        
+        for(int n=0; n<ALLOC_NUM; n++) {
+            allocs[n] = VirtualAlloc(
+                NULL, 
+                0x1000, 
+                0x3000, 
+                p_RW
+            );
+        }
 
-    for(int n=0; n<ALLOC_NUM; n++) {
-        if (VirtualProtect(
-            allocs[n], 
-            1000, 
-            p_RX, 
-            &result) == 0) 
-        {
-            return 7;
+        for(int n=0; n<ALLOC_NUM; n++) {
+            if (VirtualProtect(
+                allocs[n], 
+                1000, 
+                p_RX, 
+                &result) == 0) 
+            {
+                return 7;
+            }
+        }
+
+        Sleep(200);
+
+        BOOL bSuccess;
+        for(int n=0; n<ALLOC_NUM; n++) {
+            bSuccess = VirtualFree(
+                            allocs[n],
+                            1000,
+                            0x00008000); // MEM_RELEASE
         }
     }
 
-    BOOL bSuccess;
-    for(int n=0; n<ALLOC_NUM; n++) {
-        bSuccess = VirtualFree(
-                        allocs[n],
-                        1000,
-                        0x00008000); // MEM_RELEASE
-    }
+
 }
