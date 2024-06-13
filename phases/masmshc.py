@@ -100,7 +100,7 @@ def masm_shc(asm_text_lines: List[str]) -> str:
             g_is32bit = True
 
         if tokens[0] == "EXTRN":
-            print(f"[ERROR] Line {line_count + 1}: External dependency detected:\n{line}")
+            raise Exception(f"[ERROR] Line {line_count + 1}: External dependency detected:\n{line}")
 
         in_skipped = False
         in_const = False
@@ -127,7 +127,7 @@ def masm_shc(asm_text_lines: List[str]) -> str:
                         logger.debug("[INFO] Entry Point: AlignRSP")
 
                 if seg_name == "_BSS":
-                    logger.error(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
+                    raise Exception(f"[ERROR] Line {line_count + 1}: _BSS segment detected! Remove all global and static variables!\n")
 
             if seg_name in ("pdata", "xdata", "voltbl"):
                 in_skipped = True
@@ -145,7 +145,7 @@ def masm_shc(asm_text_lines: List[str]) -> str:
             if tokens[1] in ("LIBCMT", "OLDNAMES"):
                 ofile.write(f"; {line}\n")  # copy commented out line
                 continue
-            print(f"[ERROR] Line {line_count + 1}: INCLUDELIB detected! Remove all external dependencies!\n")
+            raise Exception(f"[ERROR] Line {line_count + 1}: INCLUDELIB detected! Remove all external dependencies!\n")
 
         if params.inline_strings and in_const:
             if tokens[1] == "DB":
