@@ -11,8 +11,12 @@ from model.project import prepare_project
 
 
 def main():
-    logger.info("Super Mega Tester")
+    logger.info("Super Mega Tester: " + os.path.dirname(VerifyFilename))
     config.load()
+
+    if not os.path.exists(os.path.dirname(VerifyFilename)):
+        print("{} directory does not exist".format(os.path.dirname(VerifyFilename)))
+        return
 
     test_exe_code()
     test_exe_data()
