@@ -11,6 +11,26 @@ logger = logging.getLogger("PEHelper")
 # Its mostly used for verification of what we were doing. 
 
 
+# PRE-LOAD a dll file into memory
+# This will load the DLL file into a memory buffer, already
+# loaded at the correct RVA addresses (e.g. sections page aligned).
+def preload_dll(payload_path: str) -> bytes:
+    dllPe = pefile.PE(payload_path)
+    dllImageSize = dllPe.OPTIONAL_HEADER.SizeOfImage
+    payload: bytearray = bytearray(dllImageSize)
+
+    # copy PE header sizeofheaders
+    payload[:dllPe.OPTIONAL_HEADER.SizeOfHeaders] = dllPe.get_data()[:dllPe.OPTIONAL_HEADER.SizeOfHeaders]
+
+    # copy sections
+    for section in dllPe.sections:
+        if section.SizeOfRawData == 0:
+            continue
+        payload[section.VirtualAddress:section.VirtualAddress + section.SizeOfRawData] = section.get_data()
+
+    return bytes(payload)
+
+
 def extract_code_from_exe_file_ep(exe_file: FilePath, len: int) -> bytes:
     pe = pefile.PE(exe_file)
     section = get_code_section(pe)
@@ -69,3 +89,11 @@ def remove_trailing_null_bytes(data: bytes) -> bytes:
         if data[i] != b'\x00'[0]:  # Check for a non-null byte
             return data[:i + 1]
     return b''  # If the entire sequence is null bytes
+
+
+def align_to_page_size(rva, offset, page_size=4096):
+    # Align to the nearest lower page boundary
+    aligned_address = rva & ~(page_size - 1)
+    real_address = aligned_address - offset
+    logger.debug("      Aligning: 0x{:X} to 0x{:X}".format(aligned_address, real_address))
+    return real_address

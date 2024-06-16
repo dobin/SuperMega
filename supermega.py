@@ -12,13 +12,13 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from pe.pehelper import extract_code_from_exe_file_ep
+from pe.pehelper import preload_dll
 from sender import scannerDetectsBytes
 from model.project import Project, prepare_project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
-from model.carrier import Carrier, DataReuseEntry, IatRequest
+from model.carrier import DataReuseEntry
 
 
 def main():
@@ -151,6 +151,14 @@ def start_real(settings: Settings):
         project.settings.plugin_decoy)
     )
 
+    # FIXUP DLL Payload
+    # Prepare DLL payload for usage in dll_loader_change
+    # This needs to be done before rendering the C templates, as the need
+    # the size of the payload
+    if project.settings.carrier_name == "dll_loader_change":
+        project.payload.payload_data = preload_dll(project.payload.payload_path)
+        project.payload.len = len(project.payload.payload_data)
+
     # CREATE: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, project.payload.len)
 
@@ -198,19 +206,11 @@ def start_real(settings: Settings):
         #observer.add_code_file("full_shc", full_shellcode)
     else:
         # shellcode is in .rdata, so we dont need to merge
+        # This is handle before, e.g. encoding.
         full_shellcode = carrier_shellcode
 
-    # RWX Injection (optional): obfuscate loader+payload
-    #if project.exe_host.rwx_section != None:
-    #    logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
-    #        project.exe_host.rwx_section.Name.decode().rstrip('\x00')
-    #    ))
-    #    obfuscate_shc_loader(settings.main_shc_path, settings.main_shc_path + ".sgn")
-    #    observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
-    #    shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
-
     # inject (merged) loader into an exe. Big task.
-    phases.injector.inject_exe(full_shellcode, settings, project.carrier)
+    phases.injector.inject_exe(full_shellcode, settings, project.carrier, project)
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred
