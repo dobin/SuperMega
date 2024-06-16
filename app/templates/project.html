@@ -7,24 +7,19 @@
     {% include 'navigation.html' %}
 
     <div class="indent">
-
-        <h2> {{project_name}} </h2>
-
         <div class="row">
-            <!-- Row 1: Buttons -->
-            <div class="col-1">
-                <div class="row">
-                    <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
-                        <button class="btn btn-primary" type="submit" value="start">Open Dir</button>
-                    </form>
 
-                    <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
-                        <button class="btn btn-primary" type="submit" value="start">Build</button>
-                    </form>
-                </div>
+            <div class="col-1">
+                <!-- Row 1: Buttons -->
+                <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec?no_exec=true">
+                    <button class="btn btn-primary" type="submit" value="start">Open Dir</button>
+                </form>
+
+                <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/build">
+                    <button class="btn btn-primary" type="submit" value="start">Build</button>
+                </form>
                 
                 {% if is_built %}
-                <div class="row">
                         <form method="POST" enctype="multipart/form-data" action="/project/{{project_name}}/exec">
                             <button class="btn btn-primary" type="submit" value="start">Start</button>
                         </form>
@@ -37,40 +32,62 @@
                             <button class="btn btn-primary" type="submit" value="start">File Remote</button>
                         </form>
                         {% endif %}
-                </div>
                 {% endif %}
             </div>
-
             <!-- Row 2: Input files -->
-            <div class="col-2">
+            <div class="col-3">
                 <!-- leave this here or it will fuck up layout -->
                 <form method="POST" enctype="multipart/form-data" action="/project_add">
-                <input type="hidden" name="project_name" value="{{project_name}}">
-                
-                <input type="text" name="comment" class="hidden form-control" 
-                       placeholder="Comment" value="{{project.comment}}"
-                       aria-label="PROJECTNAME" aria-describedby="basic-addon1"
-                       onchange="this.form.submit()">
-            
-                <select class="form-select" name="shellcode" aria-label="SHELLCODE" onchange="this.form.submit()">
-                    {% for shellcode in shellcodes %}
-                    <option value="{{shellcode['filename']}}" 
-                            {% if shellcode["filename"] in project.settings.payload_path %} selected {% endif %}
-                    >
-                        {{shellcode['filename']}} ({{shellcode['size']}})
-                    </option>
-                    {% endfor %}
-                </select>
-            
-                <select class="form-select" name="exe" aria-label="EXE" onchange="this.form.submit()">
-                    {% for exe in exes %}
-                    <option value="{{exe['filename']}}"
-                        {% if exe['filename'] == project.settings.inject_exe_in %} selected {% endif %}
-                    >
-                    {{exe['filename'] | basename}} ({{exe['size']}})</option>
-                    {% endfor %}
-                </select>
 
+                <input type="text" name="project_name" class="hidden form-control" 
+                    placeholder="" value="{{project_name}}"
+                    aria-label="PROJECTNAME" aria-describedby="basic-addon1"
+                    onchange="this.form.submit()" readonly>
+
+                <input type="text" name="comment" class="hidden form-control" 
+                    placeholder="" value="{{project.comment}}"
+                    aria-label="PROJECTNAME" aria-describedby="basic-addon1"
+                    onchange="this.form.submit()">
+
+                <!-- Input: Payload File -->
+                <div class="form-group row">
+                    <label for="shellcode" class="col-sm-3 col-form-label">
+                        Payload
+                    </label>
+
+                    <div class="col-sm-9">
+                        <select class="form-select" id="shellcode" name="shellcode" 
+                                aria-label="SHELLCODE" onchange="this.form.submit()">
+                            {% for shellcode in shellcodes %}
+                            <option value="{{shellcode['filename']}}" 
+                                    {% if shellcode["filename"] in project.settings.payload_path %} selected {% endif %}
+                            >
+                                {{shellcode['filename']}} ({{shellcode['size']}})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Input: EXE File -->
+                <div class="form-group row">
+                    <label for="exe" class="col-sm-3 col-form-label">
+                        Injectable
+                    </label>
+                    <div class="col-sm-9">
+                        <select class="form-select" id="exe" name="exe" 
+                                aria-label="EXE" onchange="this.form.submit()">
+                            {% for exe in exes %}
+                            <option value="{{exe['filename']}}"
+                                {% if exe['filename'] == project.settings.inject_exe_in %} selected {% endif %}
+                            >
+                            {{exe['filename'] | basename}} ({{exe['size']}})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Input: DLL function -->
                 {% if exports != [] %}
                 <select class="form-select" name="dllfunc" aria-label="DLLFUNC" onchange="this.form.submit()">
                     {% for export in exports %}
@@ -81,23 +98,39 @@
                     {% endfor %}
                 </select>
                 {% endif %}
-                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE INFO</a>
             </div>
 
             <!-- Row 3: exe and shellcode info -->
             <div class="col-2">
-                {% if is_64 %}
-                x64: {{ is_64 }}
-                {% else %}
-                <span class="text-danger">x64: {{ is_64 }}</span>
-                {% endif %}
-                    / Dotnet: {{ is_dotnet}} <br>
-                .text: {{ code_sect_size}}  <br>
-                .rdata: {{ data_sect_size}} 
-                (max: {{ data_sect_largest_gap_size}}) <br>
-                {% if not has_rodata_section %}
-                <span class="text-danger">No .rdata section</span> <br>
-                {% endif %}
+                <a href="/exes/{{project.settings.inject_exe_in | basename}}">EXE Info:</a>
+                <ul>
+                    <li>
+                        {% if is_64 %}
+                            x64: {{ is_64 }}
+                        {% else %}
+                            <span class="text-danger">x64: {{ is_64 }}</span>
+                        {% endif %}
+                    </li>
+                
+                    <li>
+                        Dotnet: {{ is_dotnet}} 
+                    </li>
+
+                    <li>
+                        .text: {{ code_sect_size}}
+                    </li>
+
+                    <li>
+                        .rdata: {{ data_sect_size}} 
+                        (max: {{ data_sect_largest_gap_size}})
+                    </li>
+                    
+                    {% if not has_rodata_section %}
+                    <li>
+                        <span class="text-danger">No .rdata section</span> <br>
+                    </li>
+                    {% endif %}
+                </ul>
 
                 {% if unresolved_dlls|length > 0 %}
                 <br>
@@ -108,37 +141,59 @@
                 {% endfor %}
                 </ul>
                 {% endif %}
+
             </div>
 
             <!-- Row 4: leet settings -->
-            <div class="col-2">
-                <select class="form-select" name="carrier_name" aria-label="CARRIERNAME" onchange="this.form.submit()">
-                    {% for name in carrier_names %}
-                    <option value="{{name}}"
-                        {% if name in project.settings.carrier_name %} selected {% endif %}
-                    >{{name}}</option>
-                    {% endfor %}
-                </select>
+            <div class="col-3">
+                <div class="form-group row">
+                    <label for="carrier_name" class="col-sm-5 col-form-label">
+                        Carrier
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="carrier_name" id="carrier_name 
+                                aria-label="CARRIERNAME" onchange="this.form.submit()">
+                            {% for name in carrier_names %}
+                            <option value="{{name}}"
+                                {% if name in project.settings.carrier_name %} selected {% endif %}
+                            >{{name}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             
-                <select class="form-select" name="carrier_invoke_style" aria-label="INJECTSTYLE" onchange="this.form.submit()">
-                    {% for name, value in carrier_invoke_styles %}
-                    <option value="{{name}}"
-                        {% if value in project.settings.carrier_invoke_style.value %} selected {% endif %}
-                    >{{value}}</option>
-                    {% endfor %}
-                </select>
+                <div class="form-group row">
+                    <label for="carrier_invoke_style" class="col-sm-5 col-form-label">
+                        Carrier&nbsp;Invoke
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="carrier_invoke_style" id="carrier_invoke_style"
+                                aria-label="INJECTSTYLE" onchange="this.form.submit()">
+                            {% for name, value in carrier_invoke_styles %}
+                            <option value="{{name}}"
+                                {% if value in project.settings.carrier_invoke_style.value %} selected {% endif %}
+                            >{{value}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
 
-                <select class="form-select" name="decoder_style" aria-label="DECODERESTYLE" onchange="this.form.submit()">
-                    {% for name, value in decoderstyles %}
-                    <option value="{{name}}"
-                    {% if value in project.settings.decoder_style.value %} selected {% endif %}
-                    >{{value}}</option>
-                    {% endfor %}
-                </select>
-            </div>
+                <div class="form-group row">
+                    <label for="carrier_invoke_style" class="col-sm-5 col-form-label">
+                        Payload&nbsp;Location
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="payload_location" id="payload_location"
+                                aria-label="PAYLOADLOCATION" onchange="this.form.submit()">
+                            {% for name, value in payload_locations %}
+                            <option value="{{name}}"
+                            {% if value in project.settings.payload_location.value %} selected {% endif %}
+                            >{{value}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
 
-            <!-- Row 5 -->
-            <div class="col-2">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" value="YES" id="flexCheckDefault"  
                         name="fix_missing_iat" onchange="this.form.submit()" {{ 'checked' if fix_missing_iat }}>
@@ -146,24 +201,84 @@
                         Add missing IAT entries
                     </label>
                 </div>
+            </div>
 
-                <select class="form-select" name="payload_location" aria-label="PAYLOADLOCATION" onchange="this.form.submit()">
-                    {% for name, value in payload_locations %}
-                    <option value="{{name}}"
-                    {% if value in project.settings.payload_location.value %} selected {% endif %}
-                    >{{value}}</option>
-                    {% endfor %}
-                </select>
+            <!-- Row 5 -->
+            <div class="col-2">
+                <div class="form-group row">
+                    <label for="decoder_style" class="col-sm-5 col-form-label">
+                        Encoder
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="decoder_style" id="decoder_style"
+                                aria-label="DECODERESTYLE" onchange="this.form.submit()">
+                            {% for name, value in decoderstyles %}
+                                <option value="{{name}}"
+                                    {% if value in project.settings.decoder_style.value %} selected {% endif %}
+                                >{{value}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="guardrail" class="col-sm-5 col-form-label">
+                        Guardrails
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="guardrail" id="guardrail"
+                                aria-label="GUARDRAILSTYLE" onchange="this.form.submit()">
+                            {% for name in guardrailstyles %}
+                                <option value="{{name}}"
+                                    {% if name in project.settings.plugin_guardrail %} selected {% endif %}
+                                >{{name}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="antiemulation_style" class="col-sm-5 col-form-label">
+                        AntiEmulation
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="antiemulation" id="antiemulation"
+                                aria-label="antiemulation" onchange="this.form.submit()">
+                            {% for name in antiemulationstyles %}
+                                <option value="{{name}}"
+                                    {% if name in project.settings.plugin_antiemulation %} selected {% endif %}
+                                >{{name}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <label for="decoy_style" class="col-sm-5 col-form-label">
+                        Decoy
+                    </label>
+                    <div class="col-sm-7">
+                        <select class="form-select" name="decoy" id="decoy"
+                                aria-label="decoy" onchange="this.form.submit()">
+                            {% for name in decoystyles %}
+                                <option value="{{name}}"
+                                    {% if name in project.settings.plugin_decoy %} selected {% endif %}
+                                >{{name}}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
 
         </form>
 
         <div class="row">
-            <div class="col">
-             {{ project_dir }} <br>
-              <div class="custom-line"></div>
-            </div>
+            <div class="custom-line"></div>
         </div>
 
 

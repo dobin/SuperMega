@@ -17,6 +17,7 @@ PATH_PAYLOAD = "data/source/payload/"
 PATH_DECODER = "data/source/decoder/"
 PATH_ANTIEMULATION = "data/source/antiemulation/"
 PATH_DECOY = "data/source/decoy/"
+PATH_GUARDRAILS = "data/source/guardrails/"
 
 PATH_WEB_PROJECT = "projects/"
 
@@ -30,13 +31,13 @@ class DecoderStyle(Enum):
 
 
 class PayloadLocation(Enum):
-    CODE = "code"
-    DATA = "data"
+    CODE = ".text"
+    DATA = ".rdata"
     
 
 class CarrierInvokeStyle(Enum):
     ChangeEntryPoint = "change EntryPoint"
-    BackdoorCallInstr = "hijack Main"
+    BackdoorCallInstr = "backdoor Entrypoint"
 
 
 class FunctionInvokeStyle(Enum):

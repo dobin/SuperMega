@@ -27,7 +27,13 @@ def create_c_from_template(settings: Settings, payload_len: int):
         PATH_DECODER, settings.main_c_path))
     plugin_decoder = ""
 
-    # Decoder
+    # Plugin: Execution Guardrails
+    filepath_guardrails = PATH_GUARDRAILS + "{}.c".format(
+        settings.plugin_guardrail)
+    with open(filepath_guardrails, "r", encoding='utf-8') as file:
+        plugin_guardrails = file.read()
+
+    # Plugin: Decoder
     filepath_decoder = PATH_DECODER + "{}.c".format(
         settings.decoder_style.value)
     with open(filepath_decoder, "r", encoding='utf-8') as file:
@@ -48,7 +54,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
     filepath_decoy = PATH_DECOY + "{}.c".format(
         settings.plugin_decoy)
     with open(filepath_decoy, "r", encoding='utf-8') as file:
-        plugin_decoy = file.read()   
+        plugin_decoy = file.read()
 
     # Choose template
     dirpath = PATH_CARRIER + settings.carrier_name + "/template.c"
@@ -61,6 +67,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         'plugin_decoder': plugin_decoder,
         'plugin_antiemulation': plugin_antiemualation,
         'plugin_decoy': plugin_decoy,
+        'plugin_guardrails': plugin_guardrails,
         'PAYLOAD_LEN': payload_len,
     })
     with open(settings.main_c_path, "w", encoding='utf-8') as file:

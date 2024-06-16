@@ -16,6 +16,7 @@ class Settings():
 
         self.plugin_antiemulation = "none"
         self.plugin_decoy = "none"
+        self.plugin_guardrail = "none"
 
         self.dllfunc: str = ""  # For DLL injection
 

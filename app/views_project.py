@@ -102,6 +102,10 @@ def project(name):
     carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
     payload_locations = [(color.name, color.value) for color in PayloadLocation]
 
+    guardrail_styles = list_files(PATH_GUARDRAILS)
+    antiemulation_styles = list_files(PATH_ANTIEMULATION)
+    decoy_styles = list_files(PATH_DECOY)
+
     return render_template('project.html', 
         project_name = name,
         project=project, 
@@ -128,6 +132,10 @@ def project(name):
 
         has_remote=has_remote,
         fix_missing_iat=project.settings.fix_missing_iat,
+
+        guardrailstyles = guardrail_styles,
+        antiemulationstyles = antiemulation_styles,
+        decoystyles = decoy_styles,
     )
 
 
@@ -143,6 +151,16 @@ def list_files_and_sizes(directory, prepend=""):
                 "size": size,
             })
     return files_and_sizes
+
+
+def list_files(directory, prepend="") -> List[str]:
+    files = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            filename = filename.replace(".c", "")
+            files.append(filename)
+    return files
 
 
 @views_project.route("/project_add", methods=['POST', 'GET'])
@@ -177,8 +195,16 @@ def add_project():
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
 
-            carrier_name = request.form['carrier_name']
-            settings.carrier_name = carrier_name
+            settings.carrier_name = request.form['carrier_name']
+            
+            settings.plugin_antiemulation = request.form['antiemulation']
+            settings.plugin_decoy = request.form['decoy']
+            settings.plugin_guardrail = request.form['guardrail']
+            logger.info("E: {}  D: {}  G: {}".format(
+                settings.plugin_antiemulation,
+                settings.plugin_decoy,
+                settings.plugin_guardrail
+            ))
 
             carrier_invoke_style = request.form['carrier_invoke_style']
             settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
