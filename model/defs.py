@@ -14,9 +14,9 @@ PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
 PATH_PAYLOAD = "data/source/payload/"
 
-PATH_DECODER = "data/source/carrier/decoder/"
-PATH_ANTIEMULATION = "data/source/carrier/antiemulation/"
-PATH_DECOY = "data/source/carrier/decoy/"
+PATH_DECODER = "data/source/decoder/"
+PATH_ANTIEMULATION = "data/source/antiemulation/"
+PATH_DECOY = "data/source/decoy/"
 
 PATH_WEB_PROJECT = "projects/"
 
