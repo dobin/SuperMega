@@ -158,14 +158,13 @@ def start_real(settings: Settings):
 
     # FIXUP DLL Payload
     # Prepare DLL payload for usage in dll_loader_change
-    # This needs to be done before rendering the C templates, as the need
-    # the size of the payload
+    # This needs to be done before rendering the C templates, as need
+    # the real size of the payload
     if project.settings.carrier_name == "dll_loader_change":
         project.payload.payload_data = preload_dll(project.payload.payload_path)
-        project.payload.len = len(project.payload.payload_data)
 
     # CREATE: Carrier C source files from template (C->C)
-    phases.templater.create_c_from_template(settings, project.payload.len)
+    phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
 
     # If we put the payload into .rdata
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
@@ -211,11 +210,11 @@ def start_real(settings: Settings):
         #observer.add_code_file("full_shc", full_shellcode)
     else:
         # shellcode is in .rdata, so we dont need to merge
-        # This is handle before, e.g. encoding.
+        # Encoding is handled before this
         full_shellcode = carrier_shellcode
 
     # inject (merged) loader into an exe. Big task.
-    phases.injector.inject_exe(full_shellcode, settings, project.carrier, project)
+    phases.injector.inject_exe(full_shellcode, settings, project.carrier, project.payload)
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred

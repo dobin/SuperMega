@@ -13,11 +13,12 @@ from model.project import Project
 from model.settings import Settings
 from pe.asmdisasm import *
 from model.defs import *
+from model.payload import Payload
 
 logger = logging.getLogger("Injector")
 
 
-def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier, project: Project):
+def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier, payload: Payload):
     exe_in = settings.inject_exe_in
     exe_out = settings.inject_exe_out
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
@@ -93,7 +94,7 @@ def inject_exe(main_shc: bytes, settings: Settings, carrier: Carrier, project: P
         # Aligning the payload (not carrier!) to page size is important for dll_loader_change
         if settings.carrier_name == "dll_loader_change":
             # align shellcode_rva minus an offset to page size
-            shellcode_rva = align_to_page_size(shellcode_rva, shellcode_len - project.payload.len)
+            shellcode_rva = align_to_page_size(shellcode_rva, shellcode_len - len(payload.payload_data))
             shellcode_offset = superpe.pe.get_offset_from_rva(shellcode_rva)
 
         logger.info("---( Inject: Write Shellcode to offset:0x{:X} (rva:0x{:X})".format(
