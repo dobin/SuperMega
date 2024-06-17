@@ -1,4 +1,3 @@
-import shutil
 import argparse
 from typing import Dict
 import os
@@ -19,12 +18,14 @@ from model.settings import Settings
 from model.defs import *
 from log import setup_logging
 from model.carrier import DataReuseEntry
+from utils import check_deps
 
 
 def main():
     """Argument parsing for when called from command line"""
     logger.info("Super Mega")
     config.load()
+    check_deps()
     settings = Settings()
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
