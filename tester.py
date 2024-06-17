@@ -18,10 +18,36 @@ def main():
         print("{} directory does not exist".format(os.path.dirname(VerifyFilename)))
         return
 
+    test_dll_loader()
     test_exe_code()
     test_exe_data()
     test_dll_code()
     test_dll_data()
+
+
+def test_dll_loader():
+    print("Testing: DLL Loader")
+    settings = Settings("unittest")
+    settings.payload_path = PATH_SHELLCODES + "createfile.dll"
+    settings.verify = True
+    settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.CODE  
+
+    print("Test DLL Loader 1/2: procexp, backdoor main, dll loader alloc")
+    settings.carrier_name = "dll_loader_alloc"
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    if start(settings) != 0:
+        print("Error")
+
+    print("Test DLL Loader 2/2: procexp, backdoor main, dll loader change")
+    settings.carrier_name = "dll_loader_change"
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    if start(settings) != 0:
+        print("Error")
 
 
 def test_exe_code():
@@ -224,6 +250,6 @@ def dll_iat_reuse():
 
 
 if __name__ == "__main__":
-    #setup_logging(level=logging.INFO)
-    setup_logging(level=logging.WARNING)
+    setup_logging(level=logging.INFO)
+    #setup_logging(level=logging.WARNING)
     main()
