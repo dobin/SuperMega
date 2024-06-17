@@ -35,7 +35,7 @@ class Settings():
         self.generate_shc_from_asm: bool = True
 
         # More
-        self.fix_missing_iat = False
+        self.fix_missing_iat = True
         self.payload_location = PayloadLocation.DATA
 
         # directories and filenames

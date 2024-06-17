@@ -146,9 +146,10 @@ def start_real(settings: Settings):
         project.settings.decoder_style.value,
         project.settings.carrier_invoke_style.value))
 
-    logger.info("---[ Plugins: AntiEmulation={}  Decoy={}".format(
+    logger.info("---[ Plugins: AntiEmulation={}  Decoy={}  Guardrail={}".format(
         project.settings.plugin_antiemulation,
-        project.settings.plugin_decoy)
+        project.settings.plugin_decoy,
+        project.settings.plugin_guardrail)
     )
 
     # FIXUP DLL Payload
