@@ -191,7 +191,10 @@ def add_project():
                 settings.dllfunc = request.form['dllfunc']
 
             settings.inject_exe_in = request.form['exe']
-            settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
+            settings.inject_exe_out = "{}{}".format(
+                settings.main_dir,
+                os.path.basename(settings.inject_exe_in).replace(".exe", ".infected.exe")
+            )
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
 
@@ -200,11 +203,6 @@ def add_project():
             settings.plugin_antiemulation = request.form['antiemulation']
             settings.plugin_decoy = request.form['decoy']
             settings.plugin_guardrail = request.form['guardrail']
-            logger.info("E: {}  D: {}  G: {}".format(
-                settings.plugin_antiemulation,
-                settings.plugin_decoy,
-                settings.plugin_guardrail
-            ))
 
             carrier_invoke_style = request.form['carrier_invoke_style']
             settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
