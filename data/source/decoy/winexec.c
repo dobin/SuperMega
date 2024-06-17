@@ -1,1 +1,4 @@
-WinExec("C:\\windows\\system32\\notepad.exe", 1);
+
+void decoy() {
+    WinExec("C:\\windows\\system32\\notepad.exe", 1);
+}

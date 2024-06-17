@@ -67,7 +67,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         'plugin_decoder': plugin_decoder,
         'plugin_antiemulation': plugin_antiemualation,
         'plugin_decoy': plugin_decoy,
-        'plugin_guardrails': plugin_guardrails,
+        'plugin_executionguardrail': plugin_guardrails,
         'PAYLOAD_LEN': payload_len,
     })
     with open(settings.main_c_path, "w", encoding='utf-8') as file:

