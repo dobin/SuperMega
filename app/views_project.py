@@ -173,6 +173,18 @@ def add_project():
 
         # new project?
         if storage.get_project(project_name) == None:
+            # Default values for web create
+            settings.init_payload_injectable(
+                "messagebox.bin",
+                "data/binary/exes/procexp64.exe",
+                ""
+            )
+            settings.decoder_style = DecoderStyle.XOR_2
+            settings.carrier_name = "alloc_rw_rx"
+            settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+            settings.payload_location = PayloadLocation.CODE
+            settings.fix_missing_iat = True
+
             # add new project
             project = WebProject(project_name, settings)
             project.comment = comment
@@ -180,20 +192,10 @@ def add_project():
         
         # update project
         else:
-            settings.payload_path = PATH_SHELLCODES + request.form['shellcode']
-            if request.form['shellcode'] == "createfile.bin":
-                settings.verify = True
-                settings.try_start_final_infected_exe = False
-            else:
-                settings.cleanup_files_on_exit = False
-
-            if 'dllfunc' in request.form:
-                settings.dllfunc = request.form['dllfunc']
-
-            settings.inject_exe_in = request.form['exe']
-            settings.inject_exe_out = "{}{}".format(
-                settings.main_dir,
-                os.path.basename(settings.inject_exe_in).replace(".exe", ".infected.exe")
+            settings.init_payload_injectable(
+                request.form['shellcode'],
+                request.form['exe'],
+                request.form.get('dllfunc', "")
             )
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False

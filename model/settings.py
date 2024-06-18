@@ -46,3 +46,19 @@ class Settings():
         self.main_shc_path = self.main_dir + "main.bin"
         self.inject_exe_out = "{}{}".format(
             self.main_dir, os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe"))
+
+    def init_payload_injectable(self, shellcode, injectable, dll_func):
+        self.payload_path = PATH_SHELLCODES + shellcode
+        if shellcode == "createfile.bin":
+            self.verify = True
+            self.try_start_final_infected_exe = False
+        else:
+            self.cleanup_files_on_exit = False
+            
+        self.inject_exe_in = injectable
+        self.inject_exe_out = "{}{}".format(
+            self.main_dir,
+            os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe")
+        )
+
+        self.dllfunc = dll_func
