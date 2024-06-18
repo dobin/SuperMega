@@ -32,6 +32,9 @@ def create_c_from_template(settings: Settings, payload_len: int):
         settings.plugin_guardrail)
     with open(filepath_guardrails, "r", encoding='utf-8') as file:
         plugin_guardrails = file.read()
+        plugin_guardrails = Template(plugin_guardrails).render({
+            'guardrail_data': settings.plugin_guardrail_data,
+        })
 
     # Plugin: Decoder
     filepath_decoder = PATH_DECODER + "{}.c".format(

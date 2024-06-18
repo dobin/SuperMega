@@ -239,6 +239,20 @@
                     </div>
                 </div>
 
+                {% if project.settings.plugin_guardrail != "none" %}
+                <div class="form-group row">
+                    <label for="guardrail" class="col-sm-5 col-form-label">
+                        Guard Data
+                    </label>
+                    <div class="col-sm-7">
+                        <input type="text" name="guardrail_data" class="hidden form-control" 
+                        placeholder="" value="{{project.settings.plugin_guardrail_data}}"
+                        aria-label="guardrail_data" aria-describedby="basic-addon1"
+                        onchange="this.form.submit()">
+                    </div>
+                </div>
+                {% endif %}
+
                 <div class="form-group row">
                     <label for="antiemulation_style" class="col-sm-5 col-form-label">
                         AntiEmulation

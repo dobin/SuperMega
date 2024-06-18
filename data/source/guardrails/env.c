@@ -15,7 +15,7 @@ int mystrcmp(wchar_t* str1, wchar_t* str2) {
 int executionguardrail() {
 	// Execution Guardrail: Env Check
 	wchar_t envVarName[] = L"USERPROFILE";
-	wchar_t tocheck[] = L"C:\\Users\\";
+	wchar_t tocheck[] = L"{{guardrail_data}}";
 	WCHAR buffer[1024];  // NOTE: Do not make it bigger, or we have a __chkstack() dependency!
 	DWORD result = GetEnvironmentVariableW(envVarName, buffer, 1024);
 	if (result == 0) {

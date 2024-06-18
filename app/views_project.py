@@ -215,6 +215,8 @@ def add_project():
             payload_location = request.form['payload_location']
             settings.payload_location = PayloadLocation[payload_location]
 
+            settings.plugin_guardrail_data = request.form['guardrail_data']
+
             # overwrite project
             project = storage.get_project(project_name)
             project.settings = settings
