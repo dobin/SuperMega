@@ -11,7 +11,7 @@ logger = logging.getLogger("Assembler")
 
 def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath) -> bytes:
     """Takes ASM source file asm_in, compiles it into build_exe, extracts its code section and write into shellcode_out"""
-    logger.info("--[ Assemble to exe: {} -> {}".format(asm_in, build_exe))
+    logger.info("-[ Assemble to exe: {} -> {}".format(asm_in, build_exe))
     run_process_checkret([
         config.get("path_ml64"),
         asm_in,

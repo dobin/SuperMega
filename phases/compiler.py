@@ -22,7 +22,7 @@ def compile_dev(
     asm_out: FilePath,
     short_call_patching: bool = False,
 ):
-    logger.info("--( Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-( Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([
@@ -54,7 +54,7 @@ def compile(
     carrier: Carrier,
     settings: Settings,
 ):
-    logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([

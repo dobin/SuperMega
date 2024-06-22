@@ -23,7 +23,7 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
     exe_out = settings.inject_exe_out
     carrier_invoke_style: CarrierInvokeStyle = settings.carrier_invoke_style
 
-    logger.info("--[ Injecting: into {} -> {}".format(exe_in, exe_out))
+    logger.info("-[ Injecting: into {} -> {}".format(exe_in, exe_out))
 
     # CHECK if shellcode fits into the target code section
     carrier_shc_len = len(carrier_shc)
@@ -42,7 +42,7 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
         # skip available
         addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
         if addr != None:
-            logger.info("    Request IAT {} is available at 0x{:X}".format(
+            logger.info("---[ Request IAT {} is available at 0x{:X}".format(
                 iatRequest.name, addr))
             continue
         iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
@@ -98,7 +98,7 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
             shellcode_rva = align_to_page_size(shellcode_rva, carrier_shc_len - len(payload.payload_data))
             carrier_shc_offset = superpe.pe.get_offset_from_rva(shellcode_rva)
 
-        logger.info("---( Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+        logger.info("--[ Inject: Write Carrier to 0x{:X} (0x{:X})".format(
             shellcode_rva, carrier_shc_offset))
 
         # Copy the shellcode
