@@ -186,11 +186,8 @@ def start_real(settings: Settings):
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
     functions = project.carrier.get_unresolved_iat()
-    if len(functions) != 0:
-        if settings.fix_missing_iat:
-            logger.info("--[ Fixing missing IAT entries: {}".format(", ".join(functions)))
-        else:
-            raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+    if len(functions) != 0 and settings.fix_missing_iat == False:
+        raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
@@ -199,7 +196,7 @@ def start_real(settings: Settings):
             build_exe = settings.main_exe_path)
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
-    # inject (merged) loader into an exe. Big task.
+    # INJECT loader into an exe and do IAT & data references. Big task.
     phases.injector.inject_exe(carrier_shellcode, settings, project.carrier, project.payload)
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 

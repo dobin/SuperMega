@@ -67,12 +67,12 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
                 raise Exception("Data reuse entry not found: {}".format(string_ref))
 
             # add a reference
-            randbytes: bytes = os.urandom(7)  # LEA is 7 bytes
+            placeholder: bytes = os.urandom(7)  # LEA is 7 bytes
             register = line.split("mov\t")[1].split(",")[0]
-            datareuse_fixup.add_reference(randbytes, register)
+            datareuse_fixup.add_reference(placeholder, register)
 
             # add lines
-            line = bytes_to_asm_db(randbytes) + " ; supermega_payload Payload".format()
+            line = bytes_to_asm_db(placeholder) + " ; supermega_payload Payload".format()
             lines_out.append(line)
             continue
 
@@ -84,9 +84,10 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         if "QWORD PTR __imp_" in line:
             # just the function name, without __imp_
             func_name = line[line.find("__imp_")+6:].rstrip()
-            randbytes: bytes = os.urandom(6)  # exact size or the result
-            carrier.add_iat_request(func_name, randbytes)
-            new_line = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
+            placeholder: bytes = os.urandom(6)  # exact size or the result
+            carrier.add_iat_request(func_name, placeholder)
+            
+            new_line = bytes_to_asm_db(placeholder) + " ; IAT Reuse for {}".format(func_name)
             lines_out.append(new_line)
             continue
 
@@ -129,10 +130,10 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
                 raise("Data reuse entry not found: {}".format(string_ref))
 
             register = line.split("lea\t")[1].split(",")[0]
-            randbytes: bytes = os.urandom(7)
-            datareuse_fixup.add_reference(randbytes, register)
+            placeholder: bytes = os.urandom(7)
+            datareuse_fixup.add_reference(placeholder, register)
 
-            line = bytes_to_asm_db(randbytes) + " ; .rdata Reuse for {} ({})".format(
+            line = bytes_to_asm_db(placeholder) + " ; .rdata Reuse for {} ({})".format(
                 string_ref, register)
             lines_out.append(line)
             continue

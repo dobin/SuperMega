@@ -52,6 +52,9 @@ def create_c_from_template(settings: Settings, payload_len: int):
         settings.plugin_antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
         plugin_antiemualation = file.read()
+        plugin_antiemualation = Template(plugin_antiemualation).render({
+            'PAYLOAD_LEN': payload_len,
+        })
 
     # Plugin: Decoy
     filepath_decoy = PATH_DECOY + "{}.c".format(

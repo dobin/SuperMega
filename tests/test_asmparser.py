@@ -98,7 +98,7 @@ class AsmTest(unittest.TestCase):
         self.assertTrue('rcx' in entry.register)
         self.assertEqual(entry.data, b"U\x00S\x00E\x00R\x00P\x00R\x00O\x00F\x00I\x00L\x00E\x00\x00\x00")
         self.assertEqual(entry.addr, 0)
-        self.assertEqual(7, len(entry.randbytes))  # needs to be 7!
+        self.assertEqual(7, len(entry.placeholder))  # needs to be 7!
 
         entry = data_reuse_entries[1+1]
         self.assertTrue('$SG72514' in entry.string_ref)

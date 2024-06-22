@@ -12,12 +12,16 @@ logger = logging.getLogger("Carrier")
 class IatRequest():
     def __init__(self, name: str, placeholder: bytes):
         self.name: str = name           # Function Name, like "VirtualAlloc"
-        self.placeholder: bytes = placeholder    # Random bytes as placeholder
+        self.references: List[bytes] = []
+        self.add_reference(placeholder)
+
+    def add_reference(self, placeholder): 
+        self.references.append(placeholder)
 
 
 class DataReuseReference(): 
-    def __init__(self, randbytes: bytes, register: str):
-        self.randbytes: bytes = randbytes
+    def __init__(self, placeholder: bytes, register: str):
+        self.placeholder: bytes = placeholder
         self.register: str = register
 
 
@@ -31,8 +35,8 @@ class DataReuseEntry():
         self.references: List[DataReuseReference] = []
 
 
-    def add_reference(self, randbytes, register): 
-        self.references.append(DataReuseReference(randbytes, register))
+    def add_reference(self, placeholder, register): 
+        self.references.append(DataReuseReference(placeholder, register))
 
 
 class Carrier():
@@ -46,6 +50,21 @@ class Carrier():
         self.superpe = SuperPe(self.exe_filepath)
 
 
+    # IAT
+
+    def add_iat_request(self, func_name: str, placeholder: bytes):
+        # existing?
+        for iat in self.iat_requests:
+            if iat.name == func_name:
+                iat.add_reference(placeholder)
+                return
+
+        # new
+        self.iat_requests.append(IatRequest(func_name, placeholder))
+
+    def get_all_iat_requests(self) -> List[IatRequest]:
+        return self.iat_requests
+
     def get_unresolved_iat(self):
         """Returns a list of IAT entries not available in the PE file"""
         functions = []
@@ -53,15 +72,6 @@ class Carrier():
             if self.superpe.get_vaddr_of_iatentry(iat.name) == None:
                 functions.append(iat.name)
         return functions
-
-
-    # IAT
-
-    def add_iat_request(self, func_name: str, placeholder: bytes):
-        self.iat_requests.append(IatRequest(func_name, placeholder))
-
-    def get_all_iat_requests(self) -> List[IatRequest]:
-        return self.iat_requests
 
 
     # Data Reuse

