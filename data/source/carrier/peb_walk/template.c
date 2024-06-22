@@ -5,7 +5,9 @@
 char *supermega_payload;
 
 /* peb_walk
-   Standard shellcode which will resolve IAT by itself with a peb_walk
+   Standard shellcode which will resolve IAT by itself with a peb walk
+   no IAT reuse is performed
+   no data reuse is performed
 */
 
 int main()

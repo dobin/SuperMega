@@ -16,9 +16,8 @@ char *supermega_payload;
 {{plugin_executionguardrail}}
 
 
-/* iat_reuse_rx
+/* VirtualAlloc -> rw -> rx
 
-   Standard IAT reuse shellcode
    * create new memory region for the payload
    * will set it to RX (may break some shellcodes, opsec-safe)
 */

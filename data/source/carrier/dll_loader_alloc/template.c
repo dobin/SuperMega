@@ -10,8 +10,9 @@ char *supermega_payload;
 
 /* DLL loader
 
-   This code will load a DLL (not a shellcode!) into memory, 
-     resolve its imports, apply relocations, and execute it.
+   This code will load a DLL (not a shellcode!) 
+   into new memory region,
+   resolve its imports, apply relocations, and execute it.
 
    Loader is based on: 
      https://www.ired.team/offensive-security/code-injection-process-injection/reflective-dll-injection
