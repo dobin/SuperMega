@@ -15,14 +15,24 @@ class IatRequest():
         self.placeholder: bytes = placeholder    # Random bytes as placeholder
 
 
-class DataReuseEntry():
-    def __init__(self, string_ref: str):
-        self.string_ref: str = string_ref  # "$SG72513"
+class DataReuseReference(): 
+    def __init__(self, randbytes: bytes, register: str):
+        self.randbytes: bytes = randbytes
+        self.register: str = register
 
-        self.register: str = ""  # "rcx"
-        self.randbytes: bytes = b""  # placeholder
-        self.data: bytes = b''
-        self.addr: int = 0
+
+class DataReuseEntry():
+    def __init__(self, string_ref: str, in_code: bool = False):
+        self.string_ref: str = string_ref  # "$SG72513"
+        self.data: bytes = b''             # the content/data
+        self.addr: int = 0                 # where content/data is stored
+        self.in_code: bool = in_code       # is the data in code section
+
+        self.references: List[DataReuseReference] = []
+
+
+    def add_reference(self, randbytes, register): 
+        self.references.append(DataReuseReference(randbytes, register))
 
 
 class Carrier():
@@ -31,7 +41,6 @@ class Carrier():
         self.reusedata_fixups: List[DataReuseEntry] = []
         self.exe_filepath: str = exe_file
         self.superpe: SuperPe = None
-
 
     def init(self):
         self.superpe = SuperPe(self.exe_filepath)

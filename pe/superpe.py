@@ -246,6 +246,17 @@ class SuperPe():
             # Reloc destination is probably 8 bytes
             # But i add another 8 to skip over small holes (common in .rdata)
             rm.add_range(reloc.rva, reloc.rva + 8 + 8)
+        
+        if True:  # FIXME this is a hack which is sometimes necessary?
+            sect_data_copy = section.pefile_section.get_data()
+            string_off = find_first_utf16_string_offset(sect_data_copy)
+            if string_off == None:
+                raise Exception("Strings not found in .rdata section, abort")
+            if string_off < 128:
+                logging.debug("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+                string_off = 128
+            rm.add_range(section.virt_addr, section.virt_addr + string_off)
+        
         rm.merge_overlaps()
         return rm
 
@@ -378,3 +389,22 @@ class SuperPe():
 
         self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0
         self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0
+
+
+def find_first_utf16_string_offset(data, min_len=8):
+    current_string = bytearray()
+    start_offset = None  # To keep track of the start of the current string
+    for i in range(0, len(data) - 1, 2):
+        # Check if we have a valid character
+        if data[i] != 0 or data[i+1] != 0:
+            if start_offset is None:  # Mark the start of a new string
+                start_offset = i
+            current_string += bytes([data[i], data[i+1]])
+        else:
+            if len(current_string) >= min_len * 2:  # Check if the current string meets the minimum length
+                return start_offset  # Return the offset where the string starts
+            current_string = bytearray()
+            start_offset = None  # Reset start offset for the next string
+
+    return None  # No string found that meets the criteria
+

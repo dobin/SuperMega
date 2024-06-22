@@ -25,19 +25,6 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath) -> bytes:
     return code
 
 
-def merge_loader_payload(
-        shellcode_in: bytes, 
-        payload_data: bytes, 
-        decoder_style: DecoderStyle
-) -> bytes:
-    payload_data = encode_payload(payload_data, decoder_style)
-
-    logger.info("---[ Size: Carrier: {} and Payload: {}  Sum: {} ".format(
-        len(shellcode_in), len(payload_data), len(shellcode_in)+len(payload_data)))
-
-    return shellcode_in + payload_data
-
-
 def encode_payload(payload: bytes, decoder_style: DecoderStyle) -> bytes:
     if decoder_style == DecoderStyle.PLAIN_1:
         return payload

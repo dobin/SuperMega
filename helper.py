@@ -136,24 +136,6 @@ def file_to_lf(filename):
         f.write(data)
 
 
-def find_first_utf16_string_offset(data, min_len=8):
-    current_string = bytearray()
-    start_offset = None  # To keep track of the start of the current string
-    for i in range(0, len(data) - 1, 2):
-        # Check if we have a valid character
-        if data[i] != 0 or data[i+1] != 0:
-            if start_offset is None:  # Mark the start of a new string
-                start_offset = i
-            current_string += bytes([data[i], data[i+1]])
-        else:
-            if len(current_string) >= min_len * 2:  # Check if the current string meets the minimum length
-                return start_offset  # Return the offset where the string starts
-            current_string = bytearray()
-            start_offset = None  # Reset start offset for the next string
-
-    return None  # No string found that meets the criteria
-
-
 def round_up_to_multiple_of_8(x):
     return math.ceil(x / 8) * 8
 
@@ -168,6 +150,7 @@ def ui_string_decode(data):
             return "(utf8) " + data.decode("utf-8")
     except Exception as e:
         logger.warning("ui_string_decode: {}".format(e))
+
 
 def ascii_to_hex_bytes(ascii_bytes):
     hex_escaped = ''.join(f'\\x{byte:02x}' for byte in ascii_bytes)
