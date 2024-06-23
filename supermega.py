@@ -199,9 +199,10 @@ def start_real(settings: Settings):
     # INJECT loader into an exe and do IAT & data references. Big task.
     injector = phases.injector.Injector(
         carrier_shellcode,
-        settings, 
-        project.injectable, 
-        project.payload)
+        project.payload,
+        project.injectable,
+        settings)
+         
     injector.inject_exe()
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 

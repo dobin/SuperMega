@@ -23,19 +23,22 @@ class Injector():
     def __init__(
             self, 
             carrier_shc: bytes, 
-            settings: Settings, 
+            payload: Payload,
             injectable: Injectable, 
-            payload: Payload): 
+            settings: Settings): 
         self.carrier_shc = carrier_shc
         self.settings = settings
         self.injectable = injectable
         self.payload = payload
 
         # superpe is a representation of the exe file. We gonna modify it, and save it at the end.
-        self.superpe = SuperPe(settings.inject_exe_in)
+        # reuse from injectable
+        #self.superpe = SuperPe(settings.inject_exe_in)
+        self.superpe = injectable.superpe
         self.function_backdoorer = FunctionBackdoorer(self.superpe)
 
         # to find space for carrier and payload
+        # for some combination of settings HACK
         self.payload_rva = None
         self.carrier_rva = None
         self.init_addresses()
