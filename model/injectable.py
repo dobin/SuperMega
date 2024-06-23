@@ -6,7 +6,7 @@ from model.defs import *
 from pe.superpe import SuperPe, PeSection
 
 
-logger = logging.getLogger("Carrier")
+logger = logging.getLogger("Injectable")
 
 
 class IatRequest():
@@ -39,7 +39,7 @@ class DataReuseEntry():
         self.references.append(DataReuseReference(placeholder, register))
 
 
-class Carrier():
+class Injectable():
     def __init__(self, exe_file: str):
         self.iat_requests: List[IatRequest] = []
         self.reusedata_fixups: List[DataReuseEntry] = []

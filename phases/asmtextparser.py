@@ -2,13 +2,13 @@ import os
 from typing import List, Dict
 
 from helper import *
-from model.carrier import Carrier, DataReuseEntry, IatRequest
+from model.injectable import Injectable, DataReuseEntry, IatRequest
 from model.settings import Settings
 
 logger = logging.getLogger("AsmTextParser")
 
 
-def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[str]:
+def parse_asm_text_file(injectable: Injectable, asm_text: str, settings: Settings) -> List[str]:
     lines_out = []
     lines = asm_text.split("\n")
 
@@ -62,7 +62,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
             string_ref = "supermega_payload"
 
             # should already exist (added before)
-            datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
+            datareuse_fixup = injectable.get_reusedata_fixup(string_ref)
             if datareuse_fixup == None:
                 raise Exception("Data reuse entry not found: {}".format(string_ref))
 
@@ -85,7 +85,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
             # just the function name, without __imp_
             func_name = line[line.find("__imp_")+6:].rstrip()
             placeholder: bytes = os.urandom(6)  # exact size or the result
-            carrier.add_iat_request(func_name, placeholder)
+            injectable.add_iat_request(func_name, placeholder)
             
             new_line = bytes_to_asm_db(placeholder) + " ; IAT Reuse for {}".format(func_name)
             lines_out.append(new_line)
@@ -98,7 +98,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         if line.startswith("$SG"):
             # fuck me. if we start a new definition, and have an old one, add the old one...
             if current_datareuse_entry != None:
-                carrier.add_datareuse_fixup(current_datareuse_entry)
+                injectable.add_datareuse_fixup(current_datareuse_entry)
                 current_datareuse_entry = None  # reset it here
 
             var_name = tokens[0]
@@ -115,7 +115,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
             continue
         if current_datareuse_entry != None:
             # when we reach here, $SG with its DB should be done.
-            carrier.add_datareuse_fixup(current_datareuse_entry)
+            injectable.add_datareuse_fixup(current_datareuse_entry)
             current_datareuse_entry = None  # reset it here
 
         # PATCH data reuse code (data from C)
@@ -125,7 +125,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         ## DB 07cH, 04cH, 028H, 0b0H, 006H, 07eH ; IAT Reuse for GetEnvironmentVariableW
         if "OFFSET FLAT:$SG" in line:
             string_ref = line.split("OFFSET FLAT:")[1]
-            datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
+            datareuse_fixup = injectable.get_reusedata_fixup(string_ref)
             if datareuse_fixup == None:
                 raise("Data reuse entry not found: {}".format(string_ref))
 

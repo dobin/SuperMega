@@ -11,15 +11,17 @@ class RangeManager:
         self.min = min
         self.max = max
 
+        self.intervals.add(Interval(0, min))
+
 
     def merge_overlaps(self):
         self.intervals.merge_overlaps(strict=False)
 
 
     def print_all(self):
-        logger.info("Min: {}  Max: {}".format(self.min, self.max))
+        print("Min: {}  Max: {}".format(self.min, self.max))
         for i in self.intervals:
-            logger.info("Interval: {}-{}".format(i.begin, i.end))
+            print("Interval: {}-{}".format(i.begin, i.end))
 
 
     def add_range(self, start, end):

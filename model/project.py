@@ -4,7 +4,7 @@ import shutil
 from model.defs import *
 from model.payload import Payload
 from model.settings import Settings
-from model.carrier import Carrier
+from model.injectable import Injectable
 
 logger = logging.getLogger("Project")
 
@@ -22,7 +22,7 @@ class Project():
         self.comment: str = ""
         self.settings: Settings = settings
         self.payload: Payload = Payload(self.settings.payload_path)
-        self.carrier: Carrier = Carrier(self.settings.inject_exe_in)
+        self.injectable: Injectable = Injectable(self.settings.inject_exe_in)
 
         self.project_dir: str = ""
         self.project_exe: str = ""
@@ -30,7 +30,7 @@ class Project():
 
     def init(self):
         self.payload.init()
-        self.carrier.init()
+        self.injectable.init()
 
 
 def prepare_project(project_name, settings):
