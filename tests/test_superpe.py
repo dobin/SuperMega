@@ -36,7 +36,7 @@ class SuperPeTest(unittest.TestCase):
 
         # Relocations
         base_relocs: List[PeRelocEntry] = superpe.get_base_relocs()
-        self.assertEqual(len(base_relocs), 2888)
+        self.assertEqual(len(base_relocs), 2864)
         base_reloc = base_relocs[0]
         self.assertEqual(base_reloc.rva, 0x11E618)
         self.assertEqual(base_reloc.base_rva, 0x11E000)

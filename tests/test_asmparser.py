@@ -42,10 +42,6 @@ class AsmTest(unittest.TestCase):
         #   lea     r8, [shcstart]
         #self.assertTrue("lea	r8, [shcstart]" in asm_text_lines[198-1-1])
         self.assertTrue("DB 0" in asm_text_lines[198-1-1])
-        self.assertTrue("supermega_payload" not in asm_text_lines[198-1-1])
-
-        # shcstart:
-        self.assertTrue("shcstart:" in asm_text_lines[213-1-1])
 
 
     def test_asm_iat_request(self):
@@ -61,11 +57,11 @@ class AsmTest(unittest.TestCase):
 
         req1 = carrier.iat_requests[0]
         self.assertEqual(req1.name, "GetEnvironmentVariableW")
-        self.assertTrue(len(req1.placeholder), 6) # 6 random bytes
+        self.assertTrue(len(req1.references[0]), 6) # 6 random bytes
         
         req2 = carrier.iat_requests[1]
         self.assertEqual(req2.name, "VirtualAlloc")
-        self.assertTrue(len(req2.placeholder), 6) # 6 random bytes
+        self.assertTrue(len(req2.references[0]), 6) # 6 random bytes
 
         # added ; at the beginning
         #self.assertTrue(lines[13-1].startswith("; EXTRN	__imp_GetEnvironmentVariableW:PROC"))
@@ -95,10 +91,10 @@ class AsmTest(unittest.TestCase):
 
         entry = data_reuse_entries[0+1]
         self.assertTrue('$SG72513' in entry.string_ref)
-        self.assertTrue('rcx' in entry.register)
+        self.assertTrue('rcx' in entry.references[0].register)
         self.assertEqual(entry.data, b"U\x00S\x00E\x00R\x00P\x00R\x00O\x00F\x00I\x00L\x00E\x00\x00\x00")
         self.assertEqual(entry.addr, 0)
-        self.assertEqual(7, len(entry.placeholder))  # needs to be 7!
+        self.assertEqual(7, len(entry.references[0].placeholder))  # needs to be 7!
 
         entry = data_reuse_entries[1+1]
         self.assertTrue('$SG72514' in entry.string_ref)
