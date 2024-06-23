@@ -49,7 +49,7 @@ class DataReuseTest(unittest.TestCase):
     def test_relocmanager(self):
         """Test reference EXE reloc manager information"""
         superpe = SuperPe(PATH_EXES + "procexp64.exe")
-        rm = superpe.get_rdata_relocmanager()
+        rm = superpe.get_rdata_rangemanager()
         self.assertEqual(61, len(rm.intervals))
         # 0x1ab0 is magic currently (should use find_first_utf16_string_offset()
         hole = rm.find_hole(20)
@@ -58,7 +58,7 @@ class DataReuseTest(unittest.TestCase):
 
     def test_largestgap(self):
         superpe = SuperPe(PATH_EXES + "7z.exe")
-        rm = superpe.get_rdata_relocmanager()
+        rm = superpe.get_rdata_rangemanager()
         start, stop = rm.find_hole(100)
         self.assertEqual(394513, start)
         self.assertEqual(396511, stop)

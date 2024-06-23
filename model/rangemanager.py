@@ -11,7 +11,8 @@ class RangeManager:
         self.min = min
         self.max = max
 
-        self.intervals.add(Interval(0, min))
+        if min > 0:
+            self.intervals.add(Interval(0, min))
 
 
     def merge_overlaps(self):

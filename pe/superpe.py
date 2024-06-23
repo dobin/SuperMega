@@ -5,6 +5,7 @@ from typing import List, Dict
 import random
 
 from model.defs import *
+from model.rangemanager import RangeManager
 
 logger = logging.getLogger("superpe")
 
@@ -321,6 +322,66 @@ class SuperPe():
             offset, func_name, new_name_bytes.decode()))
         self.pe.set_bytes_at_offset(offset, new_name_bytes)
 
+    ## .rdata manager
+    def get_rdata_rangemanager(self) -> RangeManager:
+        section = self.get_section_by_name(".rdata")
+        relocs = self.get_relocations_for_section(".rdata")
+        rm = RangeManager(section.virt_addr, section.virt_addr + section.virt_size)
+        for reloc in relocs:
+            # Reloc destination is probably 8 bytes
+            # But i add another 8 to skip over small holes (common in .rdata)
+            rm.add_range(reloc.rva, reloc.rva + 8 + 8)
+        
+        if True:  # FIXME this is a hack which is sometimes necessary?
+            sect_data_copy = section.pefile_section.get_data()
+            string_off = find_first_utf16_string_offset(sect_data_copy)
+            if string_off == None:
+                raise Exception("Strings not found in .rdata section, abort")
+            if string_off < 128:
+                logging.debug("weird: Strings in .rdata section at offset {} < 100".format(string_off))
+                string_off = 128
+            rm.add_range(section.virt_addr, section.virt_addr + string_off)
+        
+        rm.merge_overlaps()
+        return rm
+    
+
+    def get_relocations_for_section(self, section_name: str) -> List[PeRelocEntry]:
+        section: PeSection = self.get_section_by_name(section_name)
+        ret = []
+        if section is None:
+            return ret
+        for reloc in self.get_base_relocs():
+            reloc_addr = reloc.rva
+            if reloc_addr >= section.virt_addr and reloc_addr < section.virt_addr + section.virt_size:
+                #logger.info("ADDR: 0x{:X}".format(reloc_addr))
+                ret.append(reloc)
+        return ret
+
+
+    def get_code_rangemanager(self) -> RangeManager:
+        code_section = self.get_code_section()
+        if code_section == None:
+            raise Exception('Could not find code section in input PE file!')
+        code_section_size = code_section.Misc_VirtualSize
+        
+        # Restrictions for putting data into .text: 
+        #   - enough space for carrier + payload
+        #   - avoid overwriting entry point function
+        #   - carrier should not generate much smaller holes in .text
+
+        rm = RangeManager(
+            code_section.VirtualAddress, 
+            code_section.VirtualAddress + code_section_size)
+        
+        # protect entrypoint a bit
+        entrypoint_rva = self.get_entrypoint()
+        rm.add_range(
+            entrypoint_rva - 0x100, 
+            entrypoint_rva + 0x100)
+        
+        return rm
+
 
     ## Helpers
 
@@ -351,3 +412,22 @@ class SuperPe():
 
         self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].VirtualAddress = 0
         self.pe.OPTIONAL_HEADER.DATA_DIRECTORY[SuperPe.IMAGE_DIRECTORY_ENTRY_SECURITY].Size = 0
+
+
+
+def find_first_utf16_string_offset(data, min_len=8):
+    current_string = bytearray()
+    start_offset = None  # To keep track of the start of the current string
+    for i in range(0, len(data) - 1, 2):
+        # Check if we have a valid character
+        if data[i] != 0 or data[i+1] != 0:
+            if start_offset is None:  # Mark the start of a new string
+                start_offset = i
+            current_string += bytes([data[i], data[i+1]])
+        else:
+            if len(current_string) >= min_len * 2:  # Check if the current string meets the minimum length
+                return start_offset  # Return the offset where the string starts
+            current_string = bytearray()
+            start_offset = None  # Reset start offset for the next string
+
+    return None  # No string found that meets the criteria
