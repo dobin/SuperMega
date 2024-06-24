@@ -27,6 +27,15 @@ def create_c_from_template(settings: Settings, payload_len: int):
         PATH_DECODER, settings.main_c_path))
     plugin_decoder = ""
 
+    # Plugin: VirtualAlloc
+    filepath_virtualprotect = PATH_VIRTUALPROTECT + "{}.c".format(
+        settings.plugin_virtualprotect)
+    with open(filepath_virtualprotect, "r", encoding='utf-8') as file:
+        plugin_virtualprotect = file.read()
+        plugin_virtualprotect = Template(plugin_virtualprotect).render({
+            'virtualprotect_data': settings.plugin_virtualprotect_data,
+        })
+
     # Plugin: Execution Guardrails
     filepath_guardrails = PATH_GUARDRAILS + "{}.c".format(
         settings.plugin_guardrail)
@@ -75,6 +84,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         'plugin_decoy': plugin_decoy,
         'plugin_executionguardrail': plugin_guardrails,
         'PAYLOAD_LEN': payload_len,
+        'plugin_virtualprotect': plugin_virtualprotect,
     })
     with open(settings.main_c_path, "w", encoding='utf-8') as file:
         file.write(rendered_template)

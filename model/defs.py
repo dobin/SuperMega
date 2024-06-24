@@ -18,6 +18,7 @@ PATH_DECODER = "data/source/decoder/"
 PATH_ANTIEMULATION = "data/source/antiemulation/"
 PATH_DECOY = "data/source/decoy/"
 PATH_GUARDRAILS = "data/source/guardrails/"
+PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 
 PATH_WEB_PROJECT = "projects/"
 

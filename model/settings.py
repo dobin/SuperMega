@@ -18,6 +18,8 @@ class Settings():
         self.plugin_decoy = "none"
         self.plugin_guardrail = "none"
         self.plugin_guardrail_data = "C:\\Users\\"
+        self.plugin_virtualprotect = "standard"
+        self.plugin_virtualprotect_data = ""
 
         self.dllfunc: str = ""  # For DLL injection
 

@@ -105,6 +105,7 @@ def project(name):
     guardrail_styles = list_files(PATH_GUARDRAILS)
     antiemulation_styles = list_files(PATH_ANTIEMULATION)
     decoy_styles = list_files(PATH_DECOY)
+    virtualprotect_styles = list_files(PATH_VIRTUALPROTECT)
 
     return render_template('project.html', 
         project_name = name,
@@ -136,6 +137,7 @@ def project(name):
         guardrailstyles = guardrail_styles,
         antiemulationstyles = antiemulation_styles,
         decoystyles = decoy_styles,
+        virtualprotectstyles = virtualprotect_styles
     )
 
 
@@ -216,6 +218,7 @@ def add_project():
             settings.payload_location = PayloadLocation[payload_location]
 
             settings.plugin_guardrail_data = request.form.get('guardrail_data', '')
+            settings.plugin_virtualprotect = request.form.get('virtualprotect')
 
             # overwrite project
             project = storage.get_project(project_name)

