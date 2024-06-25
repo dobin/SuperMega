@@ -27,18 +27,18 @@ def asm_to_shellcode(asm_in: FilePath, build_exe: FilePath) -> bytes:
 
 def encode_payload(payload: bytes, decoder_style: DecoderStyle) -> bytes:
     if decoder_style == DecoderStyle.PLAIN_1:
-        return payload
+        return bytes(payload)
     elif decoder_style == DecoderStyle.XOR_1:
         xor_key = config.xor_key
         logger.info("---[ XOR payload with key 0x{:X}".format(xor_key))
         xored = bytes([byte ^ xor_key for byte in payload])
-        return xored
+        return bytes(xored)
     elif decoder_style == DecoderStyle.XOR_2:
         xor_key = config.xor_key2
         logger.info("---[ XOR2 payload with key {}".format(xor_key))
         xored = bytearray(payload)
         for i in range(len(xored)):
             xored[i] ^= xor_key[i % 2]
-        return xored
+        return bytes(xored)
     else:
         raise Exception("Unknown decoder style")
