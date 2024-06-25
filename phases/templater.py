@@ -47,7 +47,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
 
     # Plugin: Decoder
     filepath_decoder = PATH_DECODER + "{}.c".format(
-        settings.decoder_style.value)
+        settings.decoder_style)
     with open(filepath_decoder, "r", encoding='utf-8') as file:
         plugin_decoder = file.read()
         plugin_decoder = Template(plugin_decoder).render({

@@ -212,10 +212,10 @@
                     <div class="col-sm-7">
                         <select class="form-select" name="decoder_style" id="decoder_style"
                                 aria-label="DECODERESTYLE" onchange="this.form.submit()">
-                            {% for name, value in decoderstyles %}
+                            {% for name in decoder_styles %}
                                 <option value="{{name}}"
-                                    {% if value in project.settings.decoder_style.value %} selected {% endif %}
-                                >{{value}}
+                                    {% if name in project.settings.decoder_style %} selected {% endif %}
+                                >{{name}}
                             </option>
                             {% endfor %}
                         </select>

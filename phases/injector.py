@@ -83,7 +83,6 @@ class Injector():
         # Patch IAT (if necessary and wanted)
         self.injectable_patch_iat()
 
-        # DEL BOTH
         carrier_shc_len = len(self.carrier_shc)
         carrier_offset: int = 0  # file offset
 

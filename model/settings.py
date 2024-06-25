@@ -11,7 +11,7 @@ class Settings():
 
         # Settings
         self.carrier_name: str = ""
-        self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
+        self.decoder_style: str = "xor_2"
         self.short_call_patching: bool = False
 
         self.plugin_antiemulation = "none"

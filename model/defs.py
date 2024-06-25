@@ -23,13 +23,6 @@ PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 PATH_WEB_PROJECT = "projects/"
 
 
-# Correlated with real template files
-# in data/plugins/
-class DecoderStyle(Enum):
-    PLAIN_1 = "plain_1"
-    XOR_1 = "xor_1"
-    XOR_2 = "xor_2"
-
 
 class PayloadLocation(Enum):
     CODE = ".text"

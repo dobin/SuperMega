@@ -56,12 +56,7 @@ def main():
     if args.carrier:
         settings.carrier_name = args.carrier
     if args.decoder:
-        if args.decoder == "plain_1":
-            settings.decoder_style = DecoderStyle.PLAIN_1
-        elif args.decoder == "xor_1":
-            settings.decoder_style = DecoderStyle.XOR_1
-        elif args.decoder == "xor_2":
-            settings.decoder_style = DecoderStyle.XOR_2
+        settings.decoder_style = args.decoder
     if args.inject:
         if args.carrier_invoke == "eop":
             settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
@@ -114,7 +109,7 @@ def start(settings: Settings) -> int:
     prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
-    if False:
+    if True:
         start_real(settings)
     else:
         try:
@@ -148,7 +143,7 @@ def start_real(settings: Settings):
     logger.info("--[ Config:  {}  {}  {}  {}".format(
         project.settings.carrier_name, 
         settings.payload_location.value,
-        project.settings.decoder_style.value,
+        project.settings.decoder_style,
         project.settings.carrier_invoke_style.value))
 
     logger.info("--[ Plugins: AntiEmulation={}  Decoy={}  Guardrail={}".format(

@@ -184,6 +184,7 @@ DWORD_PTR load_dll(LPVOID dllBase, DWORD_PTR *ret_dllBase, DWORD *ret_aoep) {
 
 {{plugin_executionguardrail}}
 
+{{plugin_virtualprotect}}
 
 int main()
 {

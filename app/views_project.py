@@ -98,7 +98,6 @@ def project(name):
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     carrier_names = get_template_names()
-    decoderstyles = [(color.name, color.value) for color in DecoderStyle]
     carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
     payload_locations = [(color.name, color.value) for color in PayloadLocation]
 
@@ -106,6 +105,8 @@ def project(name):
     antiemulation_styles = list_files(PATH_ANTIEMULATION)
     decoy_styles = list_files(PATH_DECOY)
     virtualprotect_styles = list_files(PATH_VIRTUALPROTECT)
+    decoder_styles = list_files(PATH_DECODER)
+
 
     return render_template('project.html', 
         project_name = name,
@@ -116,7 +117,7 @@ def project(name):
         exes=exes,
         shellcodes=shellcodes,
         carrier_names=carrier_names,
-        decoderstyles=decoderstyles,
+        decoder_styles=decoder_styles,
         carrier_invoke_styles=carrier_invoke_styles,
         payload_locations=payload_locations,
         exports=exports,
@@ -181,7 +182,7 @@ def add_project():
                 "data/binary/exes/procexp64.exe",
                 ""
             )
-            settings.decoder_style = DecoderStyle.XOR_2
+            settings.decoder_style = "xor_2"
             settings.carrier_name = "alloc_rw_rx"
             settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
             settings.payload_location = PayloadLocation.CODE
@@ -201,22 +202,15 @@ def add_project():
             )
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
-
             settings.carrier_name = request.form['carrier_name']
-            
             settings.plugin_antiemulation = request.form['antiemulation']
             settings.plugin_decoy = request.form['decoy']
             settings.plugin_guardrail = request.form['guardrail']
-
             carrier_invoke_style = request.form['carrier_invoke_style']
             settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
-
-            decoder_style = request.form['decoder_style']
-            settings.decoder_style = DecoderStyle[decoder_style]
-
+            settings.decoder_style = request.form['decoder_style']
             payload_location = request.form['payload_location']
             settings.payload_location = PayloadLocation[payload_location]
-
             settings.plugin_guardrail_data = request.form.get('guardrail_data', '')
             settings.plugin_virtualprotect = request.form.get('virtualprotect')
 
