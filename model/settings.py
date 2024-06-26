@@ -39,6 +39,7 @@ class Settings():
 
         # More
         self.fix_missing_iat = True
+        self.patch_show_window = True
         self.payload_location = PayloadLocation.DATA
 
         # directories and filenames

@@ -143,7 +143,8 @@ class Injector():
         self.inject_and_reference_data()
 
         # changes from console to UI (no console window) if necessary
-        self.superpe.patch_subsystem()
+        if self.settings.patch_show_window:
+            self.superpe.patch_subsystem()
 
         # We done
         logger.info("--( Write to file: {}".format(exe_out))
