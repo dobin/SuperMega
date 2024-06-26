@@ -129,6 +129,15 @@ def start(settings: Settings) -> int:
     return 0
 
 
+def sanity_checks(settings):
+    if 'dll_loader' in settings.carrier_name:
+        if not settings.payload_path.endswith(".dll"):
+            raise Exception("dll loader requires a dll as payload, not shellcode")
+    else:
+        if not settings.payload_path.endswith(".bin"):
+            raise Exception("loader requires shellcode as payload, not DLL")
+
+
 def start_real(settings: Settings):
     """Main entry point for the application. This is where the magic happens (based on settings)"""
 
@@ -151,6 +160,9 @@ def start_real(settings: Settings):
         project.settings.plugin_decoy,
         project.settings.plugin_guardrail)
     )
+
+    # Tell user if they attempt to do something stupid
+    sanity_checks(project.settings)
 
     # FIXUP DLL Payload
     # Prepare DLL payload for usage in dll_loader_change
