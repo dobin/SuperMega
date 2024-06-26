@@ -109,7 +109,7 @@ def start(settings: Settings) -> int:
     prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
-    if True:
+    if False:
         start_real(settings)
     else:
         try:

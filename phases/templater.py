@@ -60,9 +60,20 @@ def create_c_from_template(settings: Settings, payload_len: int):
     filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format(
         settings.plugin_antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
+        sir_iteration_count = 5
+        sir_alloc_count = int(config.get("sir_target_mem") / payload_len)+1
+        # if too large, compiler will add a __checkstk dependency
+        if sir_alloc_count > 256:
+            sir_alloc_count = 256
+        logging.info("   AntiEmulation target: iterations: {} alloc: {}".format(
+            sir_iteration_count, sir_alloc_count)
+        )
+
         plugin_antiemualation = file.read()
         plugin_antiemualation = Template(plugin_antiemualation).render({
             'PAYLOAD_LEN': payload_len,
+            'SIR_ALLOC_COUNT': sir_alloc_count,
+            'SIR_ITERATION_COUNT': sir_iteration_count,
         })
 
     # Plugin: Decoy

