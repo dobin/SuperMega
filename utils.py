@@ -3,11 +3,26 @@ import os
 import pathlib
 import glob
 import logging
+import shutil
 
 from config import config
 from model.defs import *
 
 logger = logging.getLogger("Utils")
+
+
+def check_deps():
+    cl = config.get("path_cl")
+    if shutil.which(cl) == None:
+        logger.error("Missing dependency: " + cl)
+        logger.error("Start in x64 Native Tools Command Prompt for VS 2022")
+        exit(1)
+
+    ml = config.get("path_ml64")
+    if shutil.which(ml) == None:
+        logger.error("Missing dependency: " + ml)
+        logger.error("Start in x64 Native Tools Command Prompt for VS 2022")
+        exit(1)
 
 
 def delete_all_files_in_directory(directory_path):

@@ -13,27 +13,25 @@ PATH_EXES_MORE = "data/binary/exes_more/"
 PATH_SHELLCODES = "data/binary/shellcodes/"
 PATH_CARRIER = "data/source/carrier/"
 PATH_PAYLOAD = "data/source/payload/"
-PATH_DECODER = "data/source/carrier/decoder/"
+
+PATH_DECODER = "data/source/decoder/"
+PATH_ANTIEMULATION = "data/source/antiemulation/"
+PATH_DECOY = "data/source/decoy/"
+PATH_GUARDRAILS = "data/source/guardrails/"
+PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 
 PATH_WEB_PROJECT = "projects/"
 
 
-# Correlated with real template files
-# in data/plugins/
-class DecoderStyle(Enum):
-    PLAIN_1 = "plain_1"
-    XOR_1 = "xor_1"
-    XOR_2 = "xor_2"
-
 
 class PayloadLocation(Enum):
-    CODE = "code"
-    DATA = "data"
+    CODE = ".text"
+    DATA = ".rdata"
     
 
 class CarrierInvokeStyle(Enum):
     ChangeEntryPoint = "change EntryPoint"
-    BackdoorCallInstr = "hijack Main"
+    BackdoorCallInstr = "backdoor Entrypoint"
 
 
 class FunctionInvokeStyle(Enum):

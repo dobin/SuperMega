@@ -2,13 +2,13 @@ import os
 from typing import List, Dict
 
 from helper import *
-from model.carrier import Carrier, DataReuseEntry, IatRequest
+from model.injectable import Injectable, DataReuseEntry, IatRequest
 from model.settings import Settings
 
 logger = logging.getLogger("AsmTextParser")
 
 
-def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> List[str]:
+def parse_asm_text_file(injectable: Injectable, asm_text: str, settings: Settings) -> List[str]:
     lines_out = []
     lines = asm_text.split("\n")
 
@@ -55,53 +55,25 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
             continue
 
         # PATCH external shellcode reference
-        if settings.payload_location == PayloadLocation.CODE:
-            ## mov	rdi, QWORD PTR supermega_payload
-            ## to
-            ## lea	rdi, [shcstart]  ; get payload shellcode address
-            if "supermega_payload" in line:
-                updated_line = line
-                updated_line = updated_line.replace(
-                    "mov	",
-                    "lea	"
-                )
-                updated_line = updated_line.replace(
-                    "QWORD PTR supermega_payload",
-                    "[shcstart]  ; get payload shellcode address"
-                )
-                lines_out.append(updated_line)
-                continue
-        elif settings.payload_location == PayloadLocation.DATA:
-            ## mov	rdi, QWORD PTR supermega_payload
-            ## to
-            ## lea  rdi, XXX
-            if "supermega_payload" in line:
-                randbytes: bytes = os.urandom(7)  # LEA is 7 bytes
-                string_ref = "supermega_payload"
+        ## mov	rdi, QWORD PTR supermega_payload
+        ## to
+        ## lea  rdi, XXX
+        if "supermega_payload" in line:
+            string_ref = "supermega_payload"
 
-                datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
-                if datareuse_fixup == None:
-                    raise Exception("Data reuse entry not found: {}".format(string_ref))
-                register = line.split("mov\t")[1].split(",")[0]
+            # should already exist (added before)
+            datareuse_fixup = injectable.get_reusedata_fixup(string_ref)
+            if datareuse_fixup == None:
+                raise Exception("Data reuse entry not found: {}".format(string_ref))
 
-                datareuse_fixup.register = register
-                datareuse_fixup.randbytes = randbytes
+            # add a reference
+            placeholder: bytes = os.urandom(7)  # LEA is 7 bytes
+            register = line.split("mov\t")[1].split(",")[0]
+            datareuse_fixup.add_reference(placeholder, register)
 
-                line = bytes_to_asm_db(randbytes) + " ; .rdata Payload".format()
-                lines_out.append(line)
-                continue
-        else: 
-            raise Exception("Unknown payload location: {}".format(settings.payload_location))
-
-        # ADD label at end of code
-        # we cant reliably identify in which function, so we just add it at the end
-        ## get_time_raw ENDP
-        ##   -> add here
-        ## _TEXT	ENDS
-        ## END
-        if line_idx > len(lines) - 5 and tokens[1] == "ENDP":
+            # add lines
+            line = bytes_to_asm_db(placeholder) + " ; supermega_payload Payload".format()
             lines_out.append(line)
-            lines_out.append("shcstart:  ; start of payload shellcode")
             continue
 
         # COLLECT AND PATCH all functions that need to be resolved in loader shellcode
@@ -112,9 +84,10 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         if "QWORD PTR __imp_" in line:
             # just the function name, without __imp_
             func_name = line[line.find("__imp_")+6:].rstrip()
-            randbytes: bytes = os.urandom(6)  # exact size or the result
-            carrier.add_iat_request(func_name, randbytes)
-            new_line = bytes_to_asm_db(randbytes) + " ; IAT Reuse for {}".format(func_name)
+            placeholder: bytes = os.urandom(6)  # exact size or the result
+            injectable.add_iat_request(func_name, placeholder)
+            
+            new_line = bytes_to_asm_db(placeholder) + " ; IAT Reuse for {}".format(func_name)
             lines_out.append(new_line)
             continue
 
@@ -125,7 +98,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         if line.startswith("$SG"):
             # fuck me. if we start a new definition, and have an old one, add the old one...
             if current_datareuse_entry != None:
-                carrier.add_datareuse_fixup(current_datareuse_entry)
+                injectable.add_datareuse_fixup(current_datareuse_entry)
                 current_datareuse_entry = None  # reset it here
 
             var_name = tokens[0]
@@ -142,7 +115,7 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
             continue
         if current_datareuse_entry != None:
             # when we reach here, $SG with its DB should be done.
-            carrier.add_datareuse_fixup(current_datareuse_entry)
+            injectable.add_datareuse_fixup(current_datareuse_entry)
             current_datareuse_entry = None  # reset it here
 
         # PATCH data reuse code (data from C)
@@ -152,17 +125,15 @@ def parse_asm_text_file(carrier: Carrier, asm_text: str, settings: Settings) -> 
         ## DB 07cH, 04cH, 028H, 0b0H, 006H, 07eH ; IAT Reuse for GetEnvironmentVariableW
         if "OFFSET FLAT:$SG" in line:
             string_ref = line.split("OFFSET FLAT:")[1]
-            register = line.split("lea\t")[1].split(",")[0]
-            randbytes: bytes = os.urandom(7)
-
-            datareuse_fixup = carrier.get_reusedata_fixup(string_ref)
+            datareuse_fixup = injectable.get_reusedata_fixup(string_ref)
             if datareuse_fixup == None:
                 raise("Data reuse entry not found: {}".format(string_ref))
 
-            datareuse_fixup.register = register
-            datareuse_fixup.randbytes = randbytes
+            register = line.split("lea\t")[1].split(",")[0]
+            placeholder: bytes = os.urandom(7)
+            datareuse_fixup.add_reference(placeholder, register)
 
-            line = bytes_to_asm_db(randbytes) + " ; .rdata Reuse for {} ({})".format(
+            line = bytes_to_asm_db(placeholder) + " ; .rdata Reuse for {} ({})".format(
                 string_ref, register)
             lines_out.append(line)
             continue

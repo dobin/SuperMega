@@ -88,7 +88,7 @@ def project(name):
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:
-            superpe.get_rdata_relocmanager().find_largest_gap()
+            superpe.get_rdata_rangemanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
     project_dir = os.path.dirname(os.getcwd() + "\\" + project.settings.main_dir)
@@ -98,9 +98,15 @@ def project(name):
     shellcodes = list_files_and_sizes(PATH_SHELLCODES)
 
     carrier_names = get_template_names()
-    decoderstyles = [(color.name, color.value) for color in DecoderStyle]
     carrier_invoke_styles = [(color.name, color.value) for color in CarrierInvokeStyle]
     payload_locations = [(color.name, color.value) for color in PayloadLocation]
+
+    guardrail_styles = list_files(PATH_GUARDRAILS)
+    antiemulation_styles = list_files(PATH_ANTIEMULATION)
+    decoy_styles = list_files(PATH_DECOY)
+    virtualprotect_styles = list_files(PATH_VIRTUALPROTECT)
+    decoder_styles = list_files(PATH_DECODER)
+
 
     return render_template('project.html', 
         project_name = name,
@@ -111,7 +117,7 @@ def project(name):
         exes=exes,
         shellcodes=shellcodes,
         carrier_names=carrier_names,
-        decoderstyles=decoderstyles,
+        decoder_styles=decoder_styles,
         carrier_invoke_styles=carrier_invoke_styles,
         payload_locations=payload_locations,
         exports=exports,
@@ -128,6 +134,11 @@ def project(name):
 
         has_remote=has_remote,
         fix_missing_iat=project.settings.fix_missing_iat,
+
+        guardrailstyles = guardrail_styles,
+        antiemulationstyles = antiemulation_styles,
+        decoystyles = decoy_styles,
+        virtualprotectstyles = virtualprotect_styles
     )
 
 
@@ -145,6 +156,16 @@ def list_files_and_sizes(directory, prepend=""):
     return files_and_sizes
 
 
+def list_files(directory, prepend="") -> List[str]:
+    files = []
+    for filename in os.listdir(directory):
+        filepath = os.path.join(directory, filename)
+        if os.path.isfile(filepath):
+            filename = filename.replace(".c", "")
+            files.append(filename)
+    return files
+
+
 @views_project.route("/project_add", methods=['POST', 'GET'])
 def add_project():
     if request.method == 'POST':
@@ -155,6 +176,18 @@ def add_project():
 
         # new project?
         if storage.get_project(project_name) == None:
+            # Default values for web create
+            settings.init_payload_injectable(
+                "messagebox.bin",
+                "data/binary/exes/procexp64.exe",
+                ""
+            )
+            settings.decoder_style = "xor_2"
+            settings.carrier_name = "alloc_rw_rx"
+            settings.carrier_invoke_style = CarrierInvokeStyle.BackdoorCallInstr
+            settings.payload_location = PayloadLocation.CODE
+            settings.fix_missing_iat = True
+
             # add new project
             project = WebProject(project_name, settings)
             project.comment = comment
@@ -162,32 +195,24 @@ def add_project():
         
         # update project
         else:
-            settings.payload_path = PATH_SHELLCODES + request.form['shellcode']
-            if request.form['shellcode'] == "createfile.bin":
-                settings.verify = True
-                settings.try_start_final_infected_exe = False
-            else:
-                settings.cleanup_files_on_exit = False
-
-            if 'dllfunc' in request.form:
-                settings.dllfunc = request.form['dllfunc']
-
-            settings.inject_exe_in = request.form['exe']
-            settings.inject_exe_out = request.form['exe'].replace(".exe", ".infected.exe")
+            settings.init_payload_injectable(
+                request.form['shellcode'],
+                request.form['exe'],
+                request.form.get('dllfunc', "")
+            )
 
             settings.fix_missing_iat = True if request.form.get('fix_missing_iat') != None else False
-
-            carrier_name = request.form['carrier_name']
-            settings.carrier_name = carrier_name
-
+            settings.carrier_name = request.form['carrier_name']
+            settings.plugin_antiemulation = request.form['antiemulation']
+            settings.plugin_decoy = request.form['decoy']
+            settings.plugin_guardrail = request.form['guardrail']
             carrier_invoke_style = request.form['carrier_invoke_style']
             settings.carrier_invoke_style = CarrierInvokeStyle[carrier_invoke_style]
-
-            decoder_style = request.form['decoder_style']
-            settings.decoder_style = DecoderStyle[decoder_style]
-
+            settings.decoder_style = request.form['decoder_style']
             payload_location = request.form['payload_location']
             settings.payload_location = PayloadLocation[payload_location]
+            settings.plugin_guardrail_data = request.form.get('guardrail_data', '')
+            settings.plugin_virtualprotect = request.form.get('virtualprotect')
 
             # overwrite project
             project = storage.get_project(project_name)

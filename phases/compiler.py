@@ -9,7 +9,7 @@ from config import config
 from observer import observer
 from model import *
 from phases.masmshc import masm_shc, Params
-from model.carrier import Carrier
+from model.injectable import Injectable
 from phases.asmtextparser import parse_asm_text_file
 from model.settings import Settings
 
@@ -22,7 +22,7 @@ def compile_dev(
     asm_out: FilePath,
     short_call_patching: bool = False,
 ):
-    logger.info("--( Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-( Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([
@@ -51,10 +51,10 @@ def compile_dev(
 def compile(
     c_in: FilePath, 
     asm_out: FilePath,
-    carrier: Carrier,
+    injectable: Injectable,
     settings: Settings,
 ):
-    logger.info("--[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
+    logger.info("-[ Compile C to ASM: {} -> {} ".format(c_in, asm_out))
 
     # Compile C To Assembly (text)
     run_process_checkret([
@@ -70,7 +70,7 @@ def compile(
     asm_text = file_readall_text(asm_out)
     observer.add_text_file("carrier_asm_orig", asm_text)
 
-    asm_text_lines = parse_asm_text_file(carrier, asm_text, settings) # Fixup assembly file
+    asm_text_lines = parse_asm_text_file(injectable, asm_text, settings) # Fixup assembly file
     asm_text = masm_shc(asm_text_lines) # Cleanup assembly file
     observer.add_text_file("carrier_asm_final", asm_text)
 

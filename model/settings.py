@@ -11,8 +11,15 @@ class Settings():
 
         # Settings
         self.carrier_name: str = ""
-        self.decoder_style: DecoderStyle = DecoderStyle.XOR_1
+        self.decoder_style: str = "xor_2"
         self.short_call_patching: bool = False
+
+        self.plugin_antiemulation = "none"
+        self.plugin_decoy = "none"
+        self.plugin_guardrail = "none"
+        self.plugin_guardrail_data = "C:\\Users\\"
+        self.plugin_virtualprotect = "standard"
+        self.plugin_virtualprotect_data = ""
 
         self.dllfunc: str = ""  # For DLL injection
 
@@ -31,7 +38,7 @@ class Settings():
         self.generate_shc_from_asm: bool = True
 
         # More
-        self.fix_missing_iat = False
+        self.fix_missing_iat = True
         self.payload_location = PayloadLocation.DATA
 
         # directories and filenames
@@ -42,3 +49,19 @@ class Settings():
         self.main_shc_path = self.main_dir + "main.bin"
         self.inject_exe_out = "{}{}".format(
             self.main_dir, os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe"))
+
+    def init_payload_injectable(self, shellcode, injectable, dll_func):
+        self.payload_path = PATH_SHELLCODES + shellcode
+        if shellcode == "createfile.bin":
+            self.verify = True
+            self.try_start_final_infected_exe = False
+        else:
+            self.cleanup_files_on_exit = False
+            
+        self.inject_exe_in = injectable
+        self.inject_exe_out = "{}{}".format(
+            self.main_dir,
+            os.path.basename(self.inject_exe_in).replace(".exe", ".infected.exe")
+        )
+
+        self.dllfunc = dll_func
