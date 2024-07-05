@@ -205,7 +205,9 @@ class Injector():
                     raise Exception("IatResolve: Call to IAT has different length than placeholder: {} != {} abort".format(
                         len(jmp), len(placeholder)
                     ))
+                idx = code.index(placeholder)
                 code = code.replace(placeholder, jmp)
+                asm_disasm(code[idx:idx+7])
 
         self.superpe.write_code_section_data(code)
 
