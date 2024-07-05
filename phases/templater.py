@@ -61,7 +61,7 @@ def create_c_from_template(settings: Settings, payload_len: int):
         settings.plugin_antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
         sir_iteration_count = 5
-        sir_alloc_count = int(config.get("sir_target_mem") / payload_len)+1
+        sir_alloc_count = (int(config.get("sir_target_mem")) / payload_len)+1
         # if too large, compiler will add a __checkstk dependency
         if sir_alloc_count > 256:
             sir_alloc_count = 256
