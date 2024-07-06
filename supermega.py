@@ -203,6 +203,10 @@ def start_real(settings: Settings):
             build_exe = settings.main_exe_path)
         observer.add_code_file("carrier_shc", carrier_shellcode)
 
+    logging.info("> Carrier Size: {}   Payload Size: {}".format(
+        len(carrier_shellcode), len(project.payload.payload_data)
+    ))
+
     # INJECT loader into an exe and do IAT & data references. Big task.
     injector = phases.injector.Injector(
         carrier_shellcode,

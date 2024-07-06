@@ -129,7 +129,7 @@ class SuperPe():
     
 
     def has_rodata_section(self) -> bool:
-        return self.get_section_by_name(".rdata")
+        return self.get_section_by_name(".rdata") != None
     
     
     def write_code_section_data(self, data: bytes):
