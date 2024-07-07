@@ -1,23 +1,74 @@
 # Todo List
 
-+ settings -> project: prep_web() and prepare_project() are weird
++ show error message when using dll_loader with shellcode
+  + and vice versa
++ make window hide an option
++ handle the injection rva reloc shit depending on initial payload size better
+
+* slides: mention that threads need NOT to start in unbacked memory
+
+
+# techniques
+
+* fork-carrier?
+  * alloc and copy in EXE1
+  * fork
+  * RX in EXE2
+
+* alternative: trash IAT entry with ROP ret?
+  * main first
+  * dll_loader too later
+  * for anti-ETW
+    * use gadget from library/DLL itself
+
+dll loader:
+* as .text is after header, do make header until end .text rx (less holes)
+  * the rest just rw?
+* loader: overwrite PE header after loading it
+* loader: some details at https://trustedsec.com/blog/loading-dlls-reflections
+* DONT do it if we assume DLL is IMAGE? (self stomping)
+* make DLL loader PE header overwrite an option (memory region)
+
+? cover .text with empty 0000 relocs?
+  # pe-sieve will not scan reloced' sections
+  * add new (will fuckup .text addr?)
+  * overwrite existing (will not be applied?)
 
 
 # high:
 
-* remove r2 for disassembly? (or make it optional)
-* more code size checks when selecting (shellcode 300kb .text small)
-
+* make plugins name colored red/yellow/green opsec
+  * add info buttons to each option, including OPSEC
+  
 
 # mid:
 
-* remove HACK which finds ascii in IAT, just replace with first Interval (or skip found interval 0)
-* do not add 0 reloc (for )
-* rename dll change-address-eop to overwrite?
+* guardrails: automatically put the hostname in it?
+* doc: list of things which are modyfiable
+* ui: templates ?
+* bug: .rdata max: 0 ?!
 
-* rename: 
-  * sourcestyle (peb, iat): carrier_style?
-  * rbrunmode (eop, backdoor): start_mode?
+
+* Cool ETW patch for our own process? (EtwEventWrite() or something)
+  * just RW it, then overwrite with 
+    void* pEventWrite = GetProcAddress(GetModuleHandleA("ntdll.dll"), (LPCSTR)sEtwEventWrite);
+    memcpy(pEventWrite, "\x48\x33\xc0\xc3", 4); 		// xor rax, rax; ret
+    https://github.com/unkvolism/Fuck-Etw/blob/main/etw-fuck.cpp
+    https://github.com/Gurpreet06/ETW-Patcher/blob/Gurpreet/main.cpp
+  * do it in dll_loader at IAT?!
+    * only events from dll will not be traced!
+    * its free...
+      -> no. loadlibrary does its thing
+      * own implementation?
+
+
+
+
+* injector is weird and/or too complicated
+  * remove project argument (used for project.payload.len)
+
+* remove HACK which finds ascii in IAT, just replace with first Interval (or skip found interval 0)
+
 * remove jmp at entry (reorder main first in .asm)
 
 * webapp: rename project
@@ -236,6 +287,50 @@ low:
   + random if not set
 + try again with short len for protect, but consider 300kb of pages (loop)
 + IAT with cpuz.exe: no size 3 in .rdata?!
+
+
++ settings -> project: prep_web() and prepare_project() are weird
++ remove r2 for disassembly? (or make it optional)
++ check entropy with a tool
++ do not add 0 reloc (for )
++ rename: 
+  + sourcestyle (peb, iat): carrier_style?
+  + rbrunmode (eop, backdoor): start_mode?
++ loader: do not VirtualAlloc, reuse existing section
++ anti emulation 
+  + web make it configurable
++ decoy
+  + web make it configurable
++ make executation guardrails a plugin too
+  + web make it configurable
++ fix templates with
+  + antiemulation
+  + decoy
+  + guardrails
++ tests all relevant: 
+  + dll_loader_alloc
+  + dll_loader_change
++ put exe in projects/, not exes/
++ remove payload.len (its len(payload)...)
++ on start: check if all dependencies (ml64.exe) are available
++ put payload away from carrier so it can be RW'd instead of RWX'd
+  + reference it like .rdata (not with the payload reference in asm-text)
++ make sane defaults when creating new project
++ .code injection should also always reference like .rdata?
+  # would make source more consistent
+  # but relative jump more stealthy?
++ rename dll change-address-eop to overwrite?
++ in injector, do we need a new superpe, or can just re-use the one from carrier?
++ on code injection: check if we overlap carrier, payload
++ support different locations in .text -> rm technique0
++ change_rwx_rx has the special VirtualProtect()
+  + outsource it either in a .h, or template
++ remove decoder_styles (as they are files now)
++ sirallocalot is configurable
+  + or make sensible defaults? 
+  + memory target = 10MB?
+  + instruction target = 10'000?
+
 
 
 
