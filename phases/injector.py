@@ -45,30 +45,62 @@ class Injector():
 
 
     def init_addresses(self):
-        rm = self.superpe.get_code_rangemanager()
+        if self.settings.payload_location == PayloadLocation.CODE:
+            #. text                                                     
+            # ┌───────────┬─────────────────────────────────────┬───────┐
+            # │           ├────────┼────────┼───────────────────┤       │
+            # │           │Carrier │ 1 Page │ Payload           │       │
+            # │           ├────────┼────────┼───────────────────┤       │
+            # └───────────┴─────────────────────────────────────┴───────┘
+            #
+            # Payload is page aligned when used with dll_loader_change
 
-        # TECHNIQUE0:
-        # assume payload is big, find a place for it, then prepend carrier (small)
-        complete_size = len(self.carrier_shc) + len(self.payload.payload_data) + 4096
+            # carrier location
+            complete_size = len(self.carrier_shc) + 4096 + len(self.payload.payload_data)
+            rm = self.superpe.get_code_rangemanager()
+            largest_gap = rm.find_holes(complete_size)
+            if len(largest_gap) == 0:
+                raise Exception('No hole found in code section to fit payload!')
+            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+            offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
+            offset += largest_gap[0][0]
+            self.carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
 
-        largest_gap = rm.find_holes(complete_size)
-        if len(largest_gap) == 0:
-            raise Exception('No hole found in code section to fit payload!')
-        largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+            # payload location: behind carrier + 1 page
+            if self.settings.carrier_name == "dll_loader_change":
+                self.payload_rva = self.carrier_rva + len(self.carrier_shc) + 4096 + 4096
+                self.payload_rva = self.payload_rva & 0xFFFFF000 # page align
+            else:
+                # no page align
+                self.payload_rva = self.carrier_rva + len(self.carrier_shc) + 4096
+        else:
+            #  .text                          .rdata                     
+            # ┌─────────┬─────────┬───────┐  ┌────────┬─────────┬───────┐
+            # │         │         │       │  │        │         │       │
+            # │         │ carrier │       │  │        │payload  │       │
+            # │         │         │       │  │        │         │       │
+            # └─────────┴─────────┴───────┘  └────────┴─────────┴───────┘
 
-        # align to center
-        offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
-        offset += largest_gap[0][0]
+            # carrier location
+            rm = self.superpe.get_code_rangemanager()
+            complete_size = len(self.carrier_shc)
+            largest_gap = rm.find_holes(complete_size)
+            if len(largest_gap) == 0:
+                raise Exception('No hole found in code section to fit payload!')
+            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+            offset = int((largest_gap_size - complete_size) / 2)  # centered in the .text section
+            offset += largest_gap[0][0]
+            self.carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
 
-        if self.settings.carrier_name == "dll_loader_change":
-            # Align to page size
-            offset = offset & 0xFFFFF000
-
-        # page aligned possibly
-        self.payload_rva = offset  
-
-        # prepend it a bit
-        self.carrier_rva = offset - len(self.payload.payload_data) - 4096
+            # payload location
+            rdata_rm = self.superpe.get_rdata_rangemanager()
+            complete_size = len(self.payload.payload_data)
+            largest_gap = rdata_rm.find_holes(complete_size)
+            if len(largest_gap) == 0:
+                raise Exception('No hole found in code section to fit payload!')
+            largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
+            offset = largest_gap[0][0]
+            self.payload_rva = self.superpe.get_section_by_name(".rdata").virt_addr + offset
 
 
     ## Inject
@@ -105,6 +137,9 @@ class Injector():
 
         else:  # EXE/DLL
             carrier_offset = self.superpe.get_offset_from_rva(self.carrier_rva)
+            if carrier_offset == None:
+                raise Exception("Carrier Offset is None, invalid carrier RVA? 0x{:X}".format(self.carrier_rva))
+            #logger.info("{} {}".format(self.carrier_rva, carrier_offset))
             logger.info("--[ Inject: Write Carrier to 0x{:X} (0x{:X})".format(
                 self.carrier_rva, carrier_offset))
 
@@ -205,7 +240,9 @@ class Injector():
                     raise Exception("IatResolve: Call to IAT has different length than placeholder: {} != {} abort".format(
                         len(jmp), len(placeholder)
                     ))
+                idx = code.index(placeholder)
                 code = code.replace(placeholder, jmp)
+                asm_disasm(code[idx:idx+7])
 
         self.superpe.write_code_section_data(code)
 
@@ -217,8 +254,6 @@ class Injector():
             # nothing todo
             return
         
-        shellcode_offset = self.superpe.pe.get_offset_from_rva(self.payload_rva)
-        
         # insert data
         logger.info("---( DataReuseFixups: Inject the data")
         for datareuse_fixup in reusedata_fixups:
@@ -226,6 +261,7 @@ class Injector():
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))
 
             if datareuse_fixup.in_code:  # .text
+                shellcode_offset = self.superpe.pe.get_offset_from_rva(self.payload_rva)
                 self.superpe.pe.set_bytes_at_offset(shellcode_offset, datareuse_fixup.data)
                 payload_rva = self.superpe.pe.get_rva_from_offset(shellcode_offset)
                 datareuse_fixup.addr = payload_rva + self.injectable.superpe.get_image_base()
@@ -270,8 +306,8 @@ class Injector():
                 )
                 asm_disasm(lea, instruction_virtual_address)  # DEBUG
                 if len(lea) != len(ref.placeholder):
-                    raise Exception("DataReuseFixup: lea instr has different length than placeholder: {} != {} abort".format(
-                        len(lea), len(ref.placeholder)
+                    raise Exception("DataReuseFixup: lea instr has different length than placeholder {}: {} != {} abort".format(
+                        ref.placeholder, len(lea), len(ref.placeholder)
                     ))
                 code = code.replace(ref.placeholder, lea)
 

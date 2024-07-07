@@ -60,15 +60,19 @@ def create_c_from_template(settings: Settings, payload_len: int):
     filepath_antiemulation = PATH_ANTIEMULATION + "{}.c".format(
         settings.plugin_antiemulation)
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
-        sir_iteration_count = 5
-        sir_alloc_count = int(config.get("sir_target_mem") / payload_len)+1
-        # if too large, compiler will add a __checkstk dependency
-        if sir_alloc_count > 256:
-            sir_alloc_count = 256
-        logging.info("   AntiEmulation target: iterations: {} alloc: {}".format(
+        sir_iteration_count = settings.sir_iteration_count
+        sir_alloc_count = settings.sir_alloc_count
+        # sir_alloc_count = int((int(config.get("sir_target_mem")) / payload_len))+1
+        max_alloc_count = 256
+        if sir_alloc_count > max_alloc_count:
+            # if too large, compiler will add a __checkstk dependency
+            logging.warning("Too large sir allocation count {}, setting to max {}".format(
+                sir_alloc_count, max_alloc_count
+            ))
+            sir_alloc_count = max_alloc_count
+        logging.info("> AntiEmulation: iterations: {}  allocs: {}".format(
             sir_iteration_count, sir_alloc_count)
         )
-
         plugin_antiemualation = file.read()
         plugin_antiemualation = Template(plugin_antiemualation).render({
             'PAYLOAD_LEN': payload_len,
