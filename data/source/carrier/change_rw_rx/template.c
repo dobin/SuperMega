@@ -22,6 +22,8 @@ char *supermega_payload;
 
 {{plugin_executionguardrail}}
 
+{{plugin_virtualprotect}}
+
 
 int main()
 {

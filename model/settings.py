@@ -23,6 +23,10 @@ class Settings():
 
         self.dllfunc: str = ""  # For DLL injection
 
+        # Anti-debugging
+        self.sir_iteration_count: int = 5
+        self.sir_alloc_count: int = 100
+
         # Injectable
         self.carrier_invoke_style: CarrierInvokeStyle = CarrierInvokeStyle.BackdoorCallInstr
         self.inject_exe_in: FilePath = ""
