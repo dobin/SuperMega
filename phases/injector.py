@@ -39,6 +39,9 @@ class Injector():
 
         # to find space for carrier and payload
         # for some combination of settings HACK
+        self.rdata_manager = self.superpe.get_rdata_rangemanager()
+        self.code_manager = self.superpe.get_code_rangemanager()
+
         self.payload_rva = None
         self.carrier_rva = None
         self.init_addresses()
@@ -57,8 +60,7 @@ class Injector():
 
             # carrier location
             complete_size = len(self.carrier_shc) + 4096 + len(self.payload.payload_data)
-            rm = self.superpe.get_code_rangemanager()
-            largest_gap = rm.find_holes(complete_size)
+            largest_gap = self.code_manager.find_holes(complete_size)
             if len(largest_gap) == 0:
                 raise Exception('No hole found in code section to fit payload!')
             largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
@@ -82,9 +84,8 @@ class Injector():
             # └─────────┴─────────┴───────┘  └────────┴─────────┴───────┘
 
             # carrier location
-            rm = self.superpe.get_code_rangemanager()
             complete_size = len(self.carrier_shc)
-            largest_gap = rm.find_holes(complete_size)
+            largest_gap = self.code_manager.find_holes(complete_size)
             if len(largest_gap) == 0:
                 raise Exception('No hole found in code section to fit payload!')
             largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
@@ -93,15 +94,14 @@ class Injector():
             self.carrier_rva = self.superpe.get_code_section().VirtualAddress + offset
 
             # payload location
-            rdata_rm = self.superpe.get_rdata_rangemanager()
             complete_size = len(self.payload.payload_data)
-            largest_gap = rdata_rm.find_holes(complete_size)
+            largest_gap = self.rdata_manager.find_holes(complete_size)
             if len(largest_gap) == 0:
                 raise Exception('No hole found in code section to fit payload!')
             largest_gap_size = largest_gap[0][1] - largest_gap[0][0]
             offset = largest_gap[0][0]
             self.payload_rva = self.superpe.get_section_by_name(".rdata").virt_addr + offset
-
+            self.rdata_manager.add_range(offset, offset+len(self.payload.payload_data))
 
     ## Inject
 
@@ -269,14 +269,13 @@ class Injector():
                     datareuse_fixup.addr, payload_rva, datareuse_fixup.string_ref, len(datareuse_fixup.data)))
 
             else:  # .rdata
-                rdata_manager = self.superpe.get_rdata_rangemanager()
                 # get a hole in the .rdata section to put our data
-                hole_rva = rdata_manager.find_hole(len(datareuse_fixup.data))
+                hole_rva = self.rdata_manager.find_hole(len(datareuse_fixup.data))
                 if hole_rva == None:
                     raise Exception("No suitable hole with size {} found in .rdata section, abort".format(
                         len(datareuse_fixup.data)
                     ))
-                rdata_manager.add_range(hole_rva[0], hole_rva[1]+1)  # mark it as used
+                self.rdata_manager.add_range(hole_rva[0], hole_rva[1]+1)  # mark it as used
 
                 var_data = datareuse_fixup.data
                 data_rva = hole_rva[0]
