@@ -109,7 +109,7 @@ def start(settings: Settings) -> int:
     prepare_project(settings.project_name, settings)
 
     # Do the thing and catch the errors
-    if False:
+    if config.catch_exception:
         start_real(settings)
     else:
         try:
@@ -176,7 +176,10 @@ def start_real(settings: Settings):
 
     # PREPARE DataReuseEntry for usage in Compiler/AsmTextParser
     # So the carrier is able to find the payload
-    project.injectable.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
+    if project.settings.payload_location == PayloadLocation.CODE:
+        project.injectable.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=True))
+    else:
+        project.injectable.add_datareuse_fixup(DataReuseEntry("supermega_payload", in_code=False))
     entry = project.injectable.get_reusedata_fixup("supermega_payload")
     entry.data = phases.assembler.encode_payload(
         project.payload.payload_data, settings.decoder_style)  # encrypt
