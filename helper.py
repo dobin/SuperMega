@@ -13,7 +13,7 @@ from observer import observer
 
 logger = logging.getLogger("Helper")
 
-SHC_VERIFY_SLEEP = 0.1
+SHC_VERIFY_SLEEP = 0.2
 
 
 def write_webproject(project_name, settings):
@@ -141,15 +141,18 @@ def round_up_to_multiple_of_8(x):
 
 
 def ui_string_decode(data):
+    res = ""
     try:
         if len(data) > 32:
-            return "Data with len {}".format(len(data))
+            res = "Data with len {}".format(len(data))
         elif b"\x00\x00" in data:
-            return "(utf16) " + data.decode("utf-16le")
+            res = "(utf16) " + data.decode("utf-16le")
         else:
-            return "(utf8) " + data.decode("utf-8")
+            res = "(utf8) " + data.decode("utf-8")
     except Exception as e:
-        logger.warning("ui_string_decode: {}".format(e))
+        res = "(bytes) " + data.hex()
+
+    return res
 
 
 def ascii_to_hex_bytes(ascii_bytes):

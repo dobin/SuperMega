@@ -257,7 +257,7 @@ class Injector():
         # insert data
         logger.info("---( DataReuseFixups: Inject the data")
         for datareuse_fixup in reusedata_fixups:
-            logger.debug("     Handling DataReuse Fixup: {} (.code: {})".format(
+            logger.info("     Handling DataReuse Fixup: {} (.code: {})".format(
                 datareuse_fixup.string_ref, datareuse_fixup.in_code))
 
             if datareuse_fixup.in_code:  # .text
@@ -281,6 +281,7 @@ class Injector():
                 data_rva = hole_rva[0]
                 self.superpe.pe.set_bytes_at_rva(data_rva, var_data)
                 datareuse_fixup.addr = data_rva + self.injectable.superpe.get_image_base()
+                ##
                 logging.info("       Add to .rdata at 0x{:X} ({}): {}: {}".format(
                     datareuse_fixup.addr, data_rva, datareuse_fixup.string_ref, ui_string_decode(var_data)))
 
