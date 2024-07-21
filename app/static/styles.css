@@ -76,3 +76,7 @@
     margin: 20px 0; /* Add some vertical spacing */
   }
   
+
+  .opsec_good { color: green; }
+  .opsec_bad { color: red; }
+  .opsec_neutral { color: orange; }

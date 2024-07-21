@@ -51,7 +51,10 @@
 
                 <!-- Input: Payload File -->
                 <div class="form-group row">
-                    <label for="shellcode" class="col-sm-3 col-form-label">
+                    <label for="shellcode" class="col-sm-3 col-form-label"
+                                data-bs-toggle="tooltip" data-bs-placement="top" 
+                                title="Shellcode or DLL to inject, from data/binary/shellcodes/"
+                    >
                         Payload
                     </label>
 
@@ -71,7 +74,10 @@
                 
                 <!-- Input: EXE File -->
                 <div class="form-group row">
-                    <label for="exe" class="col-sm-3 col-form-label">
+                    <label for="exe" class="col-sm-3 col-form-label"
+                           data-bs-toggle="tooltip" data-bs-placement="top" 
+                           title="EXE or DLL to infect, from data/binary/exes/"   
+                    >
                         Injectable
                     </label>
                     <div class="col-sm-9">
@@ -147,8 +153,19 @@
             <!-- Row 4: leet settings -->
             <div class="col-3">
                 <div class="form-group row">
-                    <label for="carrier_name" class="col-sm-5 col-form-label">
+                    <label for="carrier_name" class="col-sm-5 col-form-label
+                    {% if 'rwx' in project.settings.carrier_name %}
+                        opsec_bad
+                    {% elif 'peb_walk' in project.settings.carrier_name %}
+                        opsec_bad
+                    {% elif 'change' in project.settings.carrier_name %}
+                        opsec_neutral
+                    {% else %}
+                        opsec_good
+                    {% endif %}
+                    ">
                         Carrier
+
                     </label>
                     <div class="col-sm-7">
                         <select class="form-select" name="carrier_name" id="carrier_name 
