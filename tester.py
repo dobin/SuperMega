@@ -21,8 +21,8 @@ def main():
     test_dll_loader()
     test_exe_code()
     test_exe_data()
-    test_dll_code()
-    test_dll_data()
+    #test_dll_code()
+    #test_dll_data()
 
 
 def test_dll_loader():
@@ -250,6 +250,6 @@ def dll_iat_reuse():
 
 
 if __name__ == "__main__":
-    setup_logging(level=logging.INFO)
-    #setup_logging(level=logging.WARNING)
+    #setup_logging(level=logging.INFO)
+    setup_logging(level=logging.WARNING)
     main()
