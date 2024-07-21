@@ -23,11 +23,10 @@ PATH_VIRTUALPROTECT = "data/source/virtualprotect/"
 PATH_WEB_PROJECT = "projects/"
 
 
-
 class PayloadLocation(Enum):
     CODE = ".text"
     DATA = ".rdata"
-    
+
 
 class CarrierInvokeStyle(Enum):
     ChangeEntryPoint = "change EntryPoint"
