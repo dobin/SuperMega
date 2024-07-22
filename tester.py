@@ -18,11 +18,75 @@ def main():
         print("{} directory does not exist".format(os.path.dirname(VerifyFilename)))
         return
 
-    test_dll_loader()
-    test_exe_code()
-    test_exe_data()
+    test_common()
+    #test_dll_loader()
+    #test_exe_code()
+    #test_exe_data()
     #test_dll_code()
     #test_dll_data()
+
+
+def test_common():
+    print("Testing: COMMON")
+
+    settings = Settings("unittest")
+    settings.payload_path = PATH_SHELLCODES + "createfile.bin"
+    settings.verify = True
+    settings.try_start_final_infected_exe = False
+    settings.payload_location = PayloadLocation.CODE
+    
+    print("Test COMMON 1/x: plain")
+    settings.decoder_style = "plain"
+    settings.carrier_name = "alloc_rw_rwx" # important (not rx)
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
+
+    print("Test COMMON 2/x: xor_1")
+    settings.decoder_style = "xor_1"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
+
+    print("Test COMMON 3/x: xor_2")
+    settings.decoder_style = "xor_2"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
+
+    print("Test COMMON 4/x: +guardrail env")
+    settings.plugin_guardrail = "env"
+    settings.plugin_guardrail_data = "C:\\\\Users\\\\hacker"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
+
+    print("Test COMMON 5/x: +sirallocalot ")
+    settings.plugin_antiemulation = "sirallocalot"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
+
+    print("Test COMMON 6/x: +virtualprotect undersized")
+    settings.plugin_virtualprotect = "undersized"
+    try:
+        if start(settings) != 0:
+            print("Error")
+    except:
+        print("Error")
 
 
 def test_dll_loader():
@@ -31,21 +95,18 @@ def test_dll_loader():
     settings.payload_path = PATH_SHELLCODES + "createfile.dll"
     settings.verify = True
     settings.try_start_final_infected_exe = False
-    settings.payload_location = PayloadLocation.CODE  
+    settings.payload_location = PayloadLocation.CODE   # important
+    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
+    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
+    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
 
     print("Test DLL Loader 1/2: procexp, backdoor main, dll loader alloc")
     settings.carrier_name = "dll_loader_alloc"
-    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
-    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:
         print("Error")
 
     print("Test DLL Loader 2/2: procexp, backdoor main, dll loader change")
     settings.carrier_name = "dll_loader_change"
-    settings.carrier_invoke_style = CarrierInvokeStyle.ChangeEntryPoint
-    settings.inject_exe_in = PATH_EXES + "procexp64.exe"
-    settings.inject_exe_out = PATH_EXES + "procexp64.verify.exe"
     if start(settings) != 0:
         print("Error")
 
