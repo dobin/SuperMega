@@ -24,6 +24,11 @@ Features:
 * Patch IAT for missing functions for the carrier
 
 
+## Usage
+
+```
+> ./web.py
+```
 
 ## Examples
 
