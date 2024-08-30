@@ -62,7 +62,6 @@ def create_c_from_template(settings: Settings, payload_len: int):
     with open(filepath_antiemulation, "r", encoding='utf-8') as file:
         sir_iteration_count = settings.sir_iteration_count
         sir_alloc_count = settings.sir_alloc_count
-        # sir_alloc_count = int((int(config.get("sir_target_mem")) / payload_len))+1
         max_alloc_count = 256
         if sir_alloc_count > max_alloc_count:
             # if too large, compiler will add a __checkstk dependency
