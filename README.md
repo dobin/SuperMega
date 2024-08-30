@@ -32,6 +32,9 @@ References:
 * [Blog Cordyceps File injection techniques](https://blog.deeb.ch/posts/exe-injection/)
 
 
+![SuperMega](https://raw.githubusercontent.com/dobin/supermega/master/web-screenshot.png)
+
+
 ## Usage
 
 ```
