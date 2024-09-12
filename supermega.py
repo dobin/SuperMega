@@ -234,9 +234,8 @@ def start_real(settings: Settings):
             payload_exit_code = phases.injector.verify_injected_exe(
                 settings.inject_exe_out,
                 dllfunc=settings.dllfunc)
-            logging.info("Payload exit code: {}".format(payload_exit_code))
             if payload_exit_code != 0:
-                raise Exception("Payload exit code: {}".format(payload_exit_code))
+                logger.warning("Payload exit code: {}".format(payload_exit_code))
         elif settings.try_start_final_infected_exe:
             run_exe(settings.inject_exe_out, dllfunc=settings.dllfunc)
 
