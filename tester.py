@@ -8,20 +8,22 @@ from model.settings import Settings
 from log import setup_logging
 from supermega import start
 from model.project import prepare_project
+from utils import check_deps
 
 
 def main():
     logger.info("Super Mega Tester: " + os.path.dirname(VerifyFilename))
     config.load()
+    check_deps()
 
     if not os.path.exists(os.path.dirname(VerifyFilename)):
         print("{} directory does not exist".format(os.path.dirname(VerifyFilename)))
         return
 
     test_common()
-    #test_dll_loader()
-    #test_exe_code()
-    #test_exe_data()
+    test_dll_loader()
+    test_exe_code()
+    test_exe_data()
     #test_dll_code()
     #test_dll_data()
 
