@@ -241,13 +241,13 @@ class SuperPe():
 
     ## IAT
 
-    def get_vaddr_of_iatentry(self, func_name: str) -> int:
+    def get_vaddr_of_iatentry(self, func_name: str):
         iat = self.get_iat_entries()
         for dll_name in iat:
             for entry in iat[dll_name]:
                 if entry.func_name == func_name:
                     return entry.iat_vaddr
-        raise Exception(f"Function {func_name} not found in IAT")
+        return None
     
 
     def get_iat_entries(self) -> Dict[str, List[IatEntry]]:
