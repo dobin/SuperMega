@@ -89,7 +89,7 @@ def project(name):
         
         has_rodata_section = superpe.has_rodata_section()
         if has_rodata_section:
-            superpe.get_rdata_rangemanager().find_largest_gap()
+            data_sect_largest_gap_size = superpe.get_rdata_rangemanager().find_largest_gap()
         unresolved_dlls = pe.dllresolver.unresolved_dlls(superpe)
 
     project_dir = os.path.dirname(os.getcwd() + "\\" + project.settings.main_dir)
